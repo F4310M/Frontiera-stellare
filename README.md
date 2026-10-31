@@ -1,4 +1,6 @@
-# Frontiera Stellare
+# Stellar Frontier
+
+*(in origine "Frontiera Stellare")*
 
 Gioco d'azione nel browser in due fasi, scritto in JavaScript puro su canvas, senza librerie e senza compilazione.
 
@@ -30,6 +32,8 @@ Gioco d'azione nel browser in due fasi, scritto in JavaScript puro su canvas, se
 - **Crediti:** ogni colpo, missile, granata e unità di carburante (jetpack compreso) costa crediti. Si guadagnano con le taglie sui nemici e con il premio della missione, pagato solo distruggendo il boss.
 - **Mercato:** dalla mappa si comprano potenziamenti: lanciatore multiplo, laser potenziato, doppio laser, barriera, motori, iniettori e granate.
 - **Missioni:** scegliendo un pianeta dalla mappa si parte sempre dallo spazio; la fase a terra si raggiunge solo conquistando l'orbita.
+- **Lingue:** inglese (predefinito), italiano, francese, spagnolo, russo, cinese e giapponese. Si sceglie dal menu in alto nella mappa o nelle impostazioni.
+- **Punteggio e classifica:** i punti arrivano da nemici abbattuti, coloni salvati, orbite conquistate e colonie liberate, e crescono con la minaccia del pianeta. Alla fine del gioco (GAME OVER o vittoria su OMEGA) si scrive il nome (massimo 10 lettere). La classifica mostra i primi 100 ed è salvata nel browser.
 - **Colonna sonora:** musica procedurale che cambia con l'azione (calma sulla mappa, battaglia in volo, boss vicino al pianeta e contro il boss). Si attiva o spegne nelle impostazioni o con il tasto M.
 - **Pianeti:** LYRA (mare), VESPER (deserto), NIMBUS (tempesta), KHEPRI (foresta) e UMBRA (lava), ognuno con il suo boss. Liberati tutti e cinque, si sblocca **OMEGA**, il pianeta finale con IMPERATORE OMEGA.
 
@@ -46,6 +50,8 @@ dist/            il gioco (apri dist/index.html tramite un server locale)
   finale.js      vite, pillola 1UP, game over e pianeta finale
   musica.js      colonna sonora procedurale
   home.js        animazioni della schermata iniziale
+  classifica.js  punteggio e classifica dei primi 100
+  i18n.js        lingue e traduzioni
 tests/           test automatici (Node.js)
 ```
 
@@ -60,4 +66,5 @@ node tests/grafica2.test.cjs
 node tests/economia.test.cjs
 node tests/arrivo.test.cjs
 node tests/finale.test.cjs
+node tests/lingue.test.cjs
 ```
