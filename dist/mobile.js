@@ -82,6 +82,10 @@ function touchApply(){
 function touchEnable(){if(touch.on)return;touch.on=true;document.body.classList.add('touch');touchBuild();if(typeof i18nBuild==='function'){i18nBuild();i18nApply()}}
 if(typeof document!=='undefined'&&document.body&&document.createElement){
  if(touchDetect())touchEnable();
+ // Su iPhone il pizzico con due dita ingrandisce o rimpicciolisce la pagina: durante il gioco va bloccato.
+ for(const ev of ['gesturestart','gesturechange'])document.addEventListener(ev,e=>{if(touch.on)e.preventDefault()},{passive:false});
+ document.addEventListener('touchmove',e=>{if(touch.on&&(state==='play'||state==='platform')&&e.cancelable)e.preventDefault()},{passive:false});
+ document.addEventListener('dblclick',e=>{if(touch.on)e.preventDefault()},{passive:false});
  addEventListener('touchstart',()=>touchEnable(),{once:true,passive:true});
  (function loop(){try{if(touch.on)touchApply()}catch(e){}requestAnimationFrame(loop)})();
 }

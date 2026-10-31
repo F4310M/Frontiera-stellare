@@ -54,6 +54,7 @@ dist/            il gioco (apri dist/index.html tramite un server locale)
   classifica.js  punteggio e classifica dei primi 100
   i18n.js        lingue e traduzioni
   mobile.js      comandi touch per cellulare e tablet
+  camera.js      zoom morbido della telecamera in volo
 tests/           test automatici (Node.js)
 ```
 
