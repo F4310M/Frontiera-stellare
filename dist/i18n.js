@@ -6,6 +6,11 @@
 const I18N_LANGS=[['en','English'],['it','Italiano'],['fr','Français'],['es','Español'],['ru','Русский'],['zh','中文'],['ja','日本語']];
 const I18N_COL={it:0,en:1,fr:2,es:3,ru:4,zh:5,ja:6};
 const I18N_ROWS=[
+["FRENA PER CONQUISTARE","BRAKE TO CONQUER","FREINE POUR CONQUÉRIR","FRENA PARA CONQUISTAR","ТОРМОЗИ ДЛЯ ЗАХВАТА","刹车以占领","ブレーキで制圧"],
+["LABIRINTO ROCCIOSO","ROCK MAZE","LABYRINTHE ROCHEUX","LABERINTO DE ROCAS","КАМЕННЫЙ ЛАБИРИНТ","岩石迷宫","岩の迷路"],
+["RAGGIUNGI L’ORBITA","REACH ORBIT","ATTEINS L’ORBITE","ALCANZA LA ÓRBITA","ВЫЙДИ НА ОРБИТУ","进入轨道","軌道に到達せよ"],
+["BERSAGLIO AGGANCIATO","TARGET LOCKED","CIBLE VERROUILLÉE","OBJETIVO FIJADO","ЦЕЛЬ ЗАХВАЧЕНА","目标已锁定","ロックオン"],
+["MISSILE PRONTO","MISSILE READY","MISSILE PRÊT","MISIL LISTO","РАКЕТА ГОТОВА","导弹就绪","ミサイル準備完了"],
 ["ALTO-DESTRA","UP-RIGHT","HAUT-DROITE","ARRIBA-DERECHA","СВЕРХУ-СПРАВА","右上","右上"],
 ["ALTO-SINISTRA","UP-LEFT","HAUT-GAUCHE","ARRIBA-IZQUIERDA","СВЕРХУ-СЛЕВА","左上","左上"],
 ["BASSO-DESTRA","DOWN-RIGHT","BAS-DROITE","ABAJO-DERECHA","СНИЗУ-СПРАВА","右下","右下"],
@@ -391,10 +396,15 @@ function i18nBuild(){
  i18nRe=new RegExp(keys.map(k=>(/^\p{L}/u.test(k)?'(?<!\\p{L})':'')+i18nEsc(k)+(/\p{L}$/u.test(k)?'(?!\\p{L})':'')).join('|'),'gu');
 }
 // Traduce una stringa italiana nella lingua scelta.
+// Su cellulare spariscono dai testi le indicazioni di tastiera e mouse.
+const I18N_TOUCH=[[/ · FRENO: F/g,''],[/ · CLIC ROTELLA(: TIRO DIRITTO)?/g,''],[/% · CLIC ROTELLA: TIRO DIRITTO/g,'%'],[/RALLENTA CON F PER CONQUISTARE/g,'FRENA PER CONQUISTARE'],[/ · MANOVRA CON F \/ S \/ A \/ D/g,''],[/ · (SHIFT DX|MOUSE DX)/g,'']];
+function i18nTouch(){return typeof touch!=='undefined'&&touch&&touch.on}
 function tr(s){
- if(!i18nRe||typeof s!=='string'||!s)return s;
+ if(typeof s!=='string'||!s)return s;
+ const t=i18nTouch();if(!i18nRe&&!t)return s;
  let o=i18nCache.get(s);if(o!==undefined)return o;
- o=s.replace(i18nRe,m=>i18nMap.get(m));
+ o=s;if(t)for(const [re,rep] of I18N_TOUCH)o=o.replace(re,rep);
+ if(i18nRe)o=o.replace(i18nRe,m=>i18nMap.get(m));
  if(i18nCache.size>4000)i18nCache.clear();i18nCache.set(s,o);return o;
 }
 i18nBuild();

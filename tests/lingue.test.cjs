@@ -42,3 +42,12 @@ vm.runInContext(fs.readFileSync(path.join(dist,'i18n.js'),'utf8'),s3);
 assert.equal(vm.runInContext("tr('OBIETTIVO: ALTO-SINISTRA')",s3),'TARGET: UP-LEFT');
 assert.equal(vm.runInContext("tr('SALTO')",s3),'JUMP');
 console.log('lingue.test direzioni: ok');
+// cellulare: niente indicazioni di tastiera e mouse
+const s4={localStorage:storage(),$:()=>null,console,touch:{on:true}};vm.createContext(s4);
+vm.runInContext(fs.readFileSync(path.join(dist,'i18n.js'),'utf8'),s4);
+assert.equal(vm.runInContext("tr('RAGGIUNGI L’ORBITA · FRENO: F')",s4),'REACH ORBIT');
+assert.equal(vm.runInContext("tr('BERSAGLIO AGGANCIATO · CLIC ROTELLA')",s4),'TARGET LOCKED');
+assert.equal(vm.runInContext("tr('BARRIERA · MOUSE DX')",s4),'BARRIER');
+vm.runInContext("setLang('it')",s4);
+assert.equal(vm.runInContext("tr('POST-BRUCIATORE · SHIFT DX')",s4),'POST-BRUCIATORE');
+console.log('lingue.test cellulare: ok');

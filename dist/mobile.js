@@ -79,7 +79,7 @@ function touchApply(){
   mouse.x=(aim.x-pf.cam.x)*s;mouse.y=aim.y*s;
  }
 }
-function touchEnable(){if(touch.on)return;touch.on=true;document.body.classList.add('touch');touchBuild()}
+function touchEnable(){if(touch.on)return;touch.on=true;document.body.classList.add('touch');touchBuild();if(typeof i18nBuild==='function'){i18nBuild();i18nApply()}}
 if(typeof document!=='undefined'&&document.body&&document.createElement){
  if(touchDetect())touchEnable();
  addEventListener('touchstart',()=>touchEnable(),{once:true,passive:true});

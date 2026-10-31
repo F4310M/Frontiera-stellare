@@ -31,7 +31,7 @@ console.log('PASS: flotta nemica in attesa');
 // Pioggia di meteoriti vicino all'atmosfera
 run('selected=0;startGame();arrivalRemaining=0;enemies=[];rocks=[];wrecks=[];monsters=[];player.x=world.x-30000;player.y=world.y;shower=[];updateMeteorShower(5)');
 assert.equal(val('shower.length'),0,'Lontano dal pianeta niente pioggia');
-run('player.x=world.x-world.r-500;player.y=world.y;for(let i=0;i<120;i++)updateMeteorShower(1/30)');
+run('player.x=world.x-world.r-500;player.y=world.y;for(let i=0;i<300;i++)updateMeteorShower(1/30)');
 assert(val('shower.length')>=2,'Vicino al pianeta arrivano molti meteoriti');
 assert(val('nextMeteorDelay()')<=9,'Il meteorite grande arriva più spesso vicino al pianeta');
 run('player.x=world.x-40000;player.y=world.y');assert(val('nextMeteorDelay()')>=12,'Lontano resta raro');

@@ -266,3 +266,30 @@ body.touch .fullscreen-toggle{top:76px;transform:none}
  .settings-card,.market-card,.board-card{max-height:94vh;overflow:auto}
  .result-stats{margin:12px 0}
 }
+
+/* Cellulare: interfaccia di gioco ridotta, più spazio per l'azione */
+body.touch .hud-top{top:8px;left:10px;right:10px}
+body.touch .objective,body.touch #missileStatus,body.touch .fullscreen-toggle,body.touch .distance-box small,body.touch .pf-progress small{display:none!important}
+body.touch .icon-btn{width:34px;height:34px;font-size:12px}
+body.touch .distance-box{padding:3px 10px;min-width:0!important;gap:8px;border-radius:6px}
+body.touch .target-indicator{flex-basis:26px!important;width:26px!important;height:26px!important}
+body.touch .target-indicator>span{width:20px;height:20px;font-size:15px}
+body.touch .distance-box b{font-size:12px}body.touch .distance-box em{font-size:7px;margin-top:1px}
+body.touch .pf-progress{min-width:min(240px,34vw)!important}body.touch .pf-track{margin:3px 0}body.touch .pf-progress em{font-size:7px;letter-spacing:1px}
+body.touch .capture-status{top:52px;width:min(240px,40vw);padding:3px 8px;background:rgba(3,11,20,.45);border-color:transparent}
+body.touch .capture-status span{font-size:8px}body.touch .capture-status>div{height:3px;margin-top:3px}
+body.touch .pf-boss{top:50px;width:min(320px,46vw);font-size:7px;letter-spacing:1.5px}body.touch .pf-boss div{height:5px;margin-top:3px}
+body.touch .meteor-alert{top:84px!important;font-size:9px!important;padding:4px 10px!important}
+body.touch .eco-hud{top:8px;right:54px;padding:3px 8px;min-width:0;gap:0;border-radius:6px}
+body.touch .eco-hud>small:first-child,body.touch #ecoSpent{display:none}
+body.touch .eco-hud b{font-size:12px}body.touch .score-hud{font-size:8px}
+body.touch .eco-delta{font-size:9px!important}
+body.touch #viteHud{left:52px!important;top:16px!important;font-size:10px!important}
+body.touch .hud-bottom{bottom:6px;gap:8px}
+body.touch .hud-bottom .meter>span{font-size:6.5px;opacity:.75}
+body.touch .meter>div{height:4px;margin:3px 0}
+body.touch .meter b{font-size:8px}
+body.touch .boost-meter{padding:2px 6px;border-color:rgba(255,157,61,.18);background:rgba(3,11,20,.4)}
+body.touch .boost-meter>span{font-size:6.5px;opacity:.75}body.touch .boost-meter>div{height:4px;margin:2px 0}body.touch .boost-meter b{display:none}
+body.touch .pf-counters{font-size:7px;letter-spacing:1px;gap:6px}
+body.touch .status{font-size:8px;padding:3px 10px}
