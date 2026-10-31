@@ -297,7 +297,7 @@ function pfFinish(win){
 }
 // Chiamata da finish() della fase 1: dopo la conquista dell'orbita si può atterrare.
 // Fine fase 1: solo due scelte, abbandonare o passare alla fase 2 (niente "ripeti").
-function pfAfterSpaceFinish(win){pfStatLabels(['NEMICI','TEMPO','SCAFO']);$('landBtn').querySelector('span').textContent='LIBERA LA COLONIA · FASE 2';show('landBtn',win);show('marketBtnResult',false);$('returnBtn').querySelector('span').textContent=win?'ABBANDONA':'TORNA ALLA MAPPA';pfRefreshMapButton()}
+function pfAfterSpaceFinish(win){pfStatLabels(['NEMICI','TEMPO','SCAFO']);$('landBtn').querySelector('span').textContent='LIBERA LA COLONIA · FASE 2';show('landBtn',win);show('marketBtnResult',false);if(win){const p=planets[selected],t=$('resultText');if(p&&t)t.textContent+=' '+pfTheme(p).brief}$('returnBtn').querySelector('span').textContent=win?'ABBANDONA':'TORNA ALLA MAPPA';pfRefreshMapButton()}
 // Chiamata da abort(): ritorno alla mappa.
 function pfCleanup(){show('platformHud',false);show('landBrief',false);show('landBtn',false);pfStatLabels(['NEMICI','TEMPO','SCAFO']);pf=null;pfRefreshMapButton()}
 // La fase 2 non si sceglie dalla mappa: ogni missione parte dallo spazio e poi atterra.
@@ -963,7 +963,8 @@ function pfDrawBanner(){
 addEventListener('keydown',e=>{if(state!=='platform'||paused||e.repeat)return;if(e.code==='KeyE'||e.code==='KeyG')pfThrowGrenade()});
 addEventListener('mousedown',e=>{if(state!=='platform')return;if(e.button===1){e.preventDefault();pfThrowGrenade()}});
 addEventListener('auxclick',e=>{if(e.button===1&&state==='platform')e.preventDefault()});
-$('landBtn').onclick=pfOpenBrief;
+// Un solo pannello: dal riepilogo della missione si scende subito in superficie.
+$('landBtn').onclick=()=>{enterGameFullscreen();startPlatform()};
 $('phase2Btn').onclick=()=>{sfx('ui');pfOpenBrief()};
 $('landEngageBtn').onclick=()=>{enterGameFullscreen();startPlatform()};
 $('landBackBtn').onclick=()=>{show('landBrief',false);abort()};

@@ -92,3 +92,7 @@ run('setMusic(false)');assert.equal(store.frontieraMusica,'off');run('setMusic(t
 run('musTick()');
 console.log('PASS: mappa senza scelta della fase e colonna sonora');
 run('abort()');
+// Un solo pannello a fine missione spaziale: LIBERA LA COLONIA porta subito in superficie.
+{const src=require('fs').readFileSync(require('path').join(__dirname,'..','dist','fase2.js'),'utf8');
+ require('assert')(/\$\('landBtn'\)\.onclick=\(\)=>\{enterGameFullscreen\(\);startPlatform\(\)\}/.test(src),'landBtn avvia direttamente la fase 2');
+ console.log('PASS: un solo pannello prima della fase 2');}
