@@ -12,6 +12,7 @@ Gioco d'azione nel browser in due fasi, scritto in JavaScript puro su canvas, se
 
 - **Online:** se GitHub Pages è attivo, apri `https://f4310m.github.io/frontiera-stellare/`.
 - **Sul PC (Windows):** fai doppio clic su `Avvia-Frontiera-Stellare.bat`. Serve Python installato.
+- **Su cellulare e tablet:** compaiono da soli un pad semitrasparente e i pulsanti touch. Il telefono va tenuto in orizzontale.
 - **Su qualsiasi sistema:** dalla cartella `dist` esegui `python -m http.server 4173` e apri `http://localhost:4173`.
 
 ### Comandi
@@ -52,6 +53,7 @@ dist/            il gioco (apri dist/index.html tramite un server locale)
   home.js        animazioni della schermata iniziale
   classifica.js  punteggio e classifica dei primi 100
   i18n.js        lingue e traduzioni
+  mobile.js      comandi touch per cellulare e tablet
 tests/           test automatici (Node.js)
 ```
 

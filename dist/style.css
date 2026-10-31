@@ -218,3 +218,51 @@ button:focus-visible{outline:2px solid #e5ffff;outline-offset:5px}.planet-node:f
 .score-msg{min-height:14px;margin:8px 0 0;color:var(--cyan)!important;font:600 10px 'Chakra Petch'!important;letter-spacing:1.5px}
 @media(max-width:850px){.board-btn span{display:none}.lang-select{padding:0 4px}.board-row{grid-template-columns:40px 1fr 90px;}.board-row span:nth-child(4){display:none}.score-row{flex-direction:column}.map-score{display:none}}
 .result-card{max-height:96vh;overflow:auto}
+
+/* Modalità mobile: pad e pulsanti semitrasparenti */
+.touch-ui{position:fixed;inset:0;z-index:9;pointer-events:none;user-select:none;-webkit-user-select:none;touch-action:none}
+.touch-pad{position:absolute;left:max(22px,env(safe-area-inset-left));bottom:max(22px,env(safe-area-inset-bottom));width:150px;height:150px;border-radius:50%;pointer-events:auto;touch-action:none;background:radial-gradient(circle,rgba(81,230,255,.10),rgba(81,230,255,.04) 62%,transparent 63%),rgba(4,16,28,.22);border:2px solid rgba(140,233,255,.32);box-shadow:inset 0 0 24px rgba(81,230,255,.12)}
+.touch-pad:before,.touch-pad:after{content:"";position:absolute;background:rgba(140,233,255,.16)}.touch-pad:before{left:50%;top:14px;bottom:14px;width:1px}.touch-pad:after{top:50%;left:14px;right:14px;height:1px}
+.touch-knob{position:absolute;left:50%;top:50%;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(210,250,255,.55),rgba(81,230,255,.28));border:1px solid rgba(200,248,255,.6);box-shadow:0 0 18px rgba(81,230,255,.35)}
+.touch-btns{position:absolute;right:max(18px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(3,auto);gap:10px;align-items:end;justify-items:center;direction:rtl}
+.touch-btn{direction:ltr;pointer-events:auto;touch-action:none;width:74px;height:74px;border-radius:50%;border:2px solid rgba(140,233,255,.38);background:rgba(4,16,28,.28);color:rgba(225,250,255,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0;font:700 7.5px 'Chakra Petch',sans-serif;letter-spacing:.5px;line-height:1.05;text-align:center;-webkit-tap-highlight-color:transparent}
+.touch-btn b{font-size:22px;line-height:1}.touch-btn span{max-width:66px;overflow:hidden}
+.touch-btn.on{background:rgba(81,230,255,.32);border-color:#bff6ff;transform:scale(.94)}
+.touch-btn.tb-fire{width:96px;height:96px;border-color:rgba(255,130,110,.55);background:rgba(60,14,10,.28)}.touch-btn.tb-fire b{font-size:30px;color:#ffb0a0}
+.touch-btn.tb-missile b{color:#ffd76a}.touch-btn.tb-shield b{color:#8cf}.touch-btn.tb-boost b{color:#ffa860}.touch-btn.tb-jump b{color:#9fffc8}.touch-btn.tb-grenade b{color:#ffd76a}
+.touch-rotate{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(2,6,12,.92);color:var(--cyan);font:600 14px 'Chakra Petch',sans-serif;letter-spacing:2px;text-align:center;padding:30px}
+.touch-rotate b{font-size:54px;animation:rot 2s ease-in-out infinite}@keyframes rot{50%{transform:rotate(90deg)}}
+body.touch .crosshair,body.touch #pfCrosshair,body.touch .controls-tip,body.touch .radar{display:none!important}
+body.touch .hud-bottom{top:auto;bottom:10px;left:190px;right:300px;flex-direction:row;align-items:flex-end;gap:10px;width:auto}
+body.touch .hud-bottom .meter{width:28%;min-width:0}body.touch .hud-bottom .meter>span{font-size:7px;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+body.touch .flight-systems{width:44%;min-width:0}body.touch .flight-systems .status{display:none}
+body.touch .boost-meter{padding:5px 8px}body.touch .boost-meter>span{font-size:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.touch .pf-counters{font-size:8px;gap:8px;flex-wrap:wrap;justify-content:center}
+body.touch .fullscreen-toggle{top:76px;transform:none}
+@media(max-height:430px){.touch-pad{width:124px;height:124px}.touch-knob{width:52px;height:52px;margin:-26px 0 0 -26px}.touch-btn{width:62px;height:62px}.touch-btn.tb-fire{width:80px;height:80px}.touch-btns{gap:7px}body.touch .hud-bottom{left:160px;right:250px}}
+
+/* Telefono in orizzontale: mappa compatta */
+@media (max-height:520px){
+ .topbar{height:52px;padding:0 14px}
+ .brand>span:last-child,.sector{display:none}
+ .top-actions{gap:8px}
+ .credits-chip{display:flex!important;flex-direction:row!important;align-items:center;gap:10px;padding:4px 10px;height:34px}
+ .credits-chip small{display:none}
+ .credits-chip b,#mapVite,#mapScore{font-size:12px!important;margin:0!important;white-space:nowrap}
+ .settings-btn{height:32px;padding:0 9px}.settings-btn span{display:none}
+ .lang-top{height:32px;font-size:9px;padding:0 4px}
+ .map-layout{height:calc(100% - 52px);grid-template-columns:1fr minmax(250px,34%)}
+ .mission-copy{display:none}
+ .star-map{min-width:0}
+ #mapScreen .planet-panel,.planet-panel{position:relative;margin:0 12px 0 0;padding:12px 16px!important;max-height:calc(100vh - 64px);overflow:auto;align-self:center}
+ #mapScreen .planet-preview,.planet-preview{display:none}
+ #mapScreen .planet-panel h2,.planet-panel h2{font-size:22px!important;margin:4px 0 2px!important}
+ .planet-panel>p:not(.panel-label):not(.keyhint){font-size:10px!important;margin:4px 0}
+ .planet-panel dl{margin:6px 0!important}.planet-panel dl div{padding:5px 0}
+ .threat-bars{margin-bottom:8px}
+ .planet-panel .keyhint,#mapScreen .star-map:after,.star-map:after{display:none}
+ #mapScreen .launch-btn,.planet-panel .launch-btn{height:44px}
+ .brief-card{padding:20px 24px;max-height:94vh;overflow:auto}.brief-card h2{font-size:22px}
+ .settings-card,.market-card,.board-card{max-height:94vh;overflow:auto}
+ .result-stats{margin:12px 0}
+}

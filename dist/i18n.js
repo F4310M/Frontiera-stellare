@@ -6,6 +6,13 @@
 const I18N_LANGS=[['en','English'],['it','Italiano'],['fr','Français'],['es','Español'],['ru','Русский'],['zh','中文'],['ja','日本語']];
 const I18N_COL={it:0,en:1,fr:2,es:3,ru:4,zh:5,ja:6};
 const I18N_ROWS=[
+["ALTO-DESTRA","UP-RIGHT","HAUT-DROITE","ARRIBA-DERECHA","СВЕРХУ-СПРАВА","右上","右上"],
+["ALTO-SINISTRA","UP-LEFT","HAUT-GAUCHE","ARRIBA-IZQUIERDA","СВЕРХУ-СЛЕВА","左上","左上"],
+["BASSO-DESTRA","DOWN-RIGHT","BAS-DROITE","ABAJO-DERECHA","СНИЗУ-СПРАВА","右下","右下"],
+["BASSO-SINISTRA","DOWN-LEFT","BAS-GAUCHE","ABAJO-IZQUIERDA","СНИЗУ-СЛЕВА","左下","左下"],
+["SALTO","JUMP","SAUT","SALTO","ПРЫЖОК","跳跃","ジャンプ"],
+["SCUDO","SHIELD","BOUCLIER","ESCUDO","ЩИТ","护盾","シールド"],
+["Ruota il telefono in orizzontale","Turn your phone sideways","Tourne ton téléphone à l’horizontale","Gira el teléfono en horizontal","Поверни телефон горизонтально","请将手机横过来","スマホを横向きにしてね"],
 ["BASSA","LOW","FAIBLE","BAJA","НИЗКАЯ","低","低"],
 ["Un mondo oceanico ai confini della nebulosa.","An ocean world on the edge of the nebula.","Un monde océanique aux confins de la nébuleuse.","Un mundo oceánico en los confines de la nebulosa.","Океанский мир на краю туманности.","星云边缘的海洋世界。","星雲の果てにある海洋惑星。"],
 ["MODERATA","MODERATE","MODÉRÉE","MODERADA","СРЕДНЯЯ","中等","中"],

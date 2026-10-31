@@ -36,3 +36,9 @@ r2("state='play';world={p:{difficulty:3}};dropSupply({type:'base'})");
 assert.equal(r2('score'),300);
 r2('scoreEnd()');assert.equal(r2('score'),0);assert.equal(r2('scorePending'),300);
 console.log('lingue.test: ok');
+// direzioni composte e comandi mobile
+const s3={localStorage:storage(),$:()=>null,console};vm.createContext(s3);
+vm.runInContext(fs.readFileSync(path.join(dist,'i18n.js'),'utf8'),s3);
+assert.equal(vm.runInContext("tr('OBIETTIVO: ALTO-SINISTRA')",s3),'TARGET: UP-LEFT');
+assert.equal(vm.runInContext("tr('SALTO')",s3),'JUMP');
+console.log('lingue.test direzioni: ok');
