@@ -4,9 +4,9 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const nodes=new Map();function node(){return{style:{setProperty(){}},classList:{add(){},remove(){},toggle(){}},children:[],textContent:'',innerHTML:'',offsetWidth:0,dataset:{},querySelector(){return node()},querySelectorAll(){return[]},appendChild(){},setAttribute(){}}}
 const store={};const gradient={addColorStop(){}};
 const fakeCtx=new Proxy({},{get(t,k){if(k in t)return t[k];if(k==='createLinearGradient'||k==='createRadialGradient')return()=>gradient;if(k==='measureText')return()=>({width:10});return()=>{}},set(t,k,v){t[k]=v;return true}});
-const sandbox={console,Math,innerWidth:1280,innerHeight:800,devicePixelRatio:1,localStorage:{getItem(k){return store[k]??null},setItem(k,v){store[k]=String(v)}},performance:{now(){return 0}},setTimeout(){return 0},clearTimeout(){},requestAnimationFrame(){},addEventListener(){},document:{body:node(),documentElement:{},addEventListener(){},getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id)},querySelectorAll(){return[]},createElement:node}};
+const sandbox={console,Math,innerWidth:1280,innerHeight:800,devicePixelRatio:1,localStorage:{getItem(k){return store[k]??null},setItem(k,v){store[k]=String(v)}},performance:{now(){return 0}},setTimeout(){return 0},clearTimeout(){},setInterval(){return 0},clearInterval(){},requestAnimationFrame(){},addEventListener(){},document:{body:node(),documentElement:{},addEventListener(){},getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id)},querySelectorAll(){return[]},createElement:node}};
 sandbox.document.getElementById('game').getContext=()=>fakeCtx;vm.createContext(sandbox);
-for(const f of ['game.js','pianeta.js','fase2.js','grafica2.js','boss.js','economia.js','finale.js'])vm.runInContext(fs.readFileSync('dist/'+f,'utf8'),sandbox);
+for(const f of ['game.js','pianeta.js','fase2.js','grafica2.js','boss.js','economia.js','finale.js','musica.js'])vm.runInContext(fs.readFileSync('dist/'+f,'utf8'),sandbox);
 const run=s=>vm.runInContext('{'+s+'\n}',sandbox),val=s=>vm.runInContext(s,sandbox);
 const step=(sec,dt=1/60)=>run(`for(let i=0;i<${Math.round(sec/dt)};i++)update(${dt})`);
 run('soundEnabled=false');
@@ -78,4 +78,17 @@ run('abort();vite=1;viteSave();eco.balance=9999;selected=0;startPlatform()');ste
 assert.equal(val('state'),'lost');assert.equal(nodes.get('resultEyebrow').textContent,'GAME OVER');
 assert.equal(val('vite'),3);assert.equal(val('eco.balance'),val('ECO_START'));assert(!val('planets.includes(FINAL_PLANET)'),'Progressi azzerati');
 console.log('PASS: game over');
+
+// Niente scelta della fase dalla mappa: si parte sempre dallo spazio
+run('abort();phaseOneComplete=true;pfRefreshMapButton()');
+let shown=null;nodes.get('phase2Btn').classList.toggle=(n,hide)=>{shown=!hide};run('pfRefreshMapButton()');assert.equal(shown,false,'Il pulsante FASE 2 della mappa resta nascosto');
+// Colonna sonora: intensità che segue il gioco
+run('abort()');assert.equal(val('musLevel()'),'calm','Mappa: musica calma');
+run('selected=0;startGame();arrivalRemaining=0');assert.equal(val('musLevel()'),'battle','In volo: battaglia');
+run('player.x=world.x-world.r-300;player.y=world.y');assert.equal(val('musLevel()'),'boss','Ingresso in atmosfera: massima intensità');
+run('abort();vite=3;selected=0;startPlatform()');step(3.5);assert.equal(val('musLevel()'),'battle');
+run('pf.phase="missione";pfEnterArena()');assert.equal(val('musLevel()'),'boss','Boss: massima intensità');
+run('setMusic(false)');assert.equal(store.frontieraMusica,'off');run('setMusic(true)');assert.equal(store.frontieraMusica,'on');
+run('musTick()');
+console.log('PASS: mappa senza scelta della fase e colonna sonora');
 run('abort()');

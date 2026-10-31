@@ -22,12 +22,15 @@ Gioco d'azione nel browser in due fasi, scritto in JavaScript puro su canvas, se
 | Speciale | Rotella: missile · Shift destro: post-bruciatore · F: freno | Rotella o E: granata · W/Spazio: salto, in aria **jetpack** |
 | Scudo | Tasto destro del mouse | Tasto destro del mouse |
 | Pausa | P | P |
+| Musica | M | M |
 
 ## Regole principali
 
 - **Vite:** 3 in tutto il gioco, condivise tra le due fasi. La pillola **1UP**, rarissima, regala una vita (massimo 5). Senza vite è **GAME OVER**: crediti, potenziamenti e pianeti liberati si azzerano.
 - **Crediti:** ogni colpo, missile, granata e unità di carburante (jetpack compreso) costa crediti. Si guadagnano con le taglie sui nemici e con il premio della missione, pagato solo distruggendo il boss.
 - **Mercato:** dalla mappa si comprano potenziamenti: lanciatore multiplo, laser potenziato, doppio laser, barriera, motori, iniettori e granate.
+- **Missioni:** scegliendo un pianeta dalla mappa si parte sempre dallo spazio; la fase a terra si raggiunge solo conquistando l'orbita.
+- **Colonna sonora:** musica procedurale che cambia con l'azione (calma sulla mappa, battaglia in volo, boss vicino al pianeta e contro il boss). Si attiva o spegne nelle impostazioni o con il tasto M.
 - **Pianeti:** LYRA (mare), VESPER (deserto), NIMBUS (tempesta), KHEPRI (foresta) e UMBRA (lava), ognuno con il suo boss. Liberati tutti e cinque, si sblocca **OMEGA**, il pianeta finale con IMPERATORE OMEGA.
 
 ## Struttura
@@ -41,6 +44,7 @@ dist/            il gioco (apri dist/index.html tramite un server locale)
   boss.js        disegno dei boss di ogni pianeta
   economia.js    crediti, spese, premi e mercato
   finale.js      vite, pillola 1UP, game over e pianeta finale
+  musica.js      colonna sonora procedurale
 tests/           test automatici (Node.js)
 ```
 

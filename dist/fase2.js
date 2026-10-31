@@ -300,7 +300,8 @@ function pfFinish(win){
 function pfAfterSpaceFinish(win){pfStatLabels(['NEMICI','TEMPO','SCAFO']);$('landBtn').querySelector('span').textContent='LIBERA LA COLONIA · FASE 2';show('landBtn',win);show('marketBtnResult',false);$('returnBtn').querySelector('span').textContent=win?'ABBANDONA':'TORNA ALLA MAPPA';pfRefreshMapButton()}
 // Chiamata da abort(): ritorno alla mappa.
 function pfCleanup(){show('platformHud',false);show('landBrief',false);show('landBtn',false);pfStatLabels(['NEMICI','TEMPO','SCAFO']);pf=null;pfRefreshMapButton()}
-function pfRefreshMapButton(){show('phase2Btn',phaseOneComplete)}
+// La fase 2 non si sceglie dalla mappa: ogni missione parte dallo spazio e poi atterra.
+function pfRefreshMapButton(){show('phase2Btn',false)}
 function pfStatLabels(labels){document.querySelectorAll('.result-stats small').forEach((el,i)=>{if(labels[i])el.textContent=labels[i]})}
 function pfStatus(text,ms=1400){const el=$('pfStatus');el.textContent=text;clearTimeout(pfStatus.to);pfStatus.to=setTimeout(()=>{el.textContent=pf&&pf.phase==='boss'?'ABBATTI IL ROBOT':'SISTEMI NOMINALI'},ms)}
 function pfBanner(title,sub,life=3.2){pf.banner={title,sub,t:0,life}}
