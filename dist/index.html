@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#030810">
+  <meta name="description" content="Frontiera Stellare — conquista pianeti e attraversa lo spazio ostile.">
+  <title>Frontiera Stellare</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="game" aria-label="Area di gioco spaziale"></canvas>
+
+  <main id="mapScreen" class="screen active" aria-label="Mappa stellare">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">FS</span><span>FRONTIERA<br><b>STELLARE</b></span></div>
+      <div class="top-actions"><div class="credits-chip" title="Crediti disponibili"><small>CREDITI</small><b id="mapCredits">2.500 CR</b></div><button id="marketBtn" class="settings-btn market-btn" aria-label="Apri il mercato">⛁ <span>MERCATO</span></button><button id="settingsBtn" class="settings-btn" aria-label="Apri impostazioni">⚙ <span>IMPOSTAZIONI</span></button><div class="sector">SETTORE <b>HELIOS–7</b> <span class="live-dot"></span> ONLINE</div></div>
+    </header>
+    <section class="map-layout">
+      <aside class="mission-copy">
+        <p class="eyebrow">COMANDO DELLA FLOTTA // FASE 1</p>
+        <h1>Scegli la tua<br><em>prossima conquista.</em></h1>
+        <p>Ogni mondo nasconde una rotta diversa. Studia il rischio, prepara i sistemi e attraversa il blocco orbitale.</p>
+        <div class="legend"><span><i class="easy"></i>Basso</span><span><i class="medium"></i>Medio</span><span><i class="hard"></i>Estremo</span></div>
+      </aside>
+      <div id="starMap" class="star-map" aria-label="Selezione pianeta"></div>
+      <aside id="planetPanel" class="planet-panel">
+        <p class="panel-label">OBIETTIVO SELEZIONATO</p>
+        <div class="planet-preview"><div id="previewPlanet" class="preview-orb"></div><span id="planetCode">HX–01</span></div>
+        <h2 id="planetName">LYRA</h2>
+        <p id="planetDesc">Un mondo oceanico ai confini della nebulosa.</p>
+        <dl>
+          <div><dt>DISTANZA</dt><dd id="planetDistance">126.000 km</dd></div>
+          <div><dt>MINACCIA</dt><dd id="planetThreat">BASSA</dd></div>
+          <div><dt>RICOMPENSA</dt><dd id="planetReward">600 CR</dd></div>
+        </dl>
+        <div class="threat-bars" id="threatBars"><i></i><i></i><i></i><i></i><i></i></div>
+        <button id="launchBtn" class="launch-btn"><span>INIZIA LA MISSIONE</span><b>→</b></button>
+        <p class="keyhint">FRECCE / WASD per muoverti · MOUSE per puntare la prua</p>
+        <button id="phase2Btn" class="text-btn phase2-btn hidden">FASE 2 · ATTERRA SUL PIANETA SELEZIONATO ⤓</button>
+      </aside>
+    </section>
+  </main>
+
+  <section id="briefing" class="overlay hidden">
+    <div class="brief-card">
+      <p class="eyebrow">COORDINATE BLOCCATE</p>
+      <h2 id="briefTitle">ROTTA PER LYRA</h2>
+      <div class="ship-line"><span>◀</span><i></i><b>●</b></div>
+      <p id="briefText">Esci dall’iperspazio, supera le difese e raggiungi l’orbita del pianeta.</p>
+      <button id="engageBtn" class="launch-btn"><span>INGAGGIA IPERSPAZIO</span><b>⟫</b></button>
+    </div>
+  </section>
+
+  <section id="settingsOverlay" class="overlay hidden" aria-label="Impostazioni">
+    <div class="brief-card settings-card">
+      <div class="settings-head"><div><p class="eyebrow">CONFIGURAZIONE DI VOLO</p><h2>IMPOSTAZIONI</h2></div><button id="closeSettingsX" class="close-btn" aria-label="Chiudi impostazioni">×</button></div>
+      <div class="setting-block">
+        <div class="setting-title"><span>SCHEMA COMANDI</span><b>MIRA CON IL MOUSE</b></div>
+        <p>La prua della nave segue il cursore del mouse: punta dove vuoi sparare. Le frecce spostano la nave nella direzione dello schermo (su = su, giù = giù, sinistra = sinistra, destra = destra), indipendentemente da dove guarda la prua. Dopo un impatto i comandi restano sospesi per un istante. La cintura rocciosa vicino al pianeta forma un labirinto. Gli urti consumano molta barriera e i frammenti delle rocce distrutte possono colpirti.</p>
+        <div class="control-grid">
+          <div><span><kbd>ROTELLA</kbd></span><b>MISSILE</b><small>Clic centrale · uno in volo · guidato se agganciato; aggancio mantenuto finché visibile</small></div>
+          <div><span><kbd>F</kbd></span><b>FRENO</b><small>Rallenta per conquistare l’orbita</small></div>
+          <div><span><kbd>P</kbd></span><b>PAUSA</b><small>Sospendi la missione</small></div>
+          <div><span><kbd>W</kbd><kbd>↑</kbd></span><b>SU</b><small>Verso l’alto dello schermo</small></div>
+          <div><span><kbd>S</kbd><kbd>↓</kbd></span><b>GIÙ</b><small>Verso il basso dello schermo</small></div>
+          <div><span><kbd>A</kbd><kbd>←</kbd></span><b>SINISTRA</b><small>Verso sinistra, qualunque sia la prua</small></div>
+          <div><span><kbd>D</kbd><kbd>→</kbd></span><b>DESTRA</b><small>Verso destra, qualunque sia la prua</small></div>
+          <div><span><kbd>CLIC</kbd><kbd>SPAZIO</kbd></span><b>FUOCO</b><small>Cannoni principali</small></div>
+          <div><span><kbd>SHIFT DX</kbd></span><b>POST-BRUCIATORE</b><small>Si riattiva solo al 100%</small></div>
+          <div><span><kbd>MOUSE DX</kbd></span><b>BARRIERA</b><small>Resta attiva negli urti, che consumano energia; capsule azzurre: +35%</small></div>
+        </div>
+      </div>
+      <div class="setting-block sound-row"><div><div class="setting-title"><span>AUDIO DI BORDO</span></div><p>Effetti di armi, impatti e iperspazio.</p></div><button id="soundToggle" class="toggle active" role="switch" aria-checked="true"><i></i><span>ATTIVO</span></button></div>
+      <button id="closeSettings" class="launch-btn"><span>SALVA E CHIUDI</span><b>✓</b></button>
+    </div>
+  </section>
+
+  <section id="hud" class="hud hidden" aria-label="Interfaccia di volo">
+    <div class="hud-top">
+      <div class="objective"><span>OBIETTIVO</span><b id="hudPlanet">LYRA</b></div>
+      <div class="distance-box"><div class="target-indicator" aria-label="Direzione obiettivo"><span id="directionArrow">➤</span><i></i></div><div><small>DISTANZA OBIETTIVO</small><b id="distance">126.000 KM</b><em id="directionText">DESTRA</em></div></div>
+      <button id="pauseBtn" class="icon-btn" aria-label="Pausa">Ⅱ</button>
+    </div>
+    <div class="capture-status"><span id="captureText">RAGGIUNGI L’ORBITA · FRENO: F</span><div><i id="captureBar"></i></div></div>
+    <div id="meteorAlert" class="meteor-alert hidden" role="alert"></div>
+    <div id="missileStatus" class="missile-status">MISSILE PRONTO · CLIC ROTELLA</div>
+    <div id="crosshair" class="crosshair" aria-hidden="true"><i></i></div>
+    <button id="fullscreenBtn" class="fullscreen-toggle" aria-label="Passa a schermo intero"><b>↗</b><span>SCHERMO INTERO</span></button>
+    <div class="hud-bottom">
+      <div class="meter"><span>SCAFO</span><div><i id="healthBar"></i></div><b id="healthText">100%</b></div>
+      <div class="flight-systems"><div class="boost-meter"><span>POST-BRUCIATORE · SHIFT DX</span><div><i id="boostBar"></i></div><b id="boostText">100% · PRONTO</b></div><div class="status" id="statusText">SISTEMI NOMINALI</div></div>
+      <div class="meter shield"><span>BARRIERA · MOUSE DX</span><div><i id="shieldBar"></i></div><b id="shieldText">100%</b></div>
+    </div>
+    <div class="controls-tip">FRECCE / WASD muovi · MOUSE punta la prua · SHIFT DX post-bruciatore · MOUSE DX barriera · clic / SPAZIO spara · ROTELLA missile · F frena · P pausa</div>
+    <div id="radar" class="radar"><i></i><span></span></div>
+  </section>
+
+  <section id="pauseOverlay" class="overlay hidden">
+    <div class="brief-card compact"><p class="eyebrow">SIMULAZIONE SOSPESA</p><h2>PAUSA</h2><button id="resumeBtn" class="launch-btn"><span>RIPRENDI</span><b>▶</b></button><button id="abortBtn" class="text-btn">ABBANDONA MISSIONE</button></div>
+  </section>
+
+  <section id="resultOverlay" class="overlay hidden">
+    <div class="brief-card result-card"><p class="eyebrow" id="resultEyebrow">ORBITA RAGGIUNTA</p><h2 id="resultTitle">MISSIONE COMPIUTA</h2><p id="resultText"></p><div class="result-stats"><span><small>NEMICI</small><b id="killsStat">0</b></span><span><small>TEMPO</small><b id="timeStat">0:00</b></span><span><small>SCAFO</small><b id="hullStat">100%</b></span></div><div id="ecoRecap" class="eco-recap hidden"></div><button id="landBtn" class="launch-btn hidden"><span>ATTERRA SUL PIANETA · FASE 2</span><b>⤓</b></button><button id="returnBtn" class="launch-btn"><span>TORNA ALLA MAPPA</span><b>↗</b></button><button id="marketBtnResult" class="text-btn market-link">⛁ APRI IL MERCATO · POTENZIAMENTI</button></div>
+  </section>
+
+  <section id="landBrief" class="overlay hidden">
+    <div class="brief-card">
+      <p class="eyebrow">FASE 2 // DISCESA IN SUPERFICIE</p>
+      <h2 id="landTitle">COLONIA DI LYRA</h2>
+      <p id="landText"></p>
+      <p class="keyhint">A / D muovi · W / SPAZIO salta · S abbassati · MOUSE mira · CLIC spara · ROTELLA o E granata · MOUSE DX scudo</p>
+      <button id="landEngageBtn" class="launch-btn"><span>SCENDI IN SUPERFICIE</span><b>⤓</b></button>
+      <button id="landBackBtn" class="text-btn">TORNA ALLA MAPPA</button>
+    </div>
+  </section>
+
+  <section id="platformHud" class="hud hidden" aria-label="Interfaccia missione a terra">
+    <div class="hud-top">
+      <div class="objective"><span>MISSIONE · LIBERA LA COLONIA</span><b id="pfPlanet">LYRA</b></div>
+      <div class="distance-box pf-progress"><div><small>AVANZAMENTO VERSO IL ROBOT</small><div class="pf-track"><i id="pfProgress"></i></div><em id="pfObjective">LIBERA I COLONI</em></div></div>
+      <button id="pfPauseBtn" class="icon-btn" aria-label="Pausa">Ⅱ</button>
+    </div>
+    <div id="pfBoss" class="pf-boss hidden"><span>ROBOT DA GUERRA RIBELLE</span><div><i id="pfBossBar"></i></div></div>
+    <div id="pfCrosshair" class="crosshair" aria-hidden="true"><i></i></div>
+    <div class="hud-bottom">
+      <div class="meter"><span>SALUTE</span><div><i id="pfHealthBar"></i></div><b id="pfHealthText">100%</b></div>
+      <div class="flight-systems"><div class="pf-counters"><span>VITE<b id="pfLives">3</b></span><span>COLONI<b id="pfRescued">0/4</b></span><span>GRANATE<b id="pfGrenades">3</b></span><span>RIBELLI<b id="pfKills">0</b></span></div><div class="status" id="pfStatus">SISTEMI NOMINALI</div></div>
+      <div class="meter shield"><span>SCUDO · MOUSE DX</span><div><i id="pfShieldBar"></i></div><b id="pfShieldText">100%</b></div>
+    </div>
+    <div class="controls-tip">A / D muovi · W / SPAZIO salta · S abbassati (S + SPAZIO scendi dalla piattaforma) · MOUSE mira · CLIC spara · ROTELLA o E granata · MOUSE DX scudo · P pausa</div>
+  </section>
+
+  <div id="ecoHud" class="eco-hud" aria-label="Crediti"><small>CREDITI</small><b id="ecoBalance">2.500 CR</b><em id="ecoSpent"></em><span id="ecoDelta" class="eco-delta"></span></div>
+
+  <section id="marketOverlay" class="overlay market-overlay hidden" aria-label="Mercato">
+    <div class="brief-card market-card">
+      <div class="settings-head"><div><p class="eyebrow">CANTIERE DELLA REPUBBLICA</p><h2>MERCATO</h2></div><button id="closeMarketX" class="close-btn" aria-label="Chiudi mercato">×</button></div>
+      <div class="market-balance"><span>SALDO DISPONIBILE</span><b id="marketBalance">2.500 CR</b></div>
+      <p class="market-prices">COSTI IN MISSIONE · colpo 1 CR · missile 25 CR · granata 20 CR · carburante 2 CR/unità. Taglia: 10 CR per nemico nello spazio, 15 CR per ribelle a terra.</p>
+      <div id="marketGrid" class="market-grid"></div>
+      <p id="marketMsg" class="market-msg"></p>
+      <button id="closeMarket" class="launch-btn"><span>CHIUDI IL MERCATO</span><b>✓</b></button>
+    </div>
+  </section>
+
+  <div id="orbitCaption" class="orbit-caption hidden"></div>
+  <div id="hyperspace" class="hyperspace hidden"><div class="warp-caption"><span id="warpDestination">ROTTA BLOCCATA</span><p id="warpPhase">CALCOLO DEL SALTO</p><i></i></div></div>
+  <script src="game.js"></script>
+  <script src="pianeta.js"></script>
+  <script src="fase2.js"></script>
+  <script src="grafica2.js"></script>
+  <script src="boss.js"></script>
+  <script src="economia.js"></script>
+  <script src="finale.js"></script>
+</body>
+</html>
