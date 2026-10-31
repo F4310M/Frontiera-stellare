@@ -45,6 +45,7 @@ dist/            il gioco (apri dist/index.html tramite un server locale)
   economia.js    crediti, spese, premi e mercato
   finale.js      vite, pillola 1UP, game over e pianeta finale
   musica.js      colonna sonora procedurale
+  home.js        animazioni della schermata iniziale
 tests/           test automatici (Node.js)
 ```
 
