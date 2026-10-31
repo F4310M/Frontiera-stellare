@@ -149,6 +149,7 @@ const I18N_ROWS=[
 ["SCUDO ESAURITO","SHIELD DEPLETED","BOUCLIER ÉPUISÉ","ESCUDO AGOTADO","ЩИТ ИСЧЕРПАН","护盾耗尽","シールド切れ"],
 [" · SALUTE −"," · HEALTH −"," · SANTÉ −"," · SALUD −"," · ЗДОРОВЬЕ −"," · 生命 −"," · 体力 −"],
 ["PILOTA RECUPERATO · VITE RIMASTE ","PILOT RECOVERED · LIVES LEFT ","PILOTE RÉCUPÉRÉ · VIES RESTANTES ","PILOTO RECUPERADO · VIDAS RESTANTES ","ПИЛОТ СПАСЁН · ОСТАЛОСЬ ЖИЗНЕЙ ","飞行员已回收 · 剩余生命 ","パイロット回収 · 残り "],
+["PILOTA DI RISERVA IN ARRIVO · VITE RIMASTE ","BACKUP PILOT INBOUND · LIVES LEFT ","PILOTE DE RÉSERVE EN APPROCHE · VIES RESTANTES ","PILOTO DE RESERVA EN CAMINO · VIDAS RESTANTES ","РЕЗЕРВНЫЙ ПИЛОТ НА ПОДХОДЕ · ОСТАЛОСЬ ЖИЗНЕЙ ","后备飞行员即将抵达 · 剩余生命 ","予備パイロット降下中 · 残り "],
 ["KIT MEDICO · SALUTE +30%","MEDKIT · HEALTH +30%","TROUSSE MÉDICALE · SANTÉ +30%","BOTIQUÍN · SALUD +30%","АПТЕЧКА · ЗДОРОВЬЕ +30%","医疗包 · 生命 +30%","メディキット · 体力 +30%"],
 ["GRANATE +2","GRENADES +2","GRENADES +2","GRANADAS +2","ГРАНАТЫ +2","手雷 +2","手榴弾 +2"],
 ["CELLA SCUDO · +40%","SHIELD CELL · +40%","CELLULE DE BOUCLIER · +40%","CÉLULA DE ESCUDO · +40%","ЯЧЕЙКА ЩИТА · +40%","护盾电池 · +40%","シールドセル · +40%"],
