@@ -12,3 +12,8 @@
 .launch-btn:disabled,#mapScreen .launch-btn:disabled{background:#1a2632!important;border-color:#2f4252!important;color:#7f97a8!important;box-shadow:none!important;cursor:not-allowed}
 .launch-btn:disabled b{opacity:.3}
 .launch-btn.done:before{display:none!important}
+/* Briefing: TORNA AL MENU sotto INGAGGIA IPERSPAZIO */
+.brief-card .brief-back{display:block;margin:14px auto 0;padding:10px 16px;font-size:11px;color:#9fc3d6;border:1px solid #9fc3d633;border-radius:8px}
+.brief-card .brief-back:hover{color:#e5ffff;border-color:#9fc3d6aa}
+#briefing .brief-card .brief-back{order:-1;align-self:flex-start;margin:0 0 2px;padding:6px 12px;font-size:10px}
+@media (min-height:521px),(orientation:portrait){#briefing .brief-card .brief-back{order:0;margin:14px auto 16px}}
