@@ -26,4 +26,6 @@ assert(calls.imageData>=5,'Texture procedurale generata per ogni pianeta');
 const before=run('gfx.solids.size');run('draw();draw()');assert.equal(run('gfx.solids.size'),before,'Le texture del terreno restano in memoria');
 run('const e={x:pf.pilot.x+100,y:600,hp:1,max:1,type:"soldato",w:22,h:48};pf.enemies.push(e);pfHitEnemy(e,5)');assert(run('gFlashes.length')>0,'Gli abbattimenti accendono un lampo di luce');
 assert(Math.abs(run('pfShoulder({x:0,y:0,face:1,crouch:false}).y')+42.7)<1e-6,'I colpi partono dal fucile disegnato');
-console.log('PASS: sfondi a strati, texture del terreno, luci, robot e personaggi su tutti i pianeti');
+const looks=run('JSON.stringify([1,2,3,4,5,6,7,8].map(id=>{const l=gLook({id});return l.skin+l.hair+l.style}))');assert(new Set(JSON.parse(looks)).size>=4,'I coloni hanno aspetti diversi');
+run('for(const st of ["legato","libero","fuga","evacuato"])gColonist({x:pf.pilot.x,y:600,state:st,t:.3,id:7},1)');
+console.log('PASS: sfondi a strati, texture del terreno, luci, robot e personaggi su tutti i pianeti, coloni diversi in ogni posa');
