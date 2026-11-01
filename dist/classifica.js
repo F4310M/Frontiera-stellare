@@ -205,7 +205,7 @@ async function scoreSubmit(){
 
 // ---- da dove arrivano i punti
 const sOrig={dropSupply,finish,pfHitEnemy,pfUpdateHostages,pfFinish,viteGameOver};
-dropSupply=function(e){sOrig.dropSupply(e);if(e&&state==='play')scoreAdd((e.type?SCORE_PTS.nemico:SCORE_PTS.roccia)*scoreDiff(world&&world.p))};
+dropSupply=function(e){sOrig.dropSupply(e);if(e&&state==='play'&&!(typeof enemyFire!=='undefined'&&enemyFire))scoreAdd((e.type?SCORE_PTS.nemico:SCORE_PTS.roccia)*scoreDiff(world&&world.p))};
 finish=function(win){
  const before=state,p=world&&world.p;if($('scoreEntry'))show('scoreEntry',false);
  sOrig.finish(win);if(state!==before&&win)scoreAdd(SCORE_PTS.orbita*scoreDiff(p));

@@ -402,3 +402,17 @@ body.touch .seg-track{height:4px;margin-top:3px}
 .board-offline{margin:0;padding:8px 14px;color:#ffd76a;font:600 9px 'Chakra Petch',sans-serif;letter-spacing:1.5px;border-bottom:1px solid rgba(255,215,106,.25)}
 .board-more{display:block;width:100%;height:38px;border:0;border-top:1px solid var(--line);background:rgba(81,230,255,.08);color:var(--cyan);font:600 10px 'Chakra Petch',sans-serif;letter-spacing:2px;cursor:pointer}
 .board-more:disabled{opacity:.5}
+
+/* Spazio: freccia dell'obiettivo più chiara e avviso quando ti allontani */
+.target-indicator:before,.target-indicator:after{display:none}
+.target-indicator>span{font-size:0;width:34px;height:34px;text-shadow:none;filter:drop-shadow(0 0 5px rgba(81,230,255,.75))}
+.target-indicator>span svg{display:block;width:100%;height:100%}
+.target-indicator>span.target-ahead{color:#fff;filter:drop-shadow(0 0 8px var(--cyan))}
+.distance-box.far{border-color:#ffb04a;box-shadow:0 0 22px rgba(255,150,60,.35)}
+.distance-box.far .target-indicator{border-color:#ffb04a}
+.distance-box.far .target-indicator>span{color:#ffb04a;filter:drop-shadow(0 0 7px #ff8a3d)}
+.distance-box.far em{color:#ffb04a}
+.far-alert{position:absolute;top:248px;left:50%;transform:translateX(-50%);width:max-content;max-width:90vw;padding:9px 16px;text-align:center;border:1px solid #ffb04a;border-radius:6px;background:rgba(45,24,4,.92);color:#ffe0b0;box-shadow:0 0 24px rgba(255,150,60,.25);font:600 12px "Chakra Petch",sans-serif;letter-spacing:1px;animation:farBlink 1s ease-in-out infinite}
+@keyframes farBlink{50%{opacity:.55}}
+body.touch .far-alert{top:116px;font-size:9px;padding:4px 10px}
+body.touch .target-indicator>span{width:22px;height:22px}
