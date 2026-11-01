@@ -147,9 +147,28 @@ function drawSideBar(x,y,h,k){
  ctx.restore();
 }
 const tOrig2={drawPlayer,pfDrawJetpack};
+// La salute della nave ora sta solo nella barra in basso.
+// ---- 6) scafo inclinato: quando la prua non punta dove va la nave, la nave si piega su un lato
+const tOrigShip=drawShip;let bankDrawT=0;
+function bankTarget(){
+ const sp=Math.hypot(player.vx,player.vy);if(sp<25)return 0;
+ const slip=Math.sin(Math.atan2(player.vy,player.vx)-player.angle);// >0: va verso la sua destra
+ return Math.max(-1,Math.min(1,slip*Math.min(1,sp/180)*1.3));
+}
 drawPlayer=function(){
+ const now=performance.now(),dt=Math.min(.1,(now-(bankDrawT||now))/1000);bankDrawT=now;
+ if(player&&!player.destroyed){const t=bankTarget();player.bank=(player.bank||0)+(t-(player.bank||0))*Math.min(1,dt*7)}
  tOrig2.drawPlayer();
- if(player&&!player.destroyed&&arrivalRemaining<=0&&player.health>0)drawSideBar(player.x+30,player.y-20,40,player.health/100);
+};
+drawShip=function(ship,hostile){
+ const b=!hostile&&state!=='platform'&&player&&ship.x===player.x&&ship.y===player.y?(player.bank||0):0;
+ if(Math.abs(b)<.02)return tOrigShip(ship,hostile);
+ // stessa trasformazione dell'originale + schiacciamento sul fianco (roll) e leggera inclinazione
+ ctx.save();ctx.translate(ship.x,ship.y);ctx.rotate(ship.angle);
+ ctx.transform(1,0,-b*.18,1-.42*Math.abs(b),0,b*3);
+ ctx.rotate(-ship.angle);ctx.translate(-ship.x,-ship.y);
+ tOrigShip(ship,hostile);
+ ctx.restore();
 };
 pfDrawJetpack=function(P,now){
  tOrig2.pfDrawJetpack(P,now);
