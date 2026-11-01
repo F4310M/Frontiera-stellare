@@ -62,9 +62,12 @@ const MUS_SONGS={
   pat:{taiko:'X.....X...X.....',rullante:'....X.......X...',charleston:'..x...x...x...x.',ost:'0101010101010101',basso:'0.....0...0.....'},
   fill:{taiko:'X.X.X.X.XXXXXXXX'},
   layers:{boss:['archi','coro','ost','basso','taiko','rullante','charleston','melodia','fanfara','braam','swell']}},
- vittoria:{bpm:100,root:48,prog:[[0,'M'],[7,'M'],[9,'m'],[5,'M'],[0,'M'],[5,'M'],[7,'M'],[0,'M']],motif:'gloria',leads:['ottoni','violini'],mel:'sempre',
-  pat:{taiko:'X.......X.......',rullante:'....x.......x...',basso:'0...2...0...2...',arpa:'0.1.2.3.4.3.2.1.'},
-  layers:{calm:['archi','coro','basso','arpa','taiko','rullante','melodia','fanfara']}}
+ vittoria:{bpm:104,root:48,prog:[[0,'M'],[7,'M'],[9,'m'],[5,'M'],[0,'M'],[5,'M'],[7,'M'],[0,'M']],motif:'gloria',leads:['ottoni','violini'],mel:'sempre',
+  pat:{taiko:'X.......X.......',rullante:'....x.......x...',basso:'0...2...0...2...',arpa:'0.1.2.3.4.3.2.1.',ost:'0.2.3.2.0.2.3.2.'},
+  fill:{taiko:'X...X...X.X.XXXX',rullante:'....x...x.xxXXXX'},
+  layers:{calm:['archi','coro','basso','arpa','taiko','rullante','melodia','fanfara'],
+   // boss del pianeta sconfitto: tutta l'orchestra, epica
+   boss:['archi','coro','ost','basso','arpa','taiko','rullante','melodia','fanfara','swell']}}
 };
 // Melodie indicizzate per ottavo, calcolate una volta.
 for(const S of Object.values(MUS_SONGS)){S.melMap={};let e=0;for(const[n,d]of MUS_MOTIF[S.motif]){S.melMap[e]=[n,d];e+=d}S.melLen=e}
@@ -149,7 +152,8 @@ for(const ev of['pointerdown','keydown','touchend'])addEventListener(ev,musUnloc
 
 // Intensità decisa dallo stato del gioco.
 function musLevel(){
- if(state==='platform'&&typeof pf!=='undefined'&&pf){if(pf.phase==='boss')return'boss';if(pf.phase==='atterraggio'||pf.phase==='vittoria'||pf.phase==='sconfitta')return'calm';return'battle'}
+ if(state==='platform'&&typeof pf!=='undefined'&&pf){if(pf.phase==='boss'||pf.phase==='vittoria')return'boss';if(pf.phase==='atterraggio'||pf.phase==='sconfitta')return'calm';return'battle'}
+ if(state==='won'&&typeof pf!=='undefined'&&pf&&pf.phase==='vittoria')return'boss';
  if(state==='play'||state==='dying'){if(typeof nearAtmosphere==='function'&&nearAtmosphere())return'boss';return'battle'}
  if(state==='orbit')return'battle';
  return'calm';
@@ -162,6 +166,8 @@ function musTheme(level=musLevel()){
  if(state==='play'||state==='dying'||state==='orbit'||state==='warp')return fin&&level==='boss'?'omega':'spazio';
  return'menu';
 }
+// Boss a terra in esplosione: la musica tace finché non arriva lo scoppio finale (vedi battaglia.js).
+function musHush(){return state==='platform'&&typeof pf!=='undefined'&&pf&&pf.phase==='vittoria'&&!!pf.boss&&!pf.boss.gone&&typeof battBoom==='function'}
 // Tonalità: ogni pianeta sposta il brano di qualche semitono (menu e OMEGA restano fissi).
 function musShift(song){
  if(song==='menu'||song==='omega'||typeof planets==='undefined')return 0;
@@ -248,7 +254,7 @@ function musStep(a,step,t,song,level,loop){
  const hit=k=>{const p=(lastBar&&S.fill&&S.fill[k])||S.pat[k]||'';return p[b]||'.'};
  const boss=level==='boss';
  if(b===0){
-  if(step===0&&loop===0){if(on('taiko'))musTimpani(a,t,S.root+mus.shift-12,.5);if(song!=='menu')musCrash(a,t,.16)}
+  if(step===0&&loop===0){if(on('taiko'))musTimpani(a,t,S.root+mus.shift-12,.5);if(song!=='menu')musCrash(a,t,.16);if(song==='vittoria'&&boss)musVictoryHit(a,t,root)}
   else if(step===0&&on('taiko')&&level!=='calm')musCrash(a,t,.12);
   if(on('archi'))musStrings(a,t,[root,root+ch[1],root+ch[2],root+12],barDur,boss?.09:.075);
   if(on('coro'))musChoir(a,t,[root+12,root+12+ch[1],root+12+ch[2]],barDur,boss?.07:.05);
@@ -269,6 +275,13 @@ function musStep(a,step,t,song,level,loop){
  }
 }
 
+// Attacco della vittoria: accordo pieno di ottoni e coro, rullo di timpani e piatti.
+function musVictoryHit(a,t,root){
+ musBrass(a,t,[root-12,root,root+4,root+7,root+12],2.4,.1);musChoir(a,t,[root+12,root+16,root+19],2.8,.08);
+ musStrings(a,t,[root,root+7,root+12,root+16],2.8,.09);musCrash(a,t,.22);
+ for(let i=0;i<12;i++)musTimpani(a,t+.06+i*.05,root-12,.3-i*.02);
+ musTaiko(a,t,.7,true);
+}
 function musStart(a,song){
  if(mus.voice){const v=mus.voice;v.gain.setTargetAtTime(.0001,a.currentTime,.45);setTimeout(()=>{try{v.disconnect()}catch(e){}},4000)}
  mus.voice=a.createGain();mus.voice.gain.value=1;mus.voice.connect(mus.synth);
@@ -278,9 +291,14 @@ function musStart(a,song){
 function musTick(){
  const a=musCtx();
  if(!a){if(mus.bus&&mus.a){mus.bus.gain.setTargetAtTime(0,mus.a.currentTime,.1);if(mus.track){musTrackStop(mus.a,mus.track,.1);mus.track=null}}return}
- const quiet=paused||document.hidden,level=musLevel(),song=musTheme(level);
+ const hush=musHush(),quiet=paused||document.hidden||hush,level=musLevel(),song=musTheme(level);
  mus.level=level;
- mus.bus.gain.setTargetAtTime(quiet?0:MUS_MASTER*MUS_VOL[level]*(typeof volumeLevel==='function'?volumeLevel('music'):1),a.currentTime,.5);
+ if(hush&&mus.track){musTrackStop(a,mus.track,.5);mus.track=null}
+ if(hush&&mus.song){mus.voice.gain.setTargetAtTime(.0001,a.currentTime,.3);mus.song=null}
+ const target=quiet?0:MUS_MASTER*MUS_VOL[level]*(typeof volumeLevel==='function'?volumeLevel('music'):1);
+ // L'attacco della vittoria arriva subito a pieno volume, senza dissolvenza.
+ if(!quiet&&song==='vittoria'&&mus.song!=='vittoria'&&!musTrackId(song,level)){mus.bus.gain.cancelScheduledValues(a.currentTime);mus.bus.gain.setValueAtTime(target,a.currentTime)}
+ else mus.bus.gain.setTargetAtTime(target,a.currentTime,.5);
  if(quiet!==mus.quiet){mus.quiet=quiet;if(mus.track){if(quiet)musTrackStop(a,mus.track,.3);else musTrackPlay(a,mus.track)}}
  if(quiet){mus.next=0;return}
  // Brano registrato, se c'è ed è pronto.
