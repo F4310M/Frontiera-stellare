@@ -123,7 +123,7 @@ function musTrack(a,id){
 function musTrackPlay(a,T){
  const el=T.els[T.cur],g=T.gains[T.cur];
  g.gain.cancelScheduledValues(a.currentTime);g.gain.setTargetAtTime(MUS_TRACK_GAIN,a.currentTime,.35);
- if(el.paused){const p=el.play();if(p&&p.catch)p.catch(()=>{T.blocked=true})}
+ if(el.paused){T.blocked=false;const p=el.play();if(p&&p.catch)p.catch(()=>{T.blocked=true})}
 }
 function musTrackStop(a,T,fade=.4){
  for(let i=0;i<T.els.length;i++){const g=T.gains[i],el=T.els[i];g.gain.cancelScheduledValues(a.currentTime);g.gain.setTargetAtTime(0,a.currentTime,fade);
@@ -140,6 +140,8 @@ function musTrackLoop(a,T){
 // Su telefono i lettori vanno "sbloccati" da un tocco: al primo gesto si preparano tutti i brani.
 function musUnlock(){
  const a=musCtx();if(!a)return;
+ // Un brano bloccato dal browser riparte al gesto successivo.
+ if(mus.track&&mus.track.blocked&&!mus.quiet)musTrackPlay(a,mus.track);
  for(const id in MUS_TRACKS){const T=musTrack(a,id);if(!T||T.unlocked)continue;T.unlocked=true;
   for(const el of T.els){if(!el.paused)continue;const p=el.play();if(p&&p.then)p.then(()=>{if(mus.track!==T||el!==T.els[T.cur])el.pause()}).catch(()=>{})}}
 }
@@ -282,7 +284,7 @@ function musTick(){
  if(quiet!==mus.quiet){mus.quiet=quiet;if(mus.track){if(quiet)musTrackStop(a,mus.track,.3);else musTrackPlay(a,mus.track)}}
  if(quiet){mus.next=0;return}
  // Brano registrato, se c'è ed è pronto.
- const id=musTrackId(song,level),T=id&&musTrack(a,id),ok=T&&T.ready&&!T.failed&&!T.blocked;
+ const id=musTrackId(song,level),T=id&&musTrack(a,id),ok=T&&!T.failed;
  if(ok){
   // Tra volo e "soglia" si cambia al massimo ogni 4 secondi, per non saltare avanti e indietro.
   const now=a.currentTime,space=mus.track&&(mus.track.id==='spazio'||mus.track.id==='soglia')&&(id==='spazio'||id==='soglia');
@@ -290,8 +292,6 @@ function musTick(){
   if(mus.track){musTrackLoop(a,mus.track);if(mus.song){mus.voice.gain.setTargetAtTime(.0001,now,.4);mus.song=null}return}
  }
  if(mus.track){musTrackStop(a,mus.track,.5);mus.track=null}
- // Il brano si sta ancora caricando: qualche istante di silenzio invece di partire con l'orchestra.
- if(T&&!T.failed&&!T.blocked&&!T.ready&&performance.now()-T.born<2500){if(mus.song){mus.voice.gain.setTargetAtTime(.0001,a.currentTime,.4);mus.song=null}return}
  if(song!==mus.song){musStart(a,song);mus.next=Math.max(mus.next,a.currentTime+.08)}
  const S=MUS_SONGS[mus.song],dt=60/S.bpm/4,len=S.prog.length*16;
  if(mus.next<a.currentTime)mus.next=a.currentTime+.06;
