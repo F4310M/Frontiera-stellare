@@ -23,10 +23,10 @@ drawTargetLock=function(){
 
 // ---- 2) navi nemiche con missili a ricerca
 const EM={missiles:[],lockers:new Set(),beep:0,warned:0};
-const EM_LOCK_SECONDS=2.4,EM_RANGE=950,EM_MAX=3,EM_DAMAGE=16;
+const EM_LOCK_SECONDS=2.4,EM_RANGE=950,EM_MAX=3,EM_DAMAGE=14;
 function emDifficulty(){return(world&&world.p&&world.p.difficulty)||1}
 function emIsLauncher(e){
- if(e.missileer===undefined)e.missileer=Math.random()<Math.min(.45,.12+.07*emDifficulty());
+ if(e.missileer===undefined)e.missileer=Math.random()<Math.min(.36,.08+.06*emDifficulty());
  return e.missileer;
 }
 function emReset(){EM.missiles=[];EM.lockers.clear();EM.beep=0}

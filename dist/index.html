@@ -85,11 +85,12 @@
   <section id="hud" class="hud hidden" aria-label="Interfaccia di volo">
     <div class="hud-top">
       <div class="objective"><span>OBIETTIVO</span><b id="hudPlanet">LYRA</b></div>
-      <div class="distance-box"><div class="target-indicator" aria-label="Direzione obiettivo"><span id="directionArrow">➤</span><i></i></div><div><small>DISTANZA OBIETTIVO</small><b id="distance">126.000 KM</b><em id="directionText">DESTRA</em></div></div>
+      <div class="distance-box"><div class="target-indicator" aria-label="Direzione obiettivo"><span id="directionArrow"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><path d="M3 12.5h15V6l12 10-12 10v-6.5H3z" fill="currentColor" stroke="#02101b" stroke-width="1.6" stroke-linejoin="round"/></svg></span><i></i></div><div><small>DISTANZA OBIETTIVO</small><b id="distance">126.000 KM</b><em id="directionText">DESTRA</em></div></div>
       <button id="pauseBtn" class="icon-btn" aria-label="Pausa">Ⅱ</button>
     </div>
     <div class="capture-status"><span id="captureText">RAGGIUNGI L’ORBITA · FRENO: F</span><div><i id="captureBar"></i></div></div>
     <div id="meteorAlert" class="meteor-alert hidden" role="alert"></div>
+    <div id="farAlert" class="far-alert hidden" role="alert">⚠ TI STAI ALLONTANANDO TROPPO DALL’OBIETTIVO · SEGUI LA FRECCIA</div>
     <div id="missileStatus" class="missile-status">MISSILE PRONTO · CLIC ROTELLA</div>
     <div id="crosshair" class="crosshair" aria-hidden="true"><i></i></div>
     <button id="fullscreenBtn" class="fullscreen-toggle" aria-label="Passa a schermo intero"><b>↗</b><span>SCHERMO INTERO</span></button>
@@ -173,6 +174,7 @@
   <script src="mobile.js"></script>
   <script src="terra.js"></script>
   <script src="missili-nemici.js"></script>
+  <script src="spazio.js"></script>
   <script src="battaglia.js"></script>
   <script src="i18n.js"></script>
 </body>

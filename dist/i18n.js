@@ -6,6 +6,11 @@
 const I18N_LANGS=[['en','English'],['it','Italiano'],['fr','Français'],['es','Español'],['ru','Русский'],['zh','中文'],['ja','日本語']];
 const I18N_COL={it:0,en:1,fr:2,es:3,ru:4,zh:5,ja:6};
 const I18N_ROWS=[
+["TI STAI ALLONTANANDO TROPPO DALL’OBIETTIVO · SEGUI LA FRECCIA","YOU ARE DRIFTING TOO FAR FROM THE TARGET · FOLLOW THE ARROW","TU T’ÉLOIGNES TROP DE L’OBJECTIF · SUIS LA FLÈCHE","TE ESTÁS ALEJANDO DEMASIADO DEL OBJETIVO · SIGUE LA FLECHA","ТЫ СЛИШКОМ УДАЛЯЕШЬСЯ ОТ ЦЕЛИ · СЛЕДУЙ ЗА СТРЕЛКОЙ","你离目标太远了 · 跟随箭头","目標から離れすぎている · 矢印に従え"],
+["NAVE DA GUERRA NEMICA IN AVVICINAMENTO","ENEMY WARSHIP APPROACHING","NAVIRE DE GUERRE ENNEMI EN APPROCHE","BUQUE DE GUERRA ENEMIGO ACERCÁNDOSE","ПРИБЛИЖАЕТСЯ ВРАЖЕСКИЙ КРЕЙСЕР","敌方战舰正在接近","敵戦艦接近中"],
+["NAVE DA GUERRA DISTRUTTA","WARSHIP DESTROYED","NAVIRE DE GUERRE DÉTRUIT","BUQUE DE GUERRA DESTRUIDO","КРЕЙСЕР УНИЧТОЖЕН","战舰已摧毁","戦艦撃破"],
+["RAZZI IN ARRIVO","ROCKETS INCOMING","ROQUETTES EN APPROCHE","COHETES EN CAMINO","РАКЕТЫ ПРИБЛИЖАЮТСЯ","火箭来袭","ロケット接近"],
+["RAZZO ABBATTUTO","ROCKET SHOT DOWN","ROQUETTE ABATTUE","COHETE DERRIBADO","РАКЕТА СБИТА","火箭已击落","ロケット撃墜"],
 ["MISSILE NEMICO IN ARRIVO","ENEMY MISSILE INCOMING","MISSILE ENNEMI EN APPROCHE","MISIL ENEMIGO EN CAMINO","ВРАЖЕСКАЯ РАКЕТА","敌方导弹来袭","敵ミサイル接近"],
 ["AGGANCIO NEMICO · SCHIVA O ABBATTI IL MISSILE","ENEMY LOCK · DODGE OR SHOOT DOWN THE MISSILE","VERROUILLAGE ENNEMI · ESQUIVE OU ABATS LE MISSILE","FIJACIÓN ENEMIGA · ESQUIVA O DERRIBA EL MISIL","ВРАГ ЗАХВАТЫВАЕТ · УКЛОНИСЬ ИЛИ СБЕЙ РАКЕТУ","敌方锁定 · 躲避或击落导弹","敵のロック · ミサイルを回避か撃墜"],
 ["MISSILE ABBATTUTO","MISSILE SHOT DOWN","MISSILE ABATTU","MISIL DERRIBADO","РАКЕТА СБИТА","导弹已击落","ミサイル撃墜"],
