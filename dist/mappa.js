@@ -56,7 +56,12 @@ function mapNewGame(){
  phaseOneComplete=false;phaseTwoComplete=false;
  vite=VITE_START;viteSave();
  if(typeof eco!=='undefined'){eco.balance=ECO_START;eco.upgrades={};ecoSave();ecoHud()}
- selected=0;finalLock();
+ selected=0;// Briefing: pulsante TORNA AL MENU (anche con Esc) per tornare alla mappa senza partire.
+function briefBack(){if($('briefing').classList.contains&&$('briefing').classList.contains('hidden'))return;sfx('ui');show('briefing',false)}
+if($('briefBackBtn'))$('briefBackBtn').onclick=briefBack;
+addEventListener('keydown',e=>{if(e.code==='Escape'&&state==='map')briefBack()});
+
+finalLock();
 }
 
 // Missioni bloccate o già concluse non partono, nemmeno con scorciatoie.
@@ -76,5 +81,10 @@ pfFinish=function(win){
  if($('starMap')&&$('starMap').appendChild)initMap();
 };
 viteGameOver=function(){localStorage.setItem('frontieraOmegaLibero','');mOrig.viteGameOver();finalLock()};
+
+// Briefing: pulsante TORNA AL MENU (anche con Esc) per tornare alla mappa senza partire.
+function briefBack(){if($('briefing').classList.contains&&$('briefing').classList.contains('hidden'))return;sfx('ui');show('briefing',false)}
+if($('briefBackBtn'))$('briefBackBtn').onclick=briefBack;
+addEventListener('keydown',e=>{if(e.code==='Escape'&&state==='map')briefBack()});
 
 finalLock();

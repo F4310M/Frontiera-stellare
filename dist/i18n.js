@@ -408,6 +408,7 @@ const I18N_ROWS=[
 ["PARETE ROCCIOSA · USA IL JETPACK PER SALIRE","ROCK WALL · USE THE JETPACK TO CLIMB","PAROI ROCHEUSE · UTILISE LE JETPACK POUR MONTER","PARED DE ROCA · USA EL JETPACK PARA SUBIR","СКАЛА · ПОДНИМИСЬ НА ДЖЕТПАКЕ","岩壁 · 用喷气背包向上飞","岩壁 · ジェットパックで登れ"],
 ["BURRONE · PLANA COL JETPACK (SALTO + GIÙ)","CHASM · GLIDE WITH THE JETPACK (JUMP + DOWN)","RAVIN · PLANE AVEC LE JETPACK (SAUT + BAS)","BARRANCO · PLANEA CON EL JETPACK (SALTO + ABAJO)","ПРОПАСТЬ · ПЛАНИРУЙ НА ДЖЕТПАКЕ (ПРЫЖОК + ВНИЗ)","深谷 · 用喷气背包滑翔（跳跃 + 下）","谷 · ジェットパックで滑空（ジャンプ + 下）"],
 ["NUCLEO IN SOVRACCARICO · ALLONTANATI","CORE OVERLOAD · GET CLEAR","NOYAU EN SURCHARGE · ÉLOIGNE-TOI","NÚCLEO SOBRECARGADO · ALÉJATE","ПЕРЕГРУЗКА ЯДРА · ОТХОДИ","核心过载 · 快撤离","コア過負荷 · 離れろ"],
+["← TORNA AL MENU","← BACK TO MENU","← RETOUR AU MENU","← VOLVER AL MENÚ","← НАЗАД В МЕНЮ","← 返回菜单","← メニューに戻る"]
 ];
 
 // Lingua predefinita: inglese. La chiave è nuova (stellarLang): le vecchie scelte salvate (stellarLingua) non contano più, così tutti ripartono in inglese.
