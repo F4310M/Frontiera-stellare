@@ -138,3 +138,20 @@ pfDrawShipOnPad=function(now){
 };
 // Mentre la navetta scende il pilota non c'è: niente granate.
 pfThrowGrenade=function(){if(pf&&!pf.pilot.visible)return;tOrig.pfThrowGrenade()};
+
+// ---- 5) barra della vita accanto alla nave del giocatore e al pilota (verde → giallo → rosso)
+function drawSideBar(x,y,h,k){
+ k=Math.max(0,Math.min(1,k));
+ ctx.save();ctx.fillStyle='rgba(2,8,16,.7)';ctx.fillRect(x-1.5,y-1.5,7,h+3);
+ ctx.fillStyle=hpColor(k);ctx.shadowBlur=6;ctx.shadowColor=hpColor(k);ctx.fillRect(x,y+h*(1-k),4,h*k);
+ ctx.restore();
+}
+const tOrig2={drawPlayer,pfDrawJetpack};
+drawPlayer=function(){
+ tOrig2.drawPlayer();
+ if(player&&!player.destroyed&&arrivalRemaining<=0&&player.health>0)drawSideBar(player.x+30,player.y-20,40,player.health/100);
+};
+pfDrawJetpack=function(P,now){
+ tOrig2.pfDrawJetpack(P,now);
+ if(P.visible&&P.hp>0)drawSideBar(P.x-P.face*34-2,P.y-(P.crouch?58:72),P.crouch?38:50,P.hp/100);
+};
