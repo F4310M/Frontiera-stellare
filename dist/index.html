@@ -91,10 +91,13 @@
     <div id="missileStatus" class="missile-status">MISSILE PRONTO · CLIC ROTELLA</div>
     <div id="crosshair" class="crosshair" aria-hidden="true"><i></i></div>
     <button id="fullscreenBtn" class="fullscreen-toggle" aria-label="Passa a schermo intero"><b>↗</b><span>SCHERMO INTERO</span></button>
-    <div class="hud-bottom">
-      <div class="meter"><span>SCAFO</span><div><i id="healthBar"></i></div><b id="healthText">100%</b></div>
-      <div class="flight-systems"><div class="boost-meter"><span>POST-BRUCIATORE · SHIFT DX</span><div><i id="boostBar"></i></div><b id="boostText">100% · PRONTO</b></div><div class="status" id="statusText">SISTEMI NOMINALI</div></div>
-      <div class="meter shield"><span>BARRIERA · MOUSE DX</span><div><i id="shieldBar"></i></div><b id="shieldText">100%</b></div>
+    <div class="hud-bottom unified">
+      <div class="status" id="statusText">SISTEMI NOMINALI</div>
+      <div class="unibar" role="group" aria-label="Sistemi della nave">
+        <div class="seg seg-health"><div class="seg-head"><span>SALUTE</span><b id="healthText">100%</b></div><div class="seg-track"><i id="healthBar"></i></div></div>
+        <div class="seg seg-boost"><div class="seg-head"><span>POST-BRUCIATORE · SHIFT DX</span><b id="boostText">100% · PRONTO</b></div><div class="seg-track"><i id="boostBar"></i></div></div>
+        <div class="seg seg-shield"><div class="seg-head"><span>BARRIERA · MOUSE DX</span><b id="shieldText">100%</b></div><div class="seg-track"><i id="shieldBar"></i></div></div>
+      </div>
     </div>
     <div class="controls-tip">FRECCE / WASD muovi · MOUSE punta la prua · SHIFT DX post-bruciatore · MOUSE DX barriera · clic / SPAZIO spara · ROTELLA missile · F frena · P pausa</div>
     <div id="radar" class="radar"><i></i><span></span></div>
