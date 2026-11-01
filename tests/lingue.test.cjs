@@ -15,7 +15,7 @@ assert.equal(run("I18N_LANGS.length"),7);
 for(const l of ['it','en','fr','es','ru','zh','ja']){run(`setLang('${l}')`);assert.equal(run('lang'),l);assert.equal(typeof run("tr('MISSIONE COMPIUTA')"),'string')}
 run("setLang('it')");assert.equal(run("tr('MISSIONE COMPIUTA')"),'MISSIONE COMPIUTA');
 run("setLang('ja')");assert.equal(run("tr('MISSIONE COMPIUTA')"),'任務完了');
-assert.equal(s1.localStorage.getItem('stellarLingua'),'ja');
+assert.equal(s1.localStorage.getItem('stellarLang'),'ja');
 assert(run('I18N_ROWS.every(r=>r.length===7&&r.every(x=>typeof x==="string"&&x.length))'),'ogni frase ha 7 lingue');
 // --- classifica
 const noop=()=>{};

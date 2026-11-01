@@ -396,10 +396,17 @@ const I18N_ROWS=[
 ["Scrivi un nome","Type a name","Écris un nom","Escribe un nombre","Введи имя","请输入名字","名前を入力してね"],
 ["PARTITA FINITA","GAME FINISHED","PARTIE TERMINÉE","PARTIDA TERMINADA","ИГРА ОКОНЧЕНА","游戏结束","ゲーム終了"],
 ["Punti: nemici abbattuti, coloni salvati, orbite conquistate e colonie liberate. Più alta la minaccia, più punti.","Points: enemies downed, colonists rescued, orbits conquered and colonies freed. The higher the threat, the more points.","Points : ennemis abattus, colons sauvés, orbites conquises et colonies libérées. Plus la menace est grande, plus il y a de points.","Puntos: enemigos abatidos, colonos rescatados, órbitas conquistadas y colonias liberadas. Cuanto mayor la amenaza, más puntos.","Очки: сбитые враги, спасённые колонисты, захваченные орбиты и освобождённые колонии. Чем выше угроза, тем больше очков.","得分来源：击落敌人、解救殖民者、占领轨道和解放殖民地。威胁越高，得分越多。","スコア：敵の撃破、入植者の救出、軌道の制圧、コロニーの解放。脅威が高いほど高得点。"],
-["La classifica è salvata in questo browser.","The leaderboard is saved in this browser.","Le classement est enregistré dans ce navigateur.","La clasificación se guarda en este navegador.","Рейтинг хранится в этом браузере.","排行榜保存在此浏览器中。","ランキングはこのブラウザに保存されます。"]
+["La classifica è salvata in questo browser.","The leaderboard is saved in this browser.","Le classement est enregistré dans ce navigateur.","La clasificación se guarda en este navegador.","Рейтинг хранится в этом браузере.","排行榜保存在此浏览器中。","ランキングはこのブラウザに保存されます。"],
+["PIANETA LIBERATO","PLANET FREED","PLANÈTE LIBÉRÉE","PLANETA LIBERADO","ПЛАНЕТА СВОБОДНА","星球已解放","惑星解放済み"],
+["LIBERA TUTTI I PIANETI","FREE ALL PLANETS FIRST","LIBÈRE TOUTES LES PLANÈTES","LIBERA TODOS LOS PLANETAS","ОСВОБОДИ ВСЕ ПЛАНЕТЫ","先解放所有星球","全惑星を解放せよ"],
+["NUOVA PARTITA","NEW GAME","NOUVELLE PARTIE","NUEVA PARTIDA","НОВАЯ ИГРА","新游戏","ニューゲーム"],
+["BLOCCATO","LOCKED","VERROUILLÉ","BLOQUEADO","ЗАКРЫТО","已锁定","ロック中"],
+["Colonia liberata: questa missione è conclusa e non si può ripetere.","Colony freed: this mission is complete and cannot be replayed.","Colonie libérée : cette mission est terminée et ne peut pas être rejouée.","Colonia liberada: esta misión está completada y no se puede repetir.","Колония освобождена: миссия завершена, повторить её нельзя.","殖民地已解放：此任务已完成，无法重玩。","植民地は解放された：この任務は完了しており、再挑戦できない。"],
+["Avvistato in lontananza. Libera tutti e cinque i pianeti per aprire la rotta verso OMEGA.","Sighted far in the distance. Free all five planets to open the route to OMEGA.","Aperçue au loin. Libère les cinq planètes pour ouvrir la route vers OMEGA.","Avistado a lo lejos. Libera los cinco planetas para abrir la ruta hacia OMEGA.","Виден вдали. Освободи все пять планет, чтобы открыть путь к OMEGA.","远方隐约可见。解放全部五颗星球，开辟通往 OMEGA 的航线。","はるか遠くに見える。5つの惑星をすべて解放して OMEGA への航路を開け。"]
 ];
 
-function i18nLoad(){try{const l=localStorage.getItem('stellarLingua');return l&&I18N_COL[l]!==undefined?l:'en'}catch(e){return 'en'}}
+// Lingua predefinita: inglese. La chiave è nuova (stellarLang): le vecchie scelte salvate (stellarLingua) non contano più, così tutti ripartono in inglese.
+function i18nLoad(){try{const l=localStorage.getItem('stellarLang');return l&&I18N_COL[l]!==undefined?l:'en'}catch(e){return 'en'}}
 let lang=i18nLoad(),i18nMap=null,i18nRe=null,i18nCache=new Map();
 function i18nEsc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
 function i18nBuild(){
@@ -480,7 +487,7 @@ function i18nApply(){
 }
 function setLang(l){
  if(I18N_COL[l]===undefined)return;
- lang=l;try{localStorage.setItem('stellarLingua',l)}catch(e){}
+ lang=l;try{localStorage.setItem('stellarLang',l)}catch(e){}
  i18nBuild();i18nApply();
 }
 

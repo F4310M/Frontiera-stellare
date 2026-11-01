@@ -1,0 +1,14 @@
+/* Mappa: scritta FREE sui pianeti liberati e OMEGA lontano e bloccato (mappa.js) */
+.planet-node .free-tag{position:absolute;left:50%;top:-16px;transform:translateX(-50%);padding:2px 7px;border-radius:4px;background:#2fe08a;color:#03140b;font:800 9px 'Chakra Petch',monospace;letter-spacing:2px;box-shadow:0 0 12px #2fe08a88;pointer-events:none;white-space:nowrap;z-index:2}
+.planet-node.freed .planet{filter:saturate(.75) brightness(1.05)}
+.planet-node.freed .risk{color:#7dffb8;opacity:1}
+#mapScreen .planet-node.freed .node-label{color:#9dffcb}
+.planet-node.distant{scale:.5;opacity:.5;filter:blur(.7px) saturate(.55)}
+.planet-node.distant .planet{animation:omega-pulse 4s ease-in-out infinite}
+.planet-node.distant .node-label,.planet-node.distant .risk{scale:1.6;transform-origin:50% 0}.planet-node.distant .node-label{top:calc(100% + 14px)!important}.planet-node.distant .risk{top:calc(100% + 42px)!important}
+.planet-node.distant .risk{letter-spacing:2px;color:#ff7a9a}
+.planet-node.distant.selected{opacity:.8;filter:saturate(.7)}
+@keyframes omega-pulse{0%,100%{box-shadow:inset -15px -9px 19px rgba(0,3,12,.85),0 0 10px #ff2a6a33}50%{box-shadow:inset -15px -9px 19px rgba(0,3,12,.85),0 0 26px #ff2a6a88}}
+.launch-btn:disabled,#mapScreen .launch-btn:disabled{background:#1a2632!important;border-color:#2f4252!important;color:#7f97a8!important;box-shadow:none!important;cursor:not-allowed}
+.launch-btn:disabled b{opacity:.3}
+.launch-btn.done:before{display:none!important}
