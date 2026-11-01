@@ -146,7 +146,7 @@ function drawSideBar(x,y,h,k){
  ctx.fillStyle=hpColor(k);ctx.shadowBlur=6;ctx.shadowColor=hpColor(k);ctx.fillRect(x,y+h*(1-k),4,h*k);
  ctx.restore();
 }
-const tOrig2={drawPlayer,pfDrawJetpack};
+const tOrig2={drawPlayer};
 // La salute della nave ora sta solo nella barra in basso.
 // ---- 6) scafo inclinato: quando la prua non punta dove va la nave, la nave si piega su un lato
 const tOrigShip=drawShip;let bankDrawT=0;
@@ -170,7 +170,4 @@ drawShip=function(ship,hostile){
  tOrigShip(ship,hostile);
  ctx.restore();
 };
-pfDrawJetpack=function(P,now){
- tOrig2.pfDrawJetpack(P,now);
- if(P.visible&&P.hp>0)drawSideBar(P.x-P.face*34-2,P.y-(P.crouch?58:72),P.crouch?38:50,P.hp/100);
-};
+// La salute del pilota ora sta solo nella barra in basso: niente barra accanto al personaggio.

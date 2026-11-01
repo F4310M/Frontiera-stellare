@@ -6,6 +6,11 @@
 const I18N_LANGS=[['en','English'],['it','Italiano'],['fr','Français'],['es','Español'],['ru','Русский'],['zh','中文'],['ja','日本語']];
 const I18N_COL={it:0,en:1,fr:2,es:3,ru:4,zh:5,ja:6};
 const I18N_ROWS=[
+["MISSILE NEMICO IN ARRIVO","ENEMY MISSILE INCOMING","MISSILE ENNEMI EN APPROCHE","MISIL ENEMIGO EN CAMINO","ВРАЖЕСКАЯ РАКЕТА","敌方导弹来袭","敵ミサイル接近"],
+["AGGANCIO NEMICO · SCHIVA O ABBATTI IL MISSILE","ENEMY LOCK · DODGE OR SHOOT DOWN THE MISSILE","VERROUILLAGE ENNEMI · ESQUIVE OU ABATS LE MISSILE","FIJACIÓN ENEMIGA · ESQUIVA O DERRIBA EL MISIL","ВРАГ ЗАХВАТЫВАЕТ · УКЛОНИСЬ ИЛИ СБЕЙ РАКЕТУ","敌方锁定 · 躲避或击落导弹","敵のロック · ミサイルを回避か撃墜"],
+["MISSILE ABBATTUTO","MISSILE SHOT DOWN","MISSILE ABATTU","MISIL DERRIBADO","РАКЕТА СБИТА","导弹已击落","ミサイル撃墜"],
+["MISSILE IN ARRIVO","MISSILE INCOMING","MISSILE EN APPROCHE","MISIL EN CAMINO","РАКЕТА ПРИБЛИЖАЕТСЯ","导弹来袭","ミサイル接近"],
+["SEI AGGANCIATO","YOU ARE LOCKED","TU ES VERROUILLÉ","TE HAN FIJADO","ТЫ НА ПРИЦЕЛЕ","你已被锁定","ロックされた"],
 ["FRENA PER CONQUISTARE","BRAKE TO CONQUER","FREINE POUR CONQUÉRIR","FRENA PARA CONQUISTAR","ТОРМОЗИ ДЛЯ ЗАХВАТА","刹车以占领","ブレーキで制圧"],
 ["LABIRINTO ROCCIOSO","ROCK MAZE","LABYRINTHE ROCHEUX","LABERINTO DE ROCAS","КАМЕННЫЙ ЛАБИРИНТ","岩石迷宫","岩の迷路"],
 ["RAGGIUNGI L’ORBITA","REACH ORBIT","ATTEINS L’ORBITE","ALCANZA LA ÓRBITA","ВЫЙДИ НА ОРБИТУ","进入轨道","軌道に到達せよ"],
