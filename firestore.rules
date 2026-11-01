@@ -8,10 +8,10 @@ service cloud.firestore {
       allow read: if true;
       allow create: if request.resource.data.keys().hasOnly(['n', 's', 'd'])
         && request.resource.data.keys().hasAll(['n', 's', 'd'])
-        // nome: da 1 a 10 caratteri, solo lettere, numeri e spazi
+        // nome: da 1 a 20 caratteri, solo lettere, numeri e spazi
         && request.resource.data.n is string
         && request.resource.data.n.size() >= 1
-        && request.resource.data.n.size() <= 10
+        && request.resource.data.n.size() <= 20
         && request.resource.data.n.matches('^[\\p{L}\\p{N} ]+$')
         // punti: numero intero positivo, con un tetto contro i valori assurdi
         && request.resource.data.s is int
