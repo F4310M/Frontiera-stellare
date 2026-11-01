@@ -400,3 +400,5 @@ body.touch .seg-track{height:4px;margin-top:3px}
 .board-tabs button{flex:1;height:34px;border:1px solid var(--line);border-radius:6px;background:rgba(2,9,17,.5);color:var(--muted);font:600 10px 'Chakra Petch',sans-serif;letter-spacing:1.5px;cursor:pointer}
 .board-tabs button.on{border-color:var(--cyan);color:var(--cyan);background:rgba(81,230,255,.12)}
 .board-offline{margin:0;padding:8px 14px;color:#ffd76a;font:600 9px 'Chakra Petch',sans-serif;letter-spacing:1.5px;border-bottom:1px solid rgba(255,215,106,.25)}
+.board-more{display:block;width:100%;height:38px;border:0;border-top:1px solid var(--line);background:rgba(81,230,255,.08);color:var(--cyan);font:600 10px 'Chakra Petch',sans-serif;letter-spacing:2px;cursor:pointer}
+.board-more:disabled{opacity:.5}

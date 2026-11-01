@@ -23,7 +23,7 @@ const s2={localStorage:storage(),$:()=>null,show:noop,state:'map',world:null,pf:
  dropSupply:noop,finish:noop,pfHitEnemy:noop,pfUpdateHostages:noop,pfFinish:noop,viteGameOver:noop};
 vm.createContext(s2);vm.runInContext(fs.readFileSync(path.join(dist,'classifica.js'),'utf8'),s2);
 const r2=c=>vm.runInContext(c,s2);
-assert.equal(r2("cleanName('  Fabio!!<b>12345678 ')"),'Fabiob1234','massimo 10 lettere, solo lettere e numeri');
+assert.equal(r2("cleanName('  Fabio!!<b>1234567890123456789 ')"),'Fabiob12345678901234','massimo 20 lettere, solo lettere e numeri');
 assert.equal(r2("boardAdd('',100)"),-1,'serve un nome');
 for(let i=0;i<120;i++)r2(`boardAdd('P${i}',${(i+1)*10})`);
 assert.equal(r2('boardLoad().length'),100,'solo i primi 100');
@@ -59,7 +59,10 @@ console.log('lingue.test cellulare: ok');
  assert.equal(vm.runInContext('coOn',s5),false,'senza configurazione: solo classifica locale');
  const docs=[],calls=[];
  const fetch=async(url,o)=>{calls.push(url);const b=JSON.parse(o.body);
-  if(url.includes(':runQuery'))return{ok:true,json:async()=>docs.slice().sort((a,b)=>b.fields.s.integerValue-a.fields.s.integerValue).slice(0,b.structuredQuery.limit).map(d=>({document:d}))};
+  const sorted=()=>docs.slice().sort((a,b)=>b.fields.s.integerValue-a.fields.s.integerValue||(a.name<b.name?1:-1));
+  if(url.includes(':runAggregationQuery')){const v=+b.structuredAggregationQuery.structuredQuery.where.fieldFilter.value.integerValue;return{ok:true,json:async()=>[{result:{aggregateFields:{c:{integerValue:String(docs.filter(d=>+d.fields.s.integerValue>v).length)}}}}]}}
+  if(url.includes(':runQuery')){let l=sorted();const sa=b.structuredQuery.startAt;if(sa){const i=l.findIndex(d=>d.name===sa.values[1].referenceValue);l=l.slice(i+1)}
+   return{ok:true,json:async()=>l.slice(0,b.structuredQuery.limit).map(d=>({document:d}))}}
   if(s5.rete===false)return{ok:false,status:503};
   const d={name:'projects/p/databases/(default)/documents/classifica/id'+docs.length,fields:b.fields};docs.push(d);return{ok:true,json:async()=>d}};
  const s6={localStorage:storage(),$:()=>null,show:noop,state:'map',world:null,pf:null,vite:3,console,setTimeout:()=>0,clearTimeout:noop,fetch,
@@ -79,5 +82,13 @@ console.log('lingue.test cellulare: ok');
  s6.rete=true;s6.fetch=fetch;
  await r6('coFlush()');assert.equal(r6('coPending().length'),0,'inviato');
  assert.equal((await r6('coTop(true)'))[1].n,'GAMMA');
+ // posizione e pagine da 100
+ for(let i=0;i<250;i++)await r6(`coSend({n:'P${i}',s:${1000+i},d:'2026-11-01'})`);
+ assert.equal(await r6('coRank(1100)'),150,'149 punteggi più alti, quindi posizione 150');
+ assert.equal((await r6('coTop(true)')).length,100);assert.equal(r6('coMore'),true);
+ assert.equal((await r6('coNext()')).length,200);
+ const all=await r6('coNext()');assert.equal(all.length,253);assert.equal(r6('coMore'),false);
+ assert.equal(new Set(all.map(r=>r.id)).size,253,'nessun doppione tra le pagine');
+ assert.equal(all[0].s,1249);assert.equal(all[252].s,500);
  console.log('lingue.test classifica mondiale: ok');
 })().catch(e=>{console.error(e);process.exit(1)});

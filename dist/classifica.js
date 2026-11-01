@@ -1,9 +1,10 @@
 // Stellar Frontier — PUNTEGGIO e CLASSIFICA.
 // I punti si accumulano in tutta la partita (nemici, coloni, orbite, colonie liberate) e crescono con la minaccia del pianeta.
-// Alla fine del gioco (GAME OVER o vittoria su OMEGA) il giocatore scrive il nome (massimo 10 lettere).
-// La classifica tiene i primi 100 punteggi: mondiale su Firebase (firebase-config.js) e, come riserva, nel browser.
+// Alla fine del gioco (GAME OVER o vittoria su OMEGA) il giocatore scrive il nome (massimo 20 lettere).
+// Classifica mondiale su Firebase (firebase-config.js): primi 10.000, a schermo 100 alla volta.
+// Come riserva, i primi 100 restano anche nel browser.
 
-const SCORE_MAX_NAME=10,BOARD_SIZE=100,SCORE_PTS={nemico:100,roccia:10,orbita:1500,ribelle:150,colono:500,colonia:4000,vita:1000,finale:25000};
+const SCORE_MAX_NAME=20,BOARD_SIZE=100,WORLD_SIZE=10000,SCORE_PTS={nemico:100,roccia:10,orbita:1500,ribelle:150,colono:500,colonia:4000,vita:1000,finale:25000};
 function scoreLoad(){const v=parseInt(localStorage.getItem('stellarPunti'),10);return Number.isFinite(v)&&v>0?v:0}
 let score=scoreLoad(),scorePending=0;
 function scoreFmt(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')}
@@ -45,7 +46,7 @@ function boardBuild(){
  if(!$('boardOverlay')){
   const o=document.createElement('section');o.id='boardOverlay';o.className='overlay hidden';o.setAttribute('aria-label','CLASSIFICA');
   o.innerHTML='<div class="brief-card board-card"><div class="settings-head"><div><p class="eyebrow">STELLAR FRONTIER</p><h2>CLASSIFICA</h2></div><button id="closeBoardX" class="close-btn" aria-label="Chiudi classifica">×</button></div>'+
-   '<p class="board-sub">I PRIMI 100 PILOTI</p><div id="boardTabs" class="board-tabs hidden"><button data-view="mondo">🌍 MONDO</button><button data-view="locale">QUESTO BROWSER</button></div><div id="boardList" class="board-list"></div>'+
+   '<p id="boardSub" class="board-sub">I PRIMI 100 PILOTI</p><div id="boardTabs" class="board-tabs hidden"><button data-view="mondo">🌍 MONDO</button><button data-view="locale">QUESTO BROWSER</button></div><div id="boardList" class="board-list"></div>'+
    '<p class="board-note">Punti: nemici abbattuti, coloni salvati, orbite conquistate e colonie liberate. Più alta la minaccia, più punti.</p><p id="boardWhere" class="board-note">La classifica è salvata in questo browser.</p>'+
    '<button id="closeBoard" class="launch-btn"><span>CHIUDI</span><b>✓</b></button></div>';
   document.body.appendChild(o);
@@ -56,7 +57,7 @@ function boardBuild(){
  if(card&&land&&!$('scoreEntry')){
   const e=document.createElement('div');e.id='scoreEntry';e.className='score-entry hidden';
   e.innerHTML='<p class="eyebrow">PUNTEGGIO FINALE</p><b id="scoreFinal" class="score-final">0</b>'+
-   '<label for="scoreName">INSERISCI IL TUO NOME</label><div class="score-row"><input id="scoreName" maxlength="10" autocomplete="off" spellcheck="false" placeholder="Massimo 10 lettere"><button id="scoreSaveBtn" class="launch-btn"><span>SALVA IN CLASSIFICA</span><b>🏆</b></button></div><p id="scoreMsg" class="score-msg"></p>';
+   '<label for="scoreName">INSERISCI IL TUO NOME</label><div class="score-row"><input id="scoreName" maxlength="20" autocomplete="off" spellcheck="false" placeholder="Massimo 20 lettere"><button id="scoreSaveBtn" class="launch-btn"><span>SALVA IN CLASSIFICA</span><b>🏆</b></button></div><p id="scoreMsg" class="score-msg"></p>';
   card.insertBefore(e,land);
   const inp=$('scoreName');
   inp.addEventListener('keydown',ev=>{ev.stopPropagation();if(ev.key==='Enter')scoreSubmit()});
@@ -83,7 +84,7 @@ function boardRenderLocal(list){boardShow(list,boardLoad(),(r,i)=>i+1===boardHig
 // I punteggi che non si riescono a inviare restano in attesa (stellarInAttesa) e partono alla prossima occasione.
 const CO=(typeof CLASSIFICA_ONLINE==='object'&&CLASSIFICA_ONLINE)||{};
 const coOn=!!(CO.projectId&&CO.apiKey)&&typeof fetch==='function';
-let coView=coOn?'mondo':'locale',coCache=null,coCacheT=0,coMyId='',coBusy=0;
+let coView=coOn?'mondo':'locale',coCache=null,coCacheT=0,coMyId='',coBusy=0,coMore=false;
 function coUrl(path){return 'https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(CO.projectId)+'/databases/(default)/documents'+path+'?key='+encodeURIComponent(CO.apiKey)}
 async function coReq(path,body){
  const ctl=typeof AbortController==='function'?new AbortController():null,t=ctl?setTimeout(()=>ctl.abort(),8000):0;
@@ -95,13 +96,32 @@ async function coReq(path,body){
 }
 function coRow(doc){
  const f=(doc&&doc.fields)||{},s=Number(f.s&&f.s.integerValue);
- return{n:cleanName(f.n&&f.n.stringValue),s,d:String((f.d&&f.d.stringValue)||'').slice(0,10),id:String(doc.name||'').split('/').pop()};
+ return{n:cleanName(f.n&&f.n.stringValue),s,d:String((f.d&&f.d.stringValue)||'').slice(0,10),id:String(doc.name||'').split('/').pop(),ref:String(doc.name||'')};
+}
+// Prima pagina (100 righe) tenuta in memoria per un minuto; "ALTRI 100" carica la pagina successiva.
+async function coPage(after){
+ const q={from:[{collectionId:'classifica'}],orderBy:[{field:{fieldPath:'s'},direction:'DESCENDING'},{field:{fieldPath:'__name__'},direction:'DESCENDING'}],limit:BOARD_SIZE};
+ if(after)q.startAt={values:[{integerValue:String(after.s)},{referenceValue:after.ref}],before:false};
+ const j=await coReq(':runQuery',{structuredQuery:q});
+ return (Array.isArray(j)?j:[]).filter(x=>x&&x.document).map(x=>coRow(x.document)).filter(r=>r.n&&Number.isFinite(r.s));
 }
 async function coTop(force){
  if(!force&&coCache&&Date.now()-coCacheT<60000)return coCache;
- const j=await coReq(':runQuery',{structuredQuery:{from:[{collectionId:'classifica'}],orderBy:[{field:{fieldPath:'s'},direction:'DESCENDING'}],limit:BOARD_SIZE}});
- coCache=(Array.isArray(j)?j:[]).filter(x=>x&&x.document).map(x=>coRow(x.document)).filter(r=>r.n&&Number.isFinite(r.s));
- coCacheT=Date.now();return coCache;
+ coCache=await coPage(null);coCacheT=Date.now();coMore=coCache.length>=BOARD_SIZE;return coCache;
+}
+async function coNext(){
+ if(!coCache||!coCache.length||coCache.length>=WORLD_SIZE)return coCache;
+ const more=await coPage(coCache[coCache.length-1]);
+ coMore=more.length>=BOARD_SIZE&&coCache.length+more.length<WORLD_SIZE;
+ coCache=coCache.concat(more).slice(0,WORLD_SIZE);return coCache;
+}
+// Posizione mondiale di un punteggio: quanti punteggi sono più alti, +1 (conteggio economico, senza leggere le righe).
+async function coRank(points){
+ const j=await coReq(':runAggregationQuery',{structuredAggregationQuery:{structuredQuery:{from:[{collectionId:'classifica'}],
+  where:{fieldFilter:{field:{fieldPath:'s'},op:'GREATER_THAN',value:{integerValue:String(Math.round(points))}}}},aggregations:[{alias:'c',count:{}}]}});
+ const r=Array.isArray(j)?j.find(x=>x&&x.result):null,c=Number(r&&r.result.aggregateFields&&r.result.aggregateFields.c&&r.result.aggregateFields.c.integerValue);
+ if(!Number.isFinite(c))throw new Error('conteggio');
+ return c+1;
 }
 async function coSend(row){
  const j=await coReq('/classifica',{fields:{n:{stringValue:row.n},s:{integerValue:String(row.s)},d:{stringValue:row.d}}});
@@ -111,13 +131,14 @@ function coPending(){try{const q=JSON.parse(localStorage.getItem('stellarInAttes
 function coPendingSave(q){localStorage.setItem('stellarInAttesa',JSON.stringify(q.slice(-20)))}
 async function coFlush(){
  if(!coOn||coBusy)return;coBusy=1;
- try{let q=coPending();while(q.length){await coSend(q[0]);q=q.slice(1);coPendingSave(q)}}catch(e){}
+ try{let q=coPending();while(q.length){if(await coRank(q[0].s)<=WORLD_SIZE)await coSend(q[0]);q=q.slice(1);coPendingSave(q)}}catch(e){}
  coBusy=0;
 }
 function boardTabs(){
  const t=$('boardTabs');if(!t)return;
  t.classList.toggle('hidden',!coOn);
  for(const b of t.querySelectorAll('button'))b.classList.toggle('on',b.dataset.view===coView);
+ const sub=$('boardSub');if(sub)sub.textContent=coView==='mondo'?'I PRIMI 10.000 PILOTI':'I PRIMI 100 PILOTI';
  const note=$('boardWhere');if(note)note.textContent=coView==='mondo'?'La classifica mondiale è condivisa da tutti i giocatori.':'La classifica è salvata in questo browser.';
 }
 async function boardRender(){
@@ -128,7 +149,13 @@ async function boardRender(){
  try{
   await coFlush();
   const b=await coTop(false);
-  if(coView==='mondo')boardShow(list,b,r=>coMyId&&r.id===coMyId,'Nessun punteggio ancora: completa una partita per entrare in classifica.');
+  if(coView!=='mondo')return;
+  boardShow(list,b,r=>coMyId&&r.id===coMyId,'Nessun punteggio ancora: completa una partita per entrare in classifica.');
+  if(coMore&&list.appendChild&&document.createElement){
+   const m=document.createElement('button');m.className='board-more';m.textContent='ALTRI 100';
+   m.onclick=async()=>{m.disabled=true;const top=list.scrollTop;try{await coNext()}catch(e){}await boardRender();list.scrollTop=top};
+   list.appendChild(m);
+  }
  }catch(e){
   if(coView!=='mondo')return;
   boardRenderLocal(list);
@@ -157,9 +184,15 @@ async function scoreSubmit(){
   const row={n:name,s:pts,d:new Date().toISOString().slice(0,10)};
   try{
    await coFlush();
-   coMyId=await coSend(row);
-   const b=await coTop(true),i=b.findIndex(r=>r.id===coMyId);
-   $('scoreMsg').textContent=i>=0?'CLASSIFICA MONDIALE · POSIZIONE '+(i+1):'FUORI DAI PRIMI 100';
+   const rank=await coRank(pts);
+   if(rank>WORLD_SIZE)$('scoreMsg').textContent='FUORI DAI PRIMI 10.000';
+   else{
+    coMyId=await coSend(row);
+    $('scoreMsg').textContent='CLASSIFICA MONDIALE · POSIZIONE '+scoreFmt(rank);
+    // si carica la lista fino al nuovo punteggio solo se è vicino alla cima (ogni 100 righe costano 100 letture)
+    await coTop(true);
+    while(rank<=300&&coMore&&!coCache.some(r=>r.id===coMyId))await coNext();
+   }
    coView='mondo';
   }catch(e){
    coPendingSave(coPending().concat([row]));
