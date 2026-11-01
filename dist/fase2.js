@@ -862,7 +862,7 @@ function pfDrawEnemy(e,now){
   if(e.type==='cecchino'){ctx.fillStyle='#ff5268';ctx.font='700 8px "Chakra Petch",sans-serif';ctx.textAlign='center';ctx.fillText('CECCHINO',e.x,e.y-72)}
  }
  const top=e.type==='drone'?e.y-20:e.y-62;
- ctx.fillStyle='#ffffff22';ctx.fillRect(e.x-14,top,28,3);ctx.fillStyle='#ff7b89';ctx.fillRect(e.x-14,top,28*Math.max(0,e.hp/e.max),3);
+ ctx.fillStyle='#ffffff22';ctx.fillRect(e.x-14,top,28,3);ctx.fillStyle=hpColor(e.hp/e.max);ctx.fillRect(e.x-14,top,28*Math.max(0,e.hp/e.max),3);
 }
 function pfDrawColonist(h,now){
  ctx.save();ctx.translate(h.x,h.y);

@@ -415,7 +415,7 @@ function gEnemy(e,now){
   if(e.type==='cecchino'){ctx.fillStyle='#ff5268';ctx.font='700 8px "Chakra Petch",sans-serif';ctx.textAlign='center';ctx.fillText('CECCHINO',e.x,e.y-84)}
  }
  const top=e.type==='drone'?e.y-26:e.y-74;
- ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(e.x-15,top-1,30,5);ctx.fillStyle='#ff7b89';ctx.fillRect(e.x-14,top,28*Math.max(0,e.hp/e.max),3);
+ ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(e.x-15,top-1,30,5);ctx.fillStyle=hpColor(e.hp/e.max);ctx.fillRect(e.x-14,top,28*Math.max(0,e.hp/e.max),3);
 }
 function gColonist(h,now){
  if(h.state!=='evacuato'&&!h.air)gShadow(h.x,h.y,16,.38);

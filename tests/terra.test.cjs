@@ -53,3 +53,6 @@ run('pf.pilot.barrier=true;pfDrawBarrier(pf.pilot,1);pf.pilot.crouch=true;pfDraw
 // Ultima vita: nessuna navetta
 run('pf.lives=1;pfLoseLife()');assert.equal(val('pf.phase'),'sconfitta');assert.equal(val('pf.drop'),null);
 console.log('PASS: barriera e ultima vita');
+// Barra della vita: verde piena, rossa quasi distrutta
+assert.equal(val('hpColor(1)'),'hsl(120,85%,55%)');assert(val('hpColor(.05)').startsWith('hsl(6,'));
+console.log('PASS: colore della barra della vita');

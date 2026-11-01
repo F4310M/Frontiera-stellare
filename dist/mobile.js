@@ -79,7 +79,7 @@ function touchApply(){
   mouse.x=(aim.x-pf.cam.x)*s;mouse.y=aim.y*s;
  }
 }
-function touchEnable(){if(touch.on)return;touch.on=true;document.body.classList.add('touch');touchBuild();if(typeof i18nBuild==='function'){i18nBuild();i18nApply()}}
+function touchEnable(){if(touch.on)return;touch.on=true;document.body.classList.add('touch');touchBuild();try{makeStars()}catch(e){}if(typeof i18nBuild==='function'){i18nBuild();i18nApply()}}
 if(typeof document!=='undefined'&&document.body&&document.createElement){
  if(touchDetect())touchEnable();
  // Su iPhone il pizzico con due dita ingrandisce o rimpicciolisce la pagina: durante il gioco va bloccato.

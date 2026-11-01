@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="bg" cx="40%" cy="35%" r="80%"><stop offset="0" stop-color="#16324a"/><stop offset="1" stop-color="#030810"/></radialGradient>
+    <linearGradient id="hull" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eafcff"/><stop offset=".5" stop-color="#8fe6f5"/><stop offset="1" stop-color="#2d8fb3"/></linearGradient>
+    <linearGradient id="fire" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3cf"/><stop offset=".45" stop-color="#ffab4a"/><stop offset="1" stop-color="#ff4d2e" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <circle cx="14" cy="14" r="1.2" fill="#cfe9ff"/><circle cx="50" cy="52" r="1" fill="#cfe9ff" opacity=".7"/><circle cx="12" cy="44" r=".8" fill="#cfe9ff" opacity=".6"/>
+  <g transform="rotate(45 32 32)">
+    <path d="M27 44 L32 60 L37 44 Z" fill="url(#fire)"/>
+    <path d="M32 6 C37 14 39 24 39 34 L46 42 L46 46 L38 43 L36 46 L28 46 L26 43 L18 46 L18 42 L25 34 C25 24 27 14 32 6 Z" fill="url(#hull)" stroke="#51e6ff" stroke-width="1.2" stroke-linejoin="round"/>
+    <ellipse cx="32" cy="22" rx="3" ry="6" fill="#0a3550"/>
+    <ellipse cx="31.2" cy="20" rx="1" ry="2.6" fill="#9ff3ff"/>
+  </g>
+</svg>
