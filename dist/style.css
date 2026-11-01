@@ -383,3 +383,15 @@ body.touch .unibar .seg{padding:3px 6px 5px}
 body.touch .seg-head span{font-size:6.5px;opacity:.85}body.touch .seg-head b{font-size:7px}
 body.touch .seg-track{height:4px;margin-top:3px}
 @media(max-height:430px){body.touch .hud-bottom.unified{width:min(520px,calc(100vw - 400px))}}
+/* Cursori del volume nelle impostazioni */
+.vol-row{display:flex;align-items:center;gap:10px;margin-top:10px;max-width:320px}
+.vol-row span{font:600 9px 'Chakra Petch',sans-serif;letter-spacing:2px;color:var(--muted)}
+.vol-row output{min-width:38px;text-align:right;font:600 11px 'Chakra Petch',sans-serif;color:var(--cyan)}
+.vol-row input[type=range]{flex:1;min-width:0;height:22px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer;touch-action:none}
+.vol-row input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--cyan) var(--fill,50%),rgba(255,255,255,.14) var(--fill,50%))}
+.vol-row input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:rgba(255,255,255,.14)}
+.vol-row input[type=range]::-moz-range-progress{height:4px;border-radius:2px;background:var(--cyan)}
+.vol-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-6px;border-radius:50%;background:#e9f4ff;border:2px solid var(--cyan);box-shadow:0 0 8px rgba(81,230,255,.5)}
+.vol-row input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#e9f4ff;border:2px solid var(--cyan)}
+.vol-row input[type=range]:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.sound-row>div:first-child{flex:1;min-width:0;margin-right:14px}

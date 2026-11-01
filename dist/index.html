@@ -74,8 +74,8 @@
           <div><span><kbd>MOUSE DX</kbd></span><b>BARRIERA</b><small>Resta attiva negli urti, che consumano energia; capsule azzurre: +35%</small></div>
         </div>
       </div>
-      <div class="setting-block sound-row"><div><div class="setting-title"><span>AUDIO DI BORDO</span></div><p>Effetti di armi, impatti e iperspazio.</p></div><button id="soundToggle" class="toggle active" role="switch" aria-checked="true"><i></i><span>ATTIVO</span></button></div>
-      <div class="setting-block sound-row"><div><div class="setting-title"><span>COLONNA SONORA</span></div><p>Musica di sottofondo che cambia con l’azione (tasto <kbd>M</kbd>).</p></div><button id="musicToggle" class="toggle active" role="switch" aria-checked="true"><i></i><span>ATTIVA</span></button></div>
+      <div class="setting-block sound-row"><div><div class="setting-title"><span>AUDIO DI BORDO</span></div><p>Effetti di armi, impatti e iperspazio.</p><label class="vol-row"><span>VOLUME</span><input type="range" id="sfxVolume" min="0" max="100" step="5" aria-label="Volume effetti sonori"><output id="sfxVolumeVal">100%</output></label></div><button id="soundToggle" class="toggle active" role="switch" aria-checked="true"><i></i><span>ATTIVO</span></button></div>
+      <div class="setting-block sound-row"><div><div class="setting-title"><span>COLONNA SONORA</span></div><p>Musica di sottofondo che cambia con l’azione (tasto <kbd>M</kbd>).</p><label class="vol-row"><span>VOLUME</span><input type="range" id="musicVolume" min="0" max="100" step="5" aria-label="Volume musica"><output id="musicVolumeVal">40%</output></label></div><button id="musicToggle" class="toggle active" role="switch" aria-checked="true"><i></i><span>ATTIVA</span></button></div>
       <button id="closeSettings" class="launch-btn"><span>SALVA E CHIUDI</span><b>✓</b></button>
     </div>
   </section>
@@ -164,6 +164,7 @@
   <script src="home.js"></script>
   <script src="finale.js"></script>
   <script src="musica.js"></script>
+  <script src="volume.js"></script>
   <script src="classifica.js"></script>
   <script src="mobile.js"></script>
   <script src="terra.js"></script>

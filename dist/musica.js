@@ -280,7 +280,7 @@ function musTick(){
  if(!a){if(mus.bus&&mus.a){mus.bus.gain.setTargetAtTime(0,mus.a.currentTime,.1);if(mus.track){musTrackStop(mus.a,mus.track,.1);mus.track=null}}return}
  const quiet=paused||document.hidden,level=musLevel(),song=musTheme(level);
  mus.level=level;
- mus.bus.gain.setTargetAtTime(quiet?0:MUS_MASTER*MUS_VOL[level],a.currentTime,.5);
+ mus.bus.gain.setTargetAtTime(quiet?0:MUS_MASTER*MUS_VOL[level]*(typeof volumeLevel==='function'?volumeLevel('music'):1),a.currentTime,.5);
  if(quiet!==mus.quiet){mus.quiet=quiet;if(mus.track){if(quiet)musTrackStop(a,mus.track,.3);else musTrackPlay(a,mus.track)}}
  if(quiet){mus.next=0;return}
  // Brano registrato, se c'è ed è pronto.
