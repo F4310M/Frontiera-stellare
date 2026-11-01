@@ -35,7 +35,7 @@ Gioco d'azione nel browser in due fasi, scritto in JavaScript puro su canvas, se
 - **Missioni:** scegliendo un pianeta dalla mappa si parte sempre dallo spazio; la fase a terra si raggiunge solo conquistando l'orbita.
 - **Lingue:** inglese (predefinito), italiano, francese, spagnolo, russo, cinese e giapponese. Si sceglie dal menu in alto nella mappa o nelle impostazioni.
 - **Punteggio e classifica:** i punti arrivano da nemici abbattuti, coloni salvati, orbite conquistate e colonie liberate, e crescono con la minaccia del pianeta. Alla fine del gioco (GAME OVER o vittoria su OMEGA) si scrive il nome (massimo 10 lettere). La classifica mostra i primi 100 ed è salvata nel browser.
-- **Colonna sonora:** ogni scena ha il suo brano e si passa dall'uno all'altro in dissolvenza: *Oltre le Stelle* sulla mappa, *Assalto Orbitale* in volo, *Soglia Ostile* vicino al pianeta, *Fuoco sul Pianeta* a terra e *Soglia Ostile (boss)* contro i boss e IMPERATORE OMEGA. Alla vittoria suona un'orchestra procedurale, che fa anche da riserva se i brani non si caricano (per esempio aprendo il gioco direttamente da disco). Si attiva o spegne nelle impostazioni o con il tasto M.
+- **Colonna sonora:** ogni scena ha il suo brano e si passa dall'uno all'altro in dissolvenza: *Oltre le Stelle* sulla mappa, *Assalto Orbitale* in volo, *Soglia Ostile* vicino al pianeta, *Fuoco sul Pianeta* a terra e *Soglia Ostile (boss)* contro i boss e IMPERATORE OMEGA. Alla vittoria suona un'orchestra procedurale, che fa anche da riserva se i brani non si caricano (per esempio aprendo il gioco direttamente da disco). Si attiva o spegne nelle impostazioni o con il tasto M. Nelle impostazioni ci sono anche due cursori, per il volume della musica (40% di partenza) e per quello degli effetti sonori.
 - **Pianeti:** LYRA (mare), VESPER (deserto), NIMBUS (tempesta), KHEPRI (foresta) e UMBRA (lava), ognuno con il suo boss. Liberati tutti e cinque, si sblocca **OMEGA**, il pianeta finale con IMPERATORE OMEGA.
 
 ## Struttura
@@ -51,6 +51,7 @@ dist/            il gioco (apri dist/index.html tramite un server locale)
   finale.js      vite, pillola 1UP, game over e pianeta finale
   musica.js      colonna sonora: brani registrati e orchestra procedurale di riserva
   musica/        i brani della colonna sonora (MP3)
+  volume.js      volume di musica ed effetti sonori
   iperspazio.js  viaggio nell'iperspazio: grafica e suono del salto
   home.js        animazioni della schermata iniziale
   classifica.js  punteggio e classifica dei primi 100
