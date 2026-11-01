@@ -51,3 +51,33 @@ assert.equal(vm.runInContext("tr('BARRIERA · MOUSE DX')",s4),'BARRIER');
 vm.runInContext("setLang('it')",s4);
 assert.equal(vm.runInContext("tr('POST-BRUCIATORE · SHIFT DX')",s4),'POST-BRUCIATORE');
 console.log('lingue.test cellulare: ok');
+// classifica mondiale: senza configurazione resta locale; con configurazione legge e scrive su Firestore
+(async()=>{
+ const s5={localStorage:storage(),$:()=>null,show:noop,state:'map',world:null,pf:null,vite:3,console,setTimeout:()=>0,clearTimeout:noop,
+  dropSupply:noop,finish:noop,pfHitEnemy:noop,pfUpdateHostages:noop,pfFinish:noop,viteGameOver:noop};
+ vm.createContext(s5);vm.runInContext(fs.readFileSync(path.join(dist,'firebase-config.js'),'utf8')+'\n'+fs.readFileSync(path.join(dist,'classifica.js'),'utf8'),s5);
+ assert.equal(vm.runInContext('coOn',s5),false,'senza configurazione: solo classifica locale');
+ const docs=[],calls=[];
+ const fetch=async(url,o)=>{calls.push(url);const b=JSON.parse(o.body);
+  if(url.includes(':runQuery'))return{ok:true,json:async()=>docs.slice().sort((a,b)=>b.fields.s.integerValue-a.fields.s.integerValue).slice(0,b.structuredQuery.limit).map(d=>({document:d}))};
+  if(s5.rete===false)return{ok:false,status:503};
+  const d={name:'projects/p/databases/(default)/documents/classifica/id'+docs.length,fields:b.fields};docs.push(d);return{ok:true,json:async()=>d}};
+ const s6={localStorage:storage(),$:()=>null,show:noop,state:'map',world:null,pf:null,vite:3,console,setTimeout:()=>0,clearTimeout:noop,fetch,
+  dropSupply:noop,finish:noop,pfHitEnemy:noop,pfUpdateHostages:noop,pfFinish:noop,viteGameOver:noop};
+ vm.createContext(s6);vm.runInContext("const CLASSIFICA_ONLINE={projectId:'p',apiKey:'k'};\n"+fs.readFileSync(path.join(dist,'classifica.js'),'utf8'),s6);
+ const r6=c=>vm.runInContext(c,s6);
+ assert.equal(r6('coOn'),true);
+ await r6("coSend({n:'ALFA',s:500,d:'2026-11-01'})");
+ await r6("coSend({n:'BETA',s:900,d:'2026-11-01'})");
+ const top=await r6('coTop(true)');
+ assert.equal(top.length,2);assert.equal(top[0].n,'BETA');assert.equal(top[0].s,900);
+ assert(calls[0].includes('firestore.googleapis.com/v1/projects/p/databases/(default)/documents/classifica?key=k'));
+ // senza rete il punteggio resta in attesa e parte dopo
+ s6.rete=false;s6.fetch=async(u,o)=>{if(!u.includes(':runQuery'))return{ok:false,status:503};return fetch(u,o)};
+ r6("coPendingSave([{n:'GAMMA',s:700,d:'2026-11-01'}])");
+ await r6('coFlush()');assert.equal(r6('coPending().length'),1,'resta in attesa');
+ s6.rete=true;s6.fetch=fetch;
+ await r6('coFlush()');assert.equal(r6('coPending().length'),0,'inviato');
+ assert.equal((await r6('coTop(true)'))[1].n,'GAMMA');
+ console.log('lingue.test classifica mondiale: ok');
+})().catch(e=>{console.error(e);process.exit(1)});

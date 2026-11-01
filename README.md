@@ -77,3 +77,11 @@ node tests/finale.test.cjs
 node tests/battaglia.test.cjs
 node tests/lingue.test.cjs
 ```
+
+## Classifica mondiale
+
+La classifica (primi 100, nomi di massimo 10 lettere) è condivisa da tutti i giocatori tramite Firebase Firestore, senza librerie: il gioco usa direttamente le API REST.
+
+- La configurazione è in `dist/firebase-config.js` (`projectId` e `apiKey`). Se è vuota, il gioco usa solo la classifica salvata nel browser.
+- Le regole di sicurezza sono in `firestore.rules`: chiunque può leggere e aggiungere un punteggio valido, nessuno può modificare o cancellare quelli esistenti.
+- Senza rete il punteggio viene salvato nel browser e inviato alla classifica mondiale appena possibile.
