@@ -6,7 +6,7 @@ Gioco d'azione nel browser in due fasi, scritto in JavaScript puro su canvas, se
 
 **Fase 1 · Spazio.** Pilota la nave verso il pianeta. Lungo la rotta incontri ribelli, rocce, relitti e meteoriti. Intorno al pianeta aspettano una flotta nemica e una cintura rocciosa, e all'ingresso nell'atmosfera arriva una pioggia di meteoriti. Fermati in orbita per conquistarla.
 
-**Fase 2 · Libera la colonia.** La nave atterra e il pilota avanza a piedi contro i ribelli del Fronte Ombra. Lungo la strada libera i coloni prigionieri e alla fine distrugge il robot che tiene in ostaggio la colonia. Ogni pianeta ha il suo ambiente e il suo boss.
+**Fase 2 · Libera la colonia.** La nave resta sospesa in aria e il pilota scende col jetpack, poi avanza a piedi contro i ribelli del Fronte Ombra. Alcuni ribelli sparano da dietro un muretto: si alzano per sparare e si riabbassano, e se li superi senza abbatterli ti sparano alle spalle. In ogni livello c'è almeno un passaggio col jetpack: una parete rocciosa da scalare in volo e subito dopo un burrone da attraversare planando. Lungo la strada libera i coloni prigionieri e alla fine distrugge il robot che tiene in ostaggio la colonia: quando cade esplode a catena, con rallentatore e onda d'urto, e parte la musica di vittoria. Ogni pianeta ha il suo ambiente e il suo boss.
 
 ## Come si gioca
 
@@ -22,7 +22,7 @@ Gioco d'azione nel browser in due fasi, scritto in JavaScript puro su canvas, se
 | Movimento | Frecce / WASD | A / D |
 | Mira | Mouse (la prua segue il cursore) | Mouse |
 | Fuoco | Clic sinistro o Spazio | Clic sinistro |
-| Speciale | Rotella: missile · Shift destro: post-bruciatore · F: freno | Rotella o E: granata · W/Spazio: salto, in aria **jetpack** |
+| Speciale | Rotella: missile · Shift destro: post-bruciatore · F: freno | Rotella o E: granata · W/Spazio: salto, in aria **jetpack** · in volo col jetpack tieni S per planare |
 | Scudo | Tasto destro del mouse | Tasto destro del mouse |
 | Pausa | P | P |
 | Musica | M | M |
@@ -58,6 +58,7 @@ dist/            il gioco (apri dist/index.html tramite un server locale)
   i18n.js        lingue e traduzioni
   mobile.js      comandi touch per cellulare e tablet
   camera.js      zoom morbido della telecamera in volo
+  battaglia.js   fase a terra: discesa col jetpack, nemici al riparo, passaggi col jetpack, esplosione del boss
 tests/           test automatici (Node.js)
 ```
 
@@ -73,5 +74,6 @@ node tests/economia.test.cjs
 node tests/arrivo.test.cjs
 node tests/musica.test.cjs
 node tests/finale.test.cjs
+node tests/battaglia.test.cjs
 node tests/lingue.test.cjs
 ```
