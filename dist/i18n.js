@@ -115,6 +115,7 @@ const I18N_ROWS=[
 ["METEORITE FRAMMENTATO · SCHIVA I DETRITI","METEOR SHATTERED · DODGE THE DEBRIS","MÉTÉORITE FRAGMENTÉE · ESQUIVE LES DÉBRIS","METEORITO FRAGMENTADO · ESQUIVA LOS ESCOMBROS","МЕТЕОРИТ РАЗБИТ · УКЛОНЯЙСЯ ОТ ОБЛОМКОВ","陨石已碎裂 · 躲避碎片","隕石粉砕 · 破片を回避"],
 ["RELITTO DISTRUTTO · 4 RIFORNIMENTI ENERGETICI","WRECK DESTROYED · 4 ENERGY SUPPLIES","ÉPAVE DÉTRUITE · 4 RAVITAILLEMENTS D’ÉNERGIE","RESTO DESTRUIDO · 4 SUMINISTROS DE ENERGÍA","ОБЛОМОК УНИЧТОЖЕН · 4 ЗАПАСА ЭНЕРГИИ","残骸已摧毁 · 4 份能量补给","残骸破壊 · エネルギー補給 4 個"],
 ["INGRESSO IN ORBITA · ","ENTERING ORBIT · ","ENTRÉE EN ORBITE · ","ENTRANDO EN ÓRBITA · ","ВЫХОД НА ОРБИТУ · ","进入轨道 · ","軌道進入 · "],
+["RIENTRO ATMOSFERICO · ","ATMOSPHERIC ENTRY · ","ENTRÉE ATMOSPHÉRIQUE · ","ENTRADA ATMOSFÉRICA · ","ВХОД В АТМОСФЕРУ · ","进入大气层 · ","大気圏突入 · "],
 ["INGRESSO NELL’ATMOSFERA · PIOGGIA DI METEORITI","ENTERING THE ATMOSPHERE · METEOR SHOWER","ENTRÉE DANS L’ATMOSPHÈRE · PLUIE DE MÉTÉORITES","ENTRADA EN LA ATMÓSFERA · LLUVIA DE METEORITOS","ВХОД В АТМОСФЕРУ · МЕТЕОРИТНЫЙ ДОЖДЬ","进入大气层 · 流星雨","大気圏突入 · 流星雨"],
 ["IMPATTO METEORITE · SCAFO −16%","METEOR IMPACT · HULL −16%","IMPACT DE MÉTÉORITE · COQUE −16%","IMPACTO DE METEORITO · CASCO −16%","УДАР МЕТЕОРИТА · КОРПУС −16%","陨石撞击 · 船体 −16%","隕石衝突 · 船体 −16%"],
 ["MARE","SEA","MER","MAR","МОРЕ","海洋","海"],

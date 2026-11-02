@@ -431,7 +431,7 @@ function gEnemy(e,now){
  if(e.type==='drone')gDrone(e,now);
  else{
   if(e.type==='cecchino'&&e.fire<.75&&pfOnScreen(e.x)){const sh=pfShoulder(e),a=e.locked??e.aim,on=e.locked!==null||Math.floor(now*14)%2;ctx.save();ctx.strokeStyle=`rgba(255,82,104,${on?.6:.2})`;ctx.lineWidth=1.2;ctx.shadowBlur=6;ctx.shadowColor='#ff5268';ctx.beginPath();ctx.moveTo(sh.x+Math.cos(a)*38,sh.y+Math.sin(a)*38);ctx.lineTo(sh.x+Math.cos(a)*1400,sh.y+Math.sin(a)*1400);ctx.stroke();ctx.restore()}
-  ctx.save();if(e.hit>0)ctx.filter='brightness(2.2)';gTrooper(e,PF_REBEL,now);ctx.restore();
+  ctx.save();gTrooper(e,PF_REBEL,now);if(e.hit>0){ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.85;gTrooper(e,PF_REBEL,now)}ctx.restore();
   if(e.type==='cecchino'){ctx.fillStyle='#ff5268';ctx.font='700 8px "Chakra Petch",sans-serif';ctx.textAlign='center';ctx.fillText('CECCHINO',e.x,e.y-84)}
  }
  const top=e.type==='drone'?e.y-26:e.y-74;
