@@ -1,7 +1,7 @@
 // Stellar Frontier — BATTAGLIA NELLO SPAZIO (fase 1).
 // 1) navi abbandonate disegnate con più dettagli (sezioni spezzate, oblò, motori spenti, cavi che fanno scintille)
 // 2) ogni tanto arriva una nave da guerra nemica grande che spara razzi
-// 3) freccia verso il pianeta attorno alla nave + avviso quando ti allontani troppo dall'obiettivo
+// 3) indicatore del pianeta sul bordo dello schermo + avviso quando ti allontani troppo dall'obiettivo
 // I razzi e i missili nemici colpiscono rocce, relitti e meteoriti, ma mai le altre navi nemiche.
 // Si appoggia a game.js e missili-nemici.js; va caricato dopo missili-nemici.js.
 
@@ -253,15 +253,30 @@ function spFarTick(dt){
  if(!SP.far||state!=='play'||paused)return;
  SP.farBeep-=dt;if(SP.farBeep<=0){SP.farBeep=3;if(typeof tone==='function'){tone(660,.12,'square',.018,440);tone(660,.12,'square',.018,440,.18)}}
 }
-// freccia attorno alla nave che indica il pianeta quando non si vede
+// indicatore sul bordo dello schermo che punta il pianeta quando non si vede
 function spDrawGuide(){
- if(state!=='play'||!player||player.destroyed||!world||arrivalRemaining>0)return;
- const dx=world.x-player.x,dy=world.y-player.y,d=Math.hypot(dx,dy);
- if(d-world.r<Math.min(W,H)*.45)return;
- const a=Math.atan2(dy,dx),now=performance.now()/1000,R=78+Math.sin(now*4)*4,far=SP.far,col=far?'#ffb04a':'#7ff0ff';
- ctx.save();ctx.translate(player.x+Math.cos(a)*R,player.y+Math.sin(a)*R);ctx.rotate(a);
- ctx.globalAlpha=far?.65+.35*Math.sin(now*10):.8;ctx.fillStyle=col;ctx.strokeStyle='rgba(2,10,18,.85)';ctx.lineWidth=2;ctx.shadowColor=col;ctx.shadowBlur=10;
- ctx.beginPath();ctx.moveTo(16,0);ctx.lineTo(2,-11);ctx.lineTo(2,-4.5);ctx.lineTo(-12,-4.5);ctx.lineTo(-12,4.5);ctx.lineTo(2,4.5);ctx.lineTo(2,11);ctx.closePath();ctx.stroke();ctx.fill();
+ if(state!=='play'||!player||player.destroyed||!world||arrivalRemaining>0||!ctx.getTransform)return;
+ // posizione del pianeta sullo schermo (in pixel CSS), qualunque sia lo zoom della telecamera
+ const M=ctx.getTransform(),k=canvas.width/W;
+ const sx=(M.a*world.x+M.c*world.y+M.e)/k,sy=(M.b*world.x+M.d*world.y+M.f)/k,sr=world.r*Math.hypot(M.a,M.b)/k;
+ if(sx+sr>0&&sx-sr<W&&sy+sr>0&&sy-sr<H)return;// il pianeta è visibile
+ const touch=document.body&&document.body.classList&&document.body.classList.contains('touch');
+ // margini: restano liberi i pannelli in alto, la barra in basso, il tasto schermo intero e il radar
+ const L=touch?50:36,R=W-(touch?50:78),T=touch?90:118,B=H-(touch?170:140);
+ const cx=W/2,cy=H/2,dx=sx-cx,dy=sy-cy;
+ const f=Math.min(dx>0?(R-cx)/dx:dx<0?(L-cx)/dx:1e9,dy>0?(B-cy)/dy:dy<0?(T-cy)/dy:1e9);
+ let x=cx+dx*f,y=cy+dy*f;if(!touch&&x>W-175&&y>H-205){if(Math.abs(dx)*(H-205-cy)>Math.abs(dy)*(W-175-cx))y=H-205;else x=W-175}
+ const a=Math.atan2(dy,dx),now=performance.now()/1000,far=SP.far,col=far?'#ffb04a':'#7ff0ff',rgb=far?'255,176,74':'127,240,255';
+ const pulse=.5+.5*Math.sin(now*(far?9:4));
+ ctx.save();ctx.setTransform(k,0,0,k,0,0);ctx.translate(x,y);
+ // alone e anello che pulsa
+ const g=ctx.createRadialGradient(0,0,0,0,0,30);g.addColorStop(0,`rgba(${rgb},${.28+.18*pulse})`);g.addColorStop(1,`rgba(${rgb},0)`);ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,30,0,6.28);ctx.fill();
+ ctx.strokeStyle=`rgba(${rgb},${.35+.4*pulse})`;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,0,13+pulse*4,0,6.28);ctx.stroke();
+ // pianetino nel colore del bersaglio al centro
+ ctx.fillStyle=world.p&&world.p.color||col;ctx.strokeStyle='rgba(2,10,18,.9)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,0,6,0,6.28);ctx.fill();ctx.stroke();
+ // punta verso il pianeta, appoggiata al bordo
+ ctx.rotate(a);ctx.globalAlpha=far?.7+.3*pulse:.95;ctx.fillStyle=col;ctx.strokeStyle='rgba(2,10,18,.9)';ctx.lineWidth=2;
+ ctx.beginPath();ctx.moveTo(30,0);ctx.lineTo(19,-8);ctx.lineTo(22,0);ctx.lineTo(19,8);ctx.closePath();ctx.stroke();ctx.fill();
  ctx.restore();
 }
 
