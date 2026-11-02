@@ -138,7 +138,8 @@ function releaseControls(){keys={};mouse.down=false;mouse.right=false;if((state=
 addEventListener('blur',releaseControls);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseControls()});
 
 // Horizontal relative movement controls yaw independently of cursor position.
-function handleFlightMouse(e){if(!Number.isFinite(e.clientX)||!Number.isFinite(e.clientY))return;mouse.x=e.clientX;mouse.y=e.clientY;placeCrosshair()}
+// Se il mouse esce dalla finestra (anche tenendo premuto il tasto di fuoco) il mirino resta fermo nell'ultima posizione valida.
+function handleFlightMouse(e){if(!Number.isFinite(e.clientX)||!Number.isFinite(e.clientY))return;if(e.clientX<0||e.clientY<0||e.clientX>=W||e.clientY>=H)return;mouse.x=e.clientX;mouse.y=e.clientY;placeCrosshair()}
 function placeCrosshair(){const el=$('crosshair');if(el&&el.style){el.style.left=mouse.x+'px';el.style.top=mouse.y+'px'}}
 // The ship sits at the screen centre: the bow turns smoothly toward the cursor.
 function updateMouseSteering(dt){mouse.turn=0;player.turnRemaining=0;const dx=mouse.x-W/2,dy=mouse.y-H/2;if(dx*dx+dy*dy<64)return;const target=Math.atan2(dy,dx),diff=Math.atan2(Math.sin(target-player.angle),Math.cos(target-player.angle));player.angle+=diff*(-Math.expm1(-AIM_RESPONSE*dt));player.angle=Math.atan2(Math.sin(player.angle),Math.cos(player.angle))}

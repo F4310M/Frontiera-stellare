@@ -428,3 +428,23 @@ body.touch .target-indicator>span{width:22px;height:22px}
 ::-webkit-scrollbar-thumb:active{background:linear-gradient(180deg,#ffd29a 0%,#ff9d3d 100%)}
 ::-webkit-scrollbar-button{display:none;width:0;height:0}
 ::-webkit-scrollbar-corner{background:transparent}
+
+/* Classifica mondiale sulla sinistra della mappa */
+.map-board{margin-top:26px;width:min(340px,26vw);min-width:250px;padding:14px 14px 12px;border:1px solid rgba(140,233,236,.22);border-radius:14px;background:linear-gradient(160deg,rgba(9,24,40,.88),rgba(4,12,22,.82));box-shadow:0 18px 40px #0008,inset 0 1px 0 #ffffff10;backdrop-filter:blur(6px)}
+.map-board-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;font:600 11px 'Chakra Petch',sans-serif;letter-spacing:2.5px;color:#d7f6ff}
+.map-board-head:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(140,233,236,.35),transparent)}
+.map-board-globe{font-size:14px;filter:drop-shadow(0 0 6px rgba(81,230,255,.6))}
+.map-board-list{max-height:min(34vh,290px);overflow-y:auto;padding-right:4px}
+.map-board-row{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;font:500 12px 'Chakra Petch',sans-serif;color:#cfe3f2}
+.map-board-row:nth-child(even){background:rgba(81,230,255,.04)}
+.map-board-row .pos{color:var(--muted);font-weight:700;text-align:center}
+.map-board-row .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.map-board-row .pts{color:var(--cyan);font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.map-board-row.top1 .pos{color:#ffd76a;text-shadow:0 0 8px #ffcf4a99}.map-board-row.top1 .name{color:#fff3cf}
+.map-board-row.top2 .pos{color:#d9e4ee}.map-board-row.top3 .pos{color:#e7a36a}
+.map-board-row.me{background:rgba(81,230,255,.14);box-shadow:inset 2px 0 0 var(--cyan)}
+.map-board .board-empty,.map-board .board-offline{margin:6px 4px;font-size:11px;color:var(--muted);line-height:1.5}
+.map-board-all{margin-top:10px;width:100%;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border:1px solid rgba(140,233,236,.3);border-radius:9px;background:rgba(81,230,255,.07);color:#bff6ff;font:600 10px 'Chakra Petch',sans-serif;letter-spacing:2px;cursor:pointer;transition:background .2s,border-color .2s}
+.map-board-all:hover{background:rgba(81,230,255,.16);border-color:var(--cyan)}
+@media (max-width:900px),(max-height:560px){.map-board{display:none}}
+body.touch .map-board{display:none}

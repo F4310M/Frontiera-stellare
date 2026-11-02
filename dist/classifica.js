@@ -222,3 +222,32 @@ pfFinish=function(win){
 viteGameOver=function(){sOrig.viteGameOver();scoreEnd()};
 
 boardBuild();scoreHud();if(coOn)setTimeout(coFlush,3000);
+
+// ---- classifica mondiale fissa sulla sinistra della mappa (primi 10, si aggiorna da sola)
+const MAP_BOARD_ROWS=10;
+function mapBoardBuild(){
+ if(typeof document==='undefined'||!document.createElement||!document.querySelector)return;
+ const side=document.querySelector('#mapScreen .mission-copy');if(!side||$('mapBoard'))return;
+ const d=document.createElement('div');d.id='mapBoard';d.className='map-board';
+ d.innerHTML='<div class="map-board-head"><span class="map-board-globe">🌍</span><b>CLASSIFICA MONDIALE</b></div>'+
+  '<div id="mapBoardList" class="map-board-list"><p class="board-empty">CARICAMENTO…</p></div>'+
+  '<button id="mapBoardAll" class="map-board-all"><span>VEDI TUTTA</span><b>→</b></button>';
+ side.appendChild(d);
+ $('mapBoardAll').onclick=()=>{coView=coOn?'mondo':'locale';boardOpen()};
+}
+async function mapBoardRender(){
+ const list=$('mapBoardList');if(!list)return;
+ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ let rows,offline=false;
+ if(coOn){try{rows=await coTop(false)}catch(e){rows=boardLoad();offline=true}}else rows=boardLoad();
+ rows=(rows||[]).slice(0,MAP_BOARD_ROWS);
+ if(!rows.length){list.innerHTML='<p class="board-empty">Nessun punteggio ancora: completa una partita per entrare in classifica.</p>';return}
+ list.innerHTML=(offline?'<p class="board-offline">OFFLINE</p>':'')+rows.map((r,i)=>
+  `<div class="map-board-row${i<3?' top'+(i+1):''}${coMyId&&r.id===coMyId?' me':''}"><span class="pos">${i+1}</span><span class="name">${esc(r.n)}</span><span class="pts">${scoreFmt(r.s)}</span></div>`).join('');
+}
+// si aggiorna quando la mappa è visibile: all'avvio, ogni minuto e dopo un nuovo punteggio
+function mapBoardTick(){const m=$('mapScreen');if(m&&m.classList&&m.classList.contains('active')&&!document.hidden)mapBoardRender()}
+mapBoardBuild();
+if(typeof setTimeout==='function'&&typeof document!=='undefined'&&document.querySelector){setTimeout(mapBoardTick,400);if(typeof setInterval==='function')setInterval(mapBoardTick,60000)}
+{const sub=scoreSubmit;scoreSubmit=async function(){const r=await sub.apply(this,arguments);coCache=null;setTimeout(mapBoardTick,500);return r}}
+if(typeof MutationObserver!=='undefined'&&typeof document!=='undefined'&&document.getElementById){const m=$('mapScreen');if(m){let was=m.classList.contains('active');new MutationObserver(()=>{const on=m.classList.contains('active');if(on&&!was)mapBoardRender();was=on}).observe(m,{attributes:true,attributeFilter:['class']})}}
