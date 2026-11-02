@@ -340,7 +340,9 @@ function pfShoulder(o){return{x:o.x+o.face*2,y:o.y+(o.crouch?-26:-34)}}
 function pfUpdatePilot(dt){
  const P=pf.pilot,control=(pf.phase==='missione'||pf.phase==='boss')&&P.hp>0;
  const left=control&&!!(keys.KeyA||keys.ArrowLeft),right=control&&!!(keys.KeyD||keys.ArrowRight),down=control&&!!(keys.KeyS||keys.ArrowDown),jumpKey=control&&!!(keys.KeyW||keys.ArrowUp||keys.Space);
- const jumpPressed=jumpKey&&!pf.jumpHeld;pf.jumpHeld=jumpKey;
+ // Ogni tasto di salto conta da solo: si può saltare con SPAZIO e riaccendere il jetpack con W o ↑ anche se SPAZIO è ancora giù.
+ const jk={w:!!keys.KeyW,u:!!keys.ArrowUp,s:!!keys.Space},pk=pf.jumpKeys||jk;
+ const jumpPressed=jumpKey&&(!pf.jumpHeld||(jk.w&&!pk.w)||(jk.u&&!pk.u)||(jk.s&&!pk.s));pf.jumpHeld=jumpKey;pf.jumpKeys=jk;
  P.crouch=down&&P.ground;P.h=P.crouch?40:50;
  const run=PF_RUN*(1+.08*(typeof upg==='function'?upg('speed'):0)),dir=(right?1:0)-(left?1:0),target=dir*(P.crouch?run*.35:run),accel=P.ground?2300:1400;
  if(control||P.ground)P.vx+=pfClamp(target-P.vx,-accel*dt,accel*dt);
@@ -349,7 +351,7 @@ function pfUpdatePilot(dt){
  if(P.jumpBuf>0){
   if(down&&P.ground&&P.onPlat){P.dropT=.25;P.jumpBuf=0;P.ground=false}
   else if(P.coyote>0){P.vy=-PF_JUMP;P.coyote=0;P.jumpBuf=0;P.ground=false;tone(300,.1,'triangle',.02,560)}
-  else if(!P.ground&&jumpPressed&&pfJetReady(P)){P.jetOn=true;P.jumpBuf=0;P.vy=Math.min(P.vy,-PF_JUMP*.8);pfBurst(P.x,P.y-10,'#ffb05a',10,.8,false,{vy:220});noise(.25,.03,1800);tone(180,.25,'sawtooth',.015,90)}
+  else if(!P.ground&&!P.jetOn&&jumpPressed&&pfJetReady(P)){P.jetOn=true;P.jetMin=PF_JET.minBurn;P.jumpBuf=0;P.vy=Math.min(P.vy,-PF_JUMP*.8);pfBurst(P.x,P.y-10,'#ffb05a',10,.8,false,{vy:220});noise(.25,.03,1800);tone(180,.25,'sawtooth',.015,90)}
  }
  pfUpdateJetpack(P,dt,control&&jumpKey);
  if(control&&!jumpKey&&!P.jetOn&&P.vy<-280)P.vy=-280;
@@ -983,14 +985,19 @@ const PF_BOSS={
 function pfBossInfo(p){return PF_BOSS[p&&p.boss]||PF_BOSS[(p&&p.theme)||'lava']||PF_BOSS.lava}
 
 // Jetpack: in aria un secondo salto accende il jetpack; tenendo premuto si resta in volo.
+// Anche con un tocco solo resta acceso per un attimo (minBurn) e sopra un burrone tiene il pilota sospeso
+// finché non si surriscalda: così un doppio salto mentre si cade nel vuoto salva sempre il pilota.
 // Si scalda: al 100% si spegne e deve raffreddarsi del tutto. Consuma carburante (crediti).
-const PF_JET={heat:36,coolGround:45,coolAir:14,fuel:2.5};
+const PF_JET={heat:36,coolGround:45,coolAir:14,fuel:2.5,minBurn:.6};
 function pfJetReady(P){return!P.jetLock&&(P.jetHeat||0)<96}
 function pfUpdateJetpack(P,dt,hold){
- P.jetHeat=P.jetHeat||0;
- if(P.jetOn&&(!hold||P.jetLock||P.ground||P.hp<=0))P.jetOn=false;
+ P.jetHeat=P.jetHeat||0;P.jetMin=Math.max(0,(P.jetMin||0)-dt);
+ // senza tasto premuto: resta acceso durante la spinta minima o se sotto c'è il vuoto (volo stazionario)
+ const auto=!hold&&P.jetOn&&(P.jetMin>0||pfGroundAt(P.x)===null||P.y>(pfGroundAt(P.x)??PF_FLOOR));
+ if(P.jetOn&&(!(hold||auto)||P.jetLock||P.ground||P.hp<=0))P.jetOn=false;
  if(P.jetOn){
-  P.vy+=(-95-P.vy)*Math.min(1,dt*7)-PF_GRAVITY*dt; // annulla la gravità e sale piano
+  const vt=hold||P.jetMin>0?-95:0;
+  P.vy+=(vt-P.vy)*Math.min(1,dt*7)-PF_GRAVITY*dt; // annulla la gravità e sale piano (fermo se non si tiene premuto)
   P.jetHeat=Math.min(100,P.jetHeat+dt*PF_JET.heat);
   if(typeof ecoFuel==='function')ecoFuel(dt*PF_JET.fuel);
   if(Math.random()<dt*40)pf.fx.push({x:P.x-P.face*8+(Math.random()-.5)*4,y:P.y-22,vx:(Math.random()-.5)*40,vy:260+Math.random()*120,life:.3,max:.3,color:Math.random()<.5?'#ffb05a':'#fff1c9',r:2+Math.random()*2.5});

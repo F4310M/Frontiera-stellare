@@ -298,7 +298,7 @@ const I18N_ROWS=[
 ["RICOMPENSA","REWARD","RÉCOMPENSE","RECOMPENSA","НАГРАДА","奖励","報酬"],
 ["INIZIA LA MISSIONE","START MISSION","COMMENCER LA MISSION","INICIAR LA MISIÓN","НАЧАТЬ МИССИЮ","开始任务","ミッション開始"],
 ["FRECCE / WASD per muoverti · MOUSE per puntare la prua","ARROWS / WASD to move · MOUSE to aim the bow","FLÈCHES / WASD pour bouger · SOURIS pour orienter la proue","FLECHAS / WASD para moverte · RATÓN para apuntar la proa","СТРЕЛКИ / WASD — движение · МЫШЬ — наведение носа","方向键 / WASD 移动 · 鼠标 瞄准船头","矢印 / WASD で移動 · マウス で艦首を向ける"],
-["FASE 2 · ATTERRA SUL PIANETA SELEZIONATO ⤓","PHASE 2 · LAND ON THE SELECTED PLANET ⤓","PHASE 2 · ATTERRIR SUR LA PLANÈTE CHOISIE ⤓","FASE 2 · ATERRIZA EN EL PLANETA ELEGIDO ⤓","ФАЗА 2 · ВЫСАДКА НА ВЫБРАННУЮ ПЛАНЕТУ ⤓","第 2 阶段 · 降落在所选星球 ⤓","フェーズ 2 · 選択した惑星に着陸 ⤓"],
+["FASE 2 · ATTERRA SUL PIANETA SELEZIONATO","PHASE 2 · LAND ON THE SELECTED PLANET","PHASE 2 · ATTERRIR SUR LA PLANÈTE CHOISIE","FASE 2 · ATERRIZA EN EL PLANETA ELEGIDO","ФАЗА 2 · ВЫСАДКА НА ВЫБРАННУЮ ПЛАНЕТУ","第 2 阶段 · 降落在所选星球","フェーズ 2 · 選択した惑星に着陸"],
 ["COORDINATE BLOCCATE","COORDINATES LOCKED","COORDONNÉES VERROUILLÉES","COORDENADAS FIJADAS","КООРДИНАТЫ ЗАДАНЫ","坐标已锁定","座標固定"],
 ["Esci dall’iperspazio, supera le difese e raggiungi l’orbita del pianeta.","Drop out of hyperspace, get past the defenses and reach the planet’s orbit.","Sors de l’hyperespace, franchis les défenses et atteins l’orbite de la planète.","Sal del hiperespacio, supera las defensas y alcanza la órbita del planeta.","Выйди из гиперпространства, прорвись через оборону и выйди на орбиту планеты.","退出超空间，突破防线，抵达星球轨道。","ハイパースペースを抜け、防衛線を突破して惑星の軌道へ到達せよ。"],
 ["INGAGGIA IPERSPAZIO","ENGAGE HYPERSPACE","ENCLENCHER L’HYPERESPACE","ACTIVAR HIPERESPACIO","ВКЛЮЧИТЬ ГИПЕРПРЫЖОК","启动超空间","ハイパースペース突入"],
@@ -348,7 +348,7 @@ const I18N_ROWS=[
 ["RIPRENDI","RESUME","REPRENDRE","CONTINUAR","ПРОДОЛЖИТЬ","继续","再開"],
 ["ABBANDONA MISSIONE","ABANDON MISSION","ABANDONNER LA MISSION","ABANDONAR MISIÓN","ПОКИНУТЬ МИССИЮ","放弃任务","ミッション放棄"],
 ["ATTERRA SUL PIANETA · FASE 2","LAND ON THE PLANET · PHASE 2","ATTERRIR SUR LA PLANÈTE · PHASE 2","ATERRIZA EN EL PLANETA · FASE 2","ВЫСАДКА НА ПЛАНЕТУ · ФАЗА 2","降落星球 · 第 2 阶段","惑星に着陸 · フェーズ 2"],
-["⛁ APRI IL MERCATO · POTENZIAMENTI","⛁ OPEN THE MARKET · UPGRADES","⛁ OUVRIR LE MARCHÉ · AMÉLIORATIONS","⛁ ABRIR EL MERCADO · MEJORAS","⛁ ОТКРЫТЬ РЫНОК · УЛУЧШЕНИЯ","⛁ 打开商店 · 升级","⛁ マーケットを開く · 強化"],
+["APRI IL MERCATO · POTENZIAMENTI","OPEN THE MARKET · UPGRADES","OUVRIR LE MARCHÉ · AMÉLIORATIONS","ABRIR EL MERCADO · MEJORAS","ОТКРЫТЬ РЫНОК · УЛУЧШЕНИЯ","打开商店 · 升级","マーケットを開く · 強化"],
 ["FASE 2 // DISCESA IN SUPERFICIE","PHASE 2 // DESCENT TO THE SURFACE","PHASE 2 // DESCENTE EN SURFACE","FASE 2 // DESCENSO A LA SUPERFICIE","ФАЗА 2 // СПУСК НА ПОВЕРХНОСТЬ","第 2 阶段 // 降落地表","フェーズ 2 // 地表へ降下"],
 ["A / D muovi · W / SPAZIO salta · S abbassati · MOUSE mira · CLIC spara · ROTELLA o E granata · MOUSE DX scudo","A / D move · W / SPACE jump · S crouch · MOUSE aim · CLICK fire · WHEEL or E grenade · RIGHT MOUSE shield","A / D bouger · W / ESPACE sauter · S s’accroupir · SOURIS viser · CLIC tirer · MOLETTE ou E grenade · CLIC DROIT bouclier","A / D mover · W / ESPACIO saltar · S agacharse · RATÓN apuntar · CLIC disparar · RUEDA o E granada · BOTÓN DERECHO escudo","A / D движение · W / ПРОБЕЛ прыжок · S пригнуться · МЫШЬ прицел · КЛИК огонь · КОЛЁСИКО или E граната · ПРАВАЯ КНОПКА щит","A / D 移动 · W / 空格 跳跃 · S 蹲下 · 鼠标 瞄准 · 点击 射击 · 滚轮 或 E 手雷 · 鼠标右键 护盾","A / D 移動 · W / スペース ジャンプ · S しゃがむ · マウス 照準 · クリック 射撃 · ホイール または E 手榴弾 · 右クリック シールド"],
 ["SCENDI IN SUPERFICIE","DESCEND TO THE SURFACE","DESCENDRE EN SURFACE","BAJAR A LA SUPERFICIE","СПУСТИТЬСЯ НА ПОВЕРХНОСТЬ","降落地表","地表へ降下"],
@@ -427,7 +427,9 @@ const I18N_ROWS=[
 ["PARETE ROCCIOSA · USA IL JETPACK PER SALIRE","ROCK WALL · USE THE JETPACK TO CLIMB","PAROI ROCHEUSE · UTILISE LE JETPACK POUR MONTER","PARED DE ROCA · USA EL JETPACK PARA SUBIR","СКАЛА · ПОДНИМИСЬ НА ДЖЕТПАКЕ","岩壁 · 用喷气背包向上飞","岩壁 · ジェットパックで登れ"],
 ["BURRONE · PLANA COL JETPACK (SALTO + GIÙ)","CHASM · GLIDE WITH THE JETPACK (JUMP + DOWN)","RAVIN · PLANE AVEC LE JETPACK (SAUT + BAS)","BARRANCO · PLANEA CON EL JETPACK (SALTO + ABAJO)","ПРОПАСТЬ · ПЛАНИРУЙ НА ДЖЕТПАКЕ (ПРЫЖОК + ВНИЗ)","深谷 · 用喷气背包滑翔（跳跃 + 下）","谷 · ジェットパックで滑空（ジャンプ + 下）"],
 ["NUCLEO IN SOVRACCARICO · ALLONTANATI","CORE OVERLOAD · GET CLEAR","NOYAU EN SURCHARGE · ÉLOIGNE-TOI","NÚCLEO SOBRECARGADO · ALÉJATE","ПЕРЕГРУЗКА ЯДРА · ОТХОДИ","核心过载 · 快撤离","コア過負荷 · 離れろ"],
-["← TORNA AL MENU","← BACK TO MENU","← RETOUR AU MENU","← VOLVER AL MENÚ","← НАЗАД В МЕНЮ","← 返回菜单","← メニューに戻る"]
+["Pilota e nave indistruttibili: nessun danno e nessuna vita persa, tutti i pianeti (anche OMEGA) si possono giocare e rigiocare. In questa modalità i punti non entrano in classifica.","Pilot and ship are indestructible: no damage and no lives lost, every planet (OMEGA too) can be played and replayed. In this mode points do not go to the leaderboard.","Pilote et vaisseau indestructibles : aucun dégât ni vie perdue, toutes les planètes (OMEGA aussi) peuvent être jouées et rejouées. Dans ce mode, les points ne vont pas au classement.","Piloto y nave indestructibles: sin daño ni vidas perdidas, todos los planetas (también OMEGA) se pueden jugar y repetir. En este modo los puntos no entran en la clasificación.","Пилот и корабль неуязвимы: без урона и потери жизней, все планеты (и ОМЕГА) можно проходить и переигрывать. В этом режиме очки не попадают в рейтинг.","飞行员和飞船无敌：不受伤害、不失去生命，所有星球（包括 OMEGA）都可游玩和重玩。此模式下分数不计入排行榜。","パイロットと機体は無敵：ダメージなし・ライフも減らず、全惑星（OMEGA も）をプレイ・再プレイ可能。このモードのスコアはランキングに入りません。"],
+["GOD MODE · RIPORTATO A TERRA","GOD MODE · BACK ON SOLID GROUND","GOD MODE · RAMENÉ AU SOL","GOD MODE · DE VUELTA A TIERRA","GOD MODE · ВОЗВРАТ НА ЗЕМЛЮ","GOD MODE · 已送回地面","GOD MODE · 地上に戻しました"],
+["TORNA AL MENU","BACK TO MENU","RETOUR AU MENU","VOLVER AL MENÚ","НАЗАД В МЕНЮ","返回菜单","メニューに戻る"]
 ];
 
 // Lingua predefinita: inglese. La chiave è nuova (stellarLang): le vecchie scelte salvate (stellarLingua) non contano più, così tutti ripartono in inglese.
@@ -530,7 +532,7 @@ if(typeof document!=='undefined'&&document.createElement&&$('settingsBtn')&&$('s
  if(card&&close){
   const b=document.createElement('div');b.className='setting-block sound-row';
   b.innerHTML='<div><div class="setting-title"><span>LINGUA</span></div><p>Lingua dei menu e dei messaggi di gioco.</p></div>';
-  b.appendChild(i18nSelect());card.insertBefore(b,close);
+  b.appendChild(i18nSelect());const side=card.querySelector('.settings-side');if(side)side.appendChild(b);else card.insertBefore(b,close);
  }
 }
 i18nApply();

@@ -6,7 +6,7 @@ const store={};const gradient={addColorStop(){}};
 const fakeCtx=new Proxy({},{get(t,k){if(k in t)return t[k];if(k==='createLinearGradient'||k==='createRadialGradient')return()=>gradient;if(k==='measureText')return()=>({width:10});return()=>{}},set(t,k,v){t[k]=v;return true}});
 const sandbox={console,Math,innerWidth:1280,innerHeight:800,devicePixelRatio:1,localStorage:{getItem(k){return store[k]??null},setItem(k,v){store[k]=String(v)}},performance:{now(){return 0}},setTimeout(){return 0},clearTimeout(){},setInterval(){return 0},clearInterval(){},requestAnimationFrame(){},addEventListener(){},document:{body:node(),documentElement:{},addEventListener(){},getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id)},querySelectorAll(){return[]},createElement:node}};
 sandbox.document.getElementById('game').getContext=()=>fakeCtx;vm.createContext(sandbox);
-for(const f of ['game.js','pianeta.js','fase2.js','grafica2.js','boss.js','economia.js','finale.js','musica.js'])vm.runInContext(fs.readFileSync('dist/'+f,'utf8'),sandbox);
+for(const f of ['icone.js','game.js','pianeta.js','fase2.js','grafica2.js','boss.js','economia.js','finale.js','musica.js'])vm.runInContext(fs.readFileSync('dist/'+f,'utf8'),sandbox);
 const run=s=>vm.runInContext('{'+s+'\n}',sandbox),val=s=>vm.runInContext(s,sandbox);
 const step=(sec,dt=1/60)=>run(`for(let i=0;i<${Math.round(sec/dt)};i++)update(${dt})`);
 run('soundEnabled=false');
