@@ -11,7 +11,7 @@ const sandbox={console:{log(){},warn(...a){throw new Error('grafica non disponib
  document:{body:node(),documentElement:{},addEventListener(){},getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id)},querySelectorAll(){return[]},createElement(tag){if(tag!=='canvas')return node();const c={width:0,height:0};c.getContext=()=>fakeCtx(c);return c}}};
 const main={width:0,height:0,style:{}};main.getContext=()=>fakeCtx(main);nodes.set('game',Object.assign(node(),main,{getContext:main.getContext}));
 vm.createContext(sandbox);
-for(const f of ['game.js','fase2.js','grafica2.js'])vm.runInContext(fs.readFileSync('dist/'+f,'utf8'),sandbox);
+for(const f of ['icone.js','game.js','fase2.js','grafica2.js'])vm.runInContext(fs.readFileSync('dist/'+f,'utf8'),sandbox);
 const run=s=>vm.runInContext('{'+s+'\n}',sandbox);
 run('soundEnabled=false');
 for(let i=0;i<5;i++){

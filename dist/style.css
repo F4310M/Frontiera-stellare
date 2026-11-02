@@ -448,3 +448,66 @@ body.touch .target-indicator>span{width:22px;height:22px}
 .map-board-all:hover{background:rgba(81,230,255,.16);border-color:var(--cyan)}
 @media (max-width:900px),(max-height:560px){.map-board{display:none}}
 body.touch .map-board{display:none}
+
+/* ---- Icone SVG al posto dei caratteri freccia (icone.js) ---- */
+.ico{width:1em;height:1em;display:inline-block;vertical-align:-.16em;flex:none;overflow:visible}
+.launch-btn b{display:inline-flex;align-items:center;justify-content:center}
+.launch-btn b .ico{width:20px;height:20px}
+.ship-line span{transform:none;display:inline-flex}.ship-line span .ico{width:20px;height:20px;filter:drop-shadow(0 0 6px rgba(81,230,255,.6))}
+kbd .ico{width:13px;height:13px;vertical-align:0}
+.icon-btn,.close-btn{display:inline-grid;place-items:center}
+.icon-btn .ico{width:16px;height:16px}.close-btn .ico{width:17px;height:17px}
+.settings-btn{display:inline-flex;align-items:center;gap:7px}.settings-btn .ico{width:15px;height:15px}
+.fullscreen-toggle b{display:inline-flex}.fullscreen-toggle b .ico{width:17px;height:17px;filter:drop-shadow(0 0 5px var(--cyan))}
+.text-btn .ico{width:13px;height:13px;margin:0 4px}
+.brief-back,.phase2-btn,.market-link{display:inline-flex!important;align-items:center;justify-content:center;gap:4px}
+.market-link{display:flex!important}
+.mi-icon .ico{width:21px;height:21px}
+.touch-btn b{display:inline-flex}.touch-btn b .ico{width:24px;height:24px}
+.touch-rotate b .ico{width:54px;height:54px}
+.board-tabs button .ico{margin-right:4px}
+.map-board-globe .ico{width:15px;height:15px;color:var(--cyan)}
+.map-board-all b{display:inline-flex}.map-board-all b .ico{width:16px;height:16px}
+.setting-title .ico{width:14px;height:14px;margin-right:4px;vertical-align:-2px}
+
+/* ---- GOD MODE (godmode.js) ---- */
+.god-badge{position:fixed;left:14px;bottom:14px;z-index:30;display:none;align-items:center;gap:6px;padding:6px 11px;border:1px solid rgba(255,215,106,.55);border-radius:8px;background:rgba(30,22,4,.75);color:#ffd76a;font:700 10px 'Chakra Petch',sans-serif;letter-spacing:2px;pointer-events:none;box-shadow:0 0 16px rgba(255,200,80,.18)}
+.god-badge .ico{width:15px;height:15px}
+body.god .god-badge{display:inline-flex}
+.god-row .setting-title span{color:#ffd76a}
+#godToggle.active{border-color:rgba(255,215,106,.6);color:#ffd76a;background:rgba(255,215,106,.08)}
+#godToggle.active i{background:#ffd76a;box-shadow:0 0 13px #ffd76a}
+
+/* ---- Finestre larghe: usano lo spazio dello schermo invece di allungarsi in verticale ---- */
+.result-main,.result-side{min-width:0}
+.settings-side{min-width:0}
+@media (min-width:700px){
+ .result-card{width:min(1040px,94vw)!important;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);gap:0 38px;align-items:center;text-align:left;padding:34px 38px!important}
+ .result-card .result-main{display:flex;flex-direction:column;justify-content:center}
+ .result-card .result-main h2{font-size:clamp(24px,2.6vw,34px)!important;line-height:1.15;margin:0 0 12px}
+ .result-card .result-main>p:not(.eyebrow){margin:0}
+ .result-card .result-stats{justify-content:flex-start;gap:38px;margin:22px 0 0}
+ .result-card .result-side{display:flex;flex-direction:column;gap:10px}
+ .result-card .result-side>*{margin:0!important}
+ .result-card .result-side .launch-btn{margin:0!important}
+ .result-card .result-side .score-entry{padding:14px 16px}
+ .result-card .score-row{flex-direction:row}
+ .result-card .score-final{font-size:30px;margin-bottom:8px}
+ .result-card .market-link{margin:4px auto 0!important}
+ .settings-card{width:min(1180px,95vw)!important}
+ .settings-cols{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:14px;align-items:start}
+ .settings-cols .setting-block{margin-bottom:0}
+ .settings-side{display:flex;flex-direction:column;gap:12px}
+ .settings-side .sound-row{gap:14px}
+ .settings-main .control-grid{grid-template-columns:1fr 1fr}
+ .market-card{width:min(1180px,95vw)!important}
+ .board-card{width:min(880px,94vw)!important}
+}
+@media (min-width:700px) and (max-height:700px){
+ .result-card{padding:22px 30px!important}
+ .result-card .result-main>p:not(.eyebrow){font-size:12px!important;line-height:1.55}
+ .result-card .result-stats{margin-top:12px}
+ .settings-main>p{font-size:10px;margin:6px 0 10px}
+}
+.result-main>p:not(.eyebrow){color:var(--muted);font-size:13px;line-height:1.7}
+body.god.playing .god-badge{left:25px;bottom:auto;top:84px}

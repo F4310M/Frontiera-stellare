@@ -14,7 +14,7 @@ const sandbox={console,Math,innerWidth:1280,innerHeight:800,devicePixelRatio:1,l
 sandbox.document.getElementById('game').getContext=()=>fakeCtx;
 Object.defineProperty(sandbox.document.getElementById('starMap'),'innerHTML',{set(){mapNodes=[]},get(){return''}});
 vm.createContext(sandbox);
-for(const f of ['game.js','pianeta.js','fase2.js','grafica2.js','boss.js','economia.js','home.js','finale.js','musica.js','classifica.js','mappa.js'])vm.runInContext(fs.readFileSync(path.join(dist,f),'utf8'),sandbox);
+for(const f of ['icone.js','game.js','pianeta.js','fase2.js','grafica2.js','boss.js','economia.js','home.js','finale.js','musica.js','classifica.js','mappa.js'])vm.runInContext(fs.readFileSync(path.join(dist,f),'utf8'),sandbox);
 const run=s=>vm.runInContext('{'+s+'\n}',sandbox),val=s=>vm.runInContext(s,sandbox);
 const step=(sec,dt=1/60)=>run(`for(let i=0;i<${Math.round(sec/dt)};i++)update(${dt})`);
 run('soundEnabled=false');

@@ -45,10 +45,10 @@ function boardBuild(){
  }
  if(!$('boardOverlay')){
   const o=document.createElement('section');o.id='boardOverlay';o.className='overlay hidden';o.setAttribute('aria-label','CLASSIFICA');
-  o.innerHTML='<div class="brief-card board-card"><div class="settings-head"><div><p class="eyebrow">STELLAR FRONTIER</p><h2>CLASSIFICA</h2></div><button id="closeBoardX" class="close-btn" aria-label="Chiudi classifica">×</button></div>'+
-   '<p id="boardSub" class="board-sub">I PRIMI 100 PILOTI</p><div id="boardTabs" class="board-tabs hidden"><button data-view="mondo">🌍 MONDO</button><button data-view="locale">QUESTO BROWSER</button></div><div id="boardList" class="board-list"></div>'+
+  o.innerHTML='<div class="brief-card board-card"><div class="settings-head"><div><p class="eyebrow">STELLAR FRONTIER</p><h2>CLASSIFICA</h2></div><button id="closeBoardX" class="close-btn" aria-label="Chiudi classifica">'+ico('close')+'</button></div>'+
+   '<p id="boardSub" class="board-sub">I PRIMI 100 PILOTI</p><div id="boardTabs" class="board-tabs hidden"><button data-view="mondo">'+ico('globe')+' MONDO</button><button data-view="locale">QUESTO BROWSER</button></div><div id="boardList" class="board-list"></div>'+
    '<p class="board-note">Punti: nemici abbattuti, coloni salvati, orbite conquistate e colonie liberate. Più alta la minaccia, più punti.</p><p id="boardWhere" class="board-note">La classifica è salvata in questo browser.</p>'+
-   '<button id="closeBoard" class="launch-btn"><span>CHIUDI</span><b>✓</b></button></div>';
+   '<button id="closeBoard" class="launch-btn"><span>CHIUDI</span><b>'+ico('check')+'</b></button></div>';
   document.body.appendChild(o);
   $('closeBoard').onclick=$('closeBoardX').onclick=()=>show('boardOverlay',false);
   for(const b of o.querySelectorAll('#boardTabs button'))b.onclick=()=>{coView=b.dataset.view;boardRender()};
@@ -57,8 +57,8 @@ function boardBuild(){
  if(card&&land&&!$('scoreEntry')){
   const e=document.createElement('div');e.id='scoreEntry';e.className='score-entry hidden';
   e.innerHTML='<p class="eyebrow">PUNTEGGIO FINALE</p><b id="scoreFinal" class="score-final">0</b>'+
-   '<label for="scoreName">INSERISCI IL TUO NOME</label><div class="score-row"><input id="scoreName" maxlength="20" autocomplete="off" spellcheck="false" placeholder="Massimo 20 lettere"><button id="scoreSaveBtn" class="launch-btn"><span>SALVA IN CLASSIFICA</span><b>🏆</b></button></div><p id="scoreMsg" class="score-msg"></p>';
-  card.insertBefore(e,land);
+   '<label for="scoreName">INSERISCI IL TUO NOME</label><div class="score-row"><input id="scoreName" maxlength="20" autocomplete="off" spellcheck="false" placeholder="Massimo 20 lettere"><button id="scoreSaveBtn" class="launch-btn"><span>SALVA IN CLASSIFICA</span><b>'+ico('trophy')+'</b></button></div><p id="scoreMsg" class="score-msg"></p>';
+  land.parentNode.insertBefore(e,land);
   const inp=$('scoreName');
   inp.addEventListener('keydown',ev=>{ev.stopPropagation();if(ev.key==='Enter')scoreSubmit()});
   inp.addEventListener('keyup',ev=>ev.stopPropagation());
@@ -229,9 +229,9 @@ function mapBoardBuild(){
  if(typeof document==='undefined'||!document.createElement||!document.querySelector)return;
  const side=document.querySelector('#mapScreen .mission-copy');if(!side||$('mapBoard'))return;
  const d=document.createElement('div');d.id='mapBoard';d.className='map-board';
- d.innerHTML='<div class="map-board-head"><span class="map-board-globe">🌍</span><b>CLASSIFICA MONDIALE</b></div>'+
+ d.innerHTML='<div class="map-board-head"><span class="map-board-globe">'+ico('globe')+'</span><b>CLASSIFICA MONDIALE</b></div>'+
   '<div id="mapBoardList" class="map-board-list"><p class="board-empty">CARICAMENTO…</p></div>'+
-  '<button id="mapBoardAll" class="map-board-all"><span>VEDI TUTTA</span><b>→</b></button>';
+  '<button id="mapBoardAll" class="map-board-all"><span>VEDI TUTTA</span><b>'+ico('arrow-right')+'</b></button>';
  side.appendChild(d);
  $('mapBoardAll').onclick=()=>{coView=coOn?'mondo':'locale';boardOpen()};
 }

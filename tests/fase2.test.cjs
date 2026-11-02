@@ -8,7 +8,7 @@ const fakeCtx=new Proxy(ctxTarget,{get(t,k){if(k in t)return t[k];if(k==='create
 const sandbox={console,Math,innerWidth:1280,innerHeight:800,devicePixelRatio:1,localStorage:{getItem(k){return store[k]??null},setItem(k,v){store[k]=String(v)}},performance:{now(){return 0}},setTimeout(){return 0},clearTimeout(){},requestAnimationFrame(){},addEventListener(){},matchMedia(){return{matches:false}},document:{body:node(),documentElement:{},addEventListener(){},getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id)},querySelectorAll(){return[]},createElement:node}};
 sandbox.document.getElementById('game').getContext=()=>fakeCtx;
 vm.createContext(sandbox);
-vm.runInContext(fs.readFileSync('dist/game.js','utf8'),sandbox);
+vm.runInContext(fs.readFileSync('dist/icone.js','utf8'),sandbox);vm.runInContext(fs.readFileSync('dist/game.js','utf8'),sandbox);
 vm.runInContext(fs.readFileSync('dist/fase2.js','utf8'),sandbox);
 vm.runInContext(fs.readFileSync('dist/grafica2.js','utf8'),sandbox);
 const run=s=>vm.runInContext('{'+s+'\n}',sandbox);

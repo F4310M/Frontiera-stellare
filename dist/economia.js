@@ -10,13 +10,13 @@ const ECO_COST={laser:1,missile:25,granata:20,fuel:2};
 const ECO_BOUNTY={1:4,2:6};
 // Potenziamenti in vendita al mercato.
 const ECO_ITEMS=[
- {id:'salvo',icon:'⟰',name:'LANCIATORE MULTIPLO',desc:'Un clic della rotella lancia più missili insieme. Ogni missile costa 25 CR.',levels:['2 MISSILI INSIEME','3 MISSILI INSIEME'],prices:[6500,13000]},
- {id:'laser',icon:'✦',name:'LASER POTENZIATO',desc:'Colpi più grossi e più potenti, nello spazio e a terra.',levels:['DANNO +50%','DANNO +100%','DANNO +150%'],prices:[3500,7000,12000]},
- {id:'shield',icon:'◈',name:'BARRIERA RINFORZATA',desc:'La barriera e lo scudo assorbono più colpi prima di esaurirsi.',levels:['RESISTENZA +35%','RESISTENZA +70%','RESISTENZA +105%'],prices:[2800,5500,9500]},
- {id:'speed',icon:'➤',name:'MOTORI POTENZIATI',desc:'La nave accelera e vola più veloce; il pilota corre più veloce.',levels:['VELOCITÀ +12%','VELOCITÀ +24%','VELOCITÀ +36%'],prices:[2400,5000,8800]},
- {id:'fuel',icon:'⛽',name:'INIETTORI EFFICIENTI',desc:'I motori consumano meno carburante.',levels:['CONSUMO −20%','CONSUMO −40%'],prices:[1800,4000]},
- {id:'grenades',icon:'●',name:'CINTURA GRANATE',desc:'Granate in più all’inizio della fase 2.',levels:['+1 GRANATA','+2 GRANATE','+3 GRANATE'],prices:[1400,2800,4600]},
- {id:'twin',icon:'⫽',name:'DOPPIO LASER',desc:'Spara due raggi paralleli a ogni colpo, nello spazio e a terra. Ogni colpo costa il doppio (2 CR).',levels:['DOPPIO LASER'],prices:[9000]}
+ {id:'salvo',icon:'salvo',name:'LANCIATORE MULTIPLO',desc:'Un clic della rotella lancia più missili insieme. Ogni missile costa 25 CR.',levels:['2 MISSILI INSIEME','3 MISSILI INSIEME'],prices:[6500,13000]},
+ {id:'laser',icon:'laser',name:'LASER POTENZIATO',desc:'Colpi più grossi e più potenti, nello spazio e a terra.',levels:['DANNO +50%','DANNO +100%','DANNO +150%'],prices:[3500,7000,12000]},
+ {id:'shield',icon:'shield',name:'BARRIERA RINFORZATA',desc:'La barriera e lo scudo assorbono più colpi prima di esaurirsi.',levels:['RESISTENZA +35%','RESISTENZA +70%','RESISTENZA +105%'],prices:[2800,5500,9500]},
+ {id:'speed',icon:'speed',name:'MOTORI POTENZIATI',desc:'La nave accelera e vola più veloce; il pilota corre più veloce.',levels:['VELOCITÀ +12%','VELOCITÀ +24%','VELOCITÀ +36%'],prices:[2400,5000,8800]},
+ {id:'fuel',icon:'fuel',name:'INIETTORI EFFICIENTI',desc:'I motori consumano meno carburante.',levels:['CONSUMO −20%','CONSUMO −40%'],prices:[1800,4000]},
+ {id:'grenades',icon:'grenade',name:'CINTURA GRANATE',desc:'Granate in più all’inizio della fase 2.',levels:['+1 GRANATA','+2 GRANATE','+3 GRANATE'],prices:[1400,2800,4600]},
+ {id:'twin',icon:'twin',name:'DOPPIO LASER',desc:'Spara due raggi paralleli a ogni colpo, nello spazio e a terra. Ogni colpo costa il doppio (2 CR).',levels:['DOPPIO LASER'],prices:[9000]}
 ];
 
 function ecoLoad(){
@@ -129,7 +129,7 @@ function ecoRenderMarket(){
  grid.innerHTML=ECO_ITEMS.map(it=>{
   const lv=ecoUpgrade(it.id),max=it.levels.length,done=lv>=max,price=done?0:it.prices[lv];
   const pips=it.levels.map((_,i)=>`<i class="${i<lv?'on':''}"></i>`).join('');
-  return `<div class="market-item${done?' maxed':''}"><div class="mi-head"><span class="mi-icon">${it.icon}</span><div><b>${it.name}</b><div class="mi-pips">${pips}</div></div></div>`+
+  return `<div class="market-item${done?' maxed':''}"><div class="mi-head"><span class="mi-icon">${ico(it.icon)}</span><div><b>${it.name}</b><div class="mi-pips">${pips}</div></div></div>`+
    `<p>${it.desc}</p><p class="mi-level">${lv?'ATTUALE: '+it.levels[lv-1]:'NON ACQUISTATO'}</p>`+
    `<button class="mi-buy" data-id="${it.id}" ${done||eco.balance<price?'disabled':''}>${done?'LIVELLO MASSIMO':it.levels[lv]+' · '+ecoFmt(price)+' CR'}</button></div>`;
  }).join('');

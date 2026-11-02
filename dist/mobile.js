@@ -12,16 +12,16 @@ function touchDetect(){
  return ua||coarse&&tp;
 }
 const touch={on:false,pad:{id:null,x:0,y:0,cx:0,cy:0,r:60},btn:{},mine:new Set(),mouseMine:{down:false,right:false}};
-const TOUCH_SPACE=[['fire','LASER','✸'],['missile','MISSILE','➶'],['shield','BARRIERA','◎'],['boost','POST-BRUCIATORE','»'],['brake','FRENO','‖']];
-const TOUCH_GROUND=[['fire','FUOCO','✸'],['jump','SALTO','⤒'],['grenade','GRANATA','●'],['shield','SCUDO','◎']];
+const TOUCH_SPACE=[['fire','LASER','fire'],['missile','MISSILE','missile'],['shield','BARRIERA','shield'],['boost','POST-BRUCIATORE','boost'],['brake','FRENO','brake']];
+const TOUCH_GROUND=[['fire','FUOCO','fire'],['jump','SALTO','jump'],['grenade','GRANATA','grenade'],['shield','SCUDO','shield']];
 
 function touchBuild(){
  if(typeof document==='undefined'||!document.createElement||!document.body||$('touchUi'))return;
  const ui=document.createElement('div');ui.id='touchUi';ui.className='touch-ui hidden';
- const btns=(list,id)=>`<div id="${id}" class="touch-btns">`+list.map(([k,label,icon])=>`<button class="touch-btn tb-${k}" data-k="${k}" aria-label="${label}"><b>${icon}</b><span>${label}</span></button>`).join('')+'</div>';
+ const btns=(list,id)=>`<div id="${id}" class="touch-btns">`+list.map(([k,label,icon])=>`<button class="touch-btn tb-${k}" data-k="${k}" aria-label="${label}"><b>${ico(icon)}</b><span>${label}</span></button>`).join('')+'</div>';
  ui.innerHTML='<div id="touchPad" class="touch-pad"><i id="touchKnob" class="touch-knob"></i></div>'+btns(TOUCH_SPACE,'touchSpace')+btns(TOUCH_GROUND,'touchGround');
  document.body.appendChild(ui);
- const rot=document.createElement('div');rot.id='touchRotate';rot.className='touch-rotate hidden';rot.innerHTML='<b>⟳</b><span>Ruota il telefono in orizzontale</span>';document.body.appendChild(rot);
+ const rot=document.createElement('div');rot.id='touchRotate';rot.className='touch-rotate hidden';rot.innerHTML='<b>'+ico('rotate')+'</b><span>Ruota il telefono in orizzontale</span>';document.body.appendChild(rot);
  // pad
  const pad=$('touchPad');
  const padMove=e=>{const r=pad.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,R=r.width/2;let dx=e.clientX-cx,dy=e.clientY-cy;const d=Math.hypot(dx,dy);if(d>R){dx=dx/d*R;dy=dy/d*R}touch.pad.x=dx/R;touch.pad.y=dy/R;$('touchKnob').style.transform=`translate(${dx}px,${dy}px)`};
