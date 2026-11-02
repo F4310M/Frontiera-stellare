@@ -412,6 +412,8 @@ const I18N_ROWS=[
 ["CLASSIFICA MONDIALE · POSIZIONE ","WORLD LEADERBOARD · RANK ","CLASSEMENT MONDIAL · RANG ","CLASIFICACIÓN MUNDIAL · PUESTO ","МИРОВОЙ РЕЙТИНГ · МЕСТО ","世界排行榜 · 名次 ","世界ランキング · 順位 "],
 ["QUESTO BROWSER","THIS BROWSER","CE NAVIGATEUR","ESTE NAVEGADOR","ЭТОТ БРАУЗЕР","此浏览器","このブラウザ"],
 ["CARICAMENTO…","LOADING…","CHARGEMENT…","CARGANDO…","ЗАГРУЗКА…","加载中…","読み込み中…"],
+["CLASSIFICA MONDIALE","WORLD LEADERBOARD","CLASSEMENT MONDIAL","CLASIFICACIÓN MUNDIAL","МИРОВОЙ РЕЙТИНГ","世界排行榜","世界ランキング"],
+["VEDI TUTTA","SEE ALL","TOUT VOIR","VER TODO","ВСЕ","查看全部","すべて見る"],
 ["MONDO","WORLD","MONDE","MUNDO","МИР","世界","ワールド"],
 ["La classifica è salvata in questo browser.","The leaderboard is saved in this browser.","Le classement est enregistré dans ce navigateur.","La clasificación se guarda en este navegador.","Рейтинг хранится в этом браузере.","排行榜保存在此浏览器中。","ランキングはこのブラウザに保存されます。"],
 ["PIANETA LIBERATO","PLANET FREED","PLANÈTE LIBÉRÉE","PLANETA LIBERADO","ПЛАНЕТА СВОБОДНА","星球已解放","惑星解放済み"],
