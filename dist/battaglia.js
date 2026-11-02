@@ -193,8 +193,9 @@ function battDrawCoverSoldier(e,now,drawTrooper){
   ctx.fillStyle='#ffd0d6';ctx.shadowBlur=12;ctx.shadowColor='#ff5268';ctx.beginPath();ctx.arc(sh.x+Math.cos(a)*30,sh.y+Math.sin(a)*30,2.4,0,6.28);ctx.fill();ctx.restore();
  }
  ctx.save();ctx.beginPath();ctx.rect(e.x-90,e.y-240,180,240);ctx.clip();
- if(e.hit>0)ctx.filter='brightness(2.2)';
- drawTrooper(Object.assign({},e,{y:e.y+dy,crouch:e.up<.55,ground:true,vx:0}),PF_REBEL,now);
+ const te=Object.assign({},e,{y:e.y+dy,crouch:e.up<.55,ground:true,vx:0});drawTrooper(te,PF_REBEL,now);
+ // lampo del colpo: la stessa figura ridisegnata in modo additivo (ctx.filter su Chrome costa un intero schermo)
+ if(e.hit>0){ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.85;drawTrooper(te,PF_REBEL,now)}
  ctx.restore();
  battDrawWall(e.wallX,e.y,now);
  // elmetto che spunta e barra della vita sopra il muretto

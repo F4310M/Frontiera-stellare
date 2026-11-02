@@ -163,11 +163,43 @@ drawPlayer=function(){
 drawShip=function(ship,hostile){
  const b=!hostile&&state!=='platform'&&player&&ship.x===player.x&&ship.y===player.y?(player.bank||0):0;
  if(Math.abs(b)<.02)return tOrigShip(ship,hostile);
- // stessa trasformazione dell'originale + schiacciamento sul fianco (roll) e leggera inclinazione
- ctx.save();ctx.translate(ship.x,ship.y);ctx.rotate(ship.angle);
- ctx.transform(1,0,-b*.18,1-.42*Math.abs(b),0,b*3);
- ctx.rotate(-ship.angle);ctx.translate(-ship.x,-ship.y);
- tOrigShip(ship,hostile);
- ctx.restore();
+ shipRoll3D(ship,hostile,b);
 };
+// ---- 6b) rollio in 3D: la nave ruota sul suo asse e si vede lo spessore (fianchi, ventre, motori, cupola).
+// Ogni pezzo è un solido "a fette": la stessa sagoma ripetuta a quote diverse, proiettata col rollio.
+const SH3_HULL=[[29,0],[8,-7],[-7,-16],[-13,-9],[-22,-12],[-17,0],[-22,12],[-13,9],[-7,16],[8,7]];
+const SH3_KEEL=[[26,0],[10,-5],[-15,-5.5],[-19,0],[-15,5.5],[10,5]];
+const SH3_CANOPY=[[15,0],[4,-5],[-5,-4],[-8,0],[-5,4],[4,5]];
+function sh3Poly(pts){ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath()}
+// disegna una sagoma a quota z con rollio (c=cos, s=sin): y' = y*c - z*s
+function sh3Slab(pts,z0,z1,c,s,col){
+ const T=ctx.getTransform?ctx.getTransform():null,px=T?Math.hypot(T.a,T.b):1,n=Math.min(40,Math.max(2,Math.ceil(Math.abs((z1-z0)*s)*px)+1));
+ for(let i=0;i<n;i++){const k=i/(n-1),z=z0+(z1-z0)*k;ctx.save();ctx.transform(1,0,0,c,0,-z*s);ctx.fillStyle=col(k);sh3Poly(pts);ctx.fill();if(i===0){ctx.strokeStyle='rgba(4,10,18,.9)';ctx.lineWidth=.8;ctx.stroke()}ctx.restore()}
+}
+function shipRoll3D(ship,hostile,b){
+ const phi=-b*1.05,c=Math.cos(phi),s=Math.sin(phi),A=Math.min(1,Math.abs(b));
+ ctx.save();ctx.translate(ship.x,ship.y);ctx.rotate(ship.angle);
+ // ombra morbida sotto la nave: si sposta dal lato che scende
+ ctx.save();ctx.globalAlpha=.22*A;ctx.fillStyle='#000';ctx.transform(1,0,0,c,0,9*s);sh3Poly(SH3_HULL);ctx.fill();ctx.restore();
+ // ventre della fusoliera e gondole dei motori (sotto le ali)
+ sh3Slab(SH3_KEEL,-9,-2,c,s,k=>`rgb(${26+k*30|0},${40+k*40|0},${54+k*46|0})`);
+ for(const py of [-7,7])sh3Slab([[-20,py-3],[-12,py-3],[-12,py+3],[-20,py+3]],-7,-1,c,s,k=>`rgb(${16+k*20|0},${34+k*26|0},${48+k*30|0})`);
+ // spessore delle ali e dello scafo: metallo scuro in basso, più chiaro verso il bordo superiore
+ sh3Slab(SH3_HULL,-4,-.3,c,s,k=>`rgb(${58+k*60|0},${78+k*70|0},${94+k*72|0})`);
+ // linea di giunzione a metà fianco
+ ctx.save();ctx.transform(1,0,0,c,0,2.2*s);ctx.strokeStyle='rgba(10,22,32,.75)';ctx.lineWidth=.7;sh3Poly(SH3_HULL);ctx.stroke();ctx.restore();
+ // bordo luminoso dove il fianco incontra la superficie
+ ctx.save();ctx.transform(1,0,0,c,0,.3*s);ctx.strokeStyle=`rgba(140,233,236,${.25+.35*A})`;ctx.lineWidth=.9;sh3Poly(SH3_HULL);ctx.stroke();ctx.restore();
+ // superficie superiore: il disegno originale, schiacciato dal rollio
+ ctx.save();ctx.transform(1,0,0,c,0,0);ctx.rotate(-ship.angle);ctx.translate(-ship.x,-ship.y);tOrigShip(ship,hostile);ctx.restore();
+ // luce: l'ala che sale prende luce, quella che scende va in ombra
+ ctx.save();ctx.transform(1,0,0,c,0,0);const g=ctx.createLinearGradient(0,-16,0,16),up=s>0?0:1;
+ g.addColorStop(up,`rgba(230,250,255,${.22*A})`);g.addColorStop(.5,'rgba(0,0,0,0)');g.addColorStop(1-up,`rgba(0,6,14,${.42*A})`);
+ ctx.fillStyle=g;sh3Poly(SH3_HULL);ctx.fill();ctx.restore();
+ // cupola della cabina in rilievo sopra lo scafo
+ sh3Slab(SH3_CANOPY,0,2.6,c,s,k=>`rgb(${14+k*14|0},${44+k*40|0},${66+k*50|0})`);
+ ctx.save();ctx.transform(1,0,0,c,0,-2.6*s);ctx.fillStyle='rgba(140,242,255,.85)';ctx.beginPath();ctx.ellipse(4,-1,5,2.2,0,0,6.28);ctx.fill();
+ ctx.fillStyle='rgba(255,255,255,.7)';ctx.beginPath();ctx.ellipse(6,-1.6+(s>0?-.6:.6),2,.8,0,0,6.28);ctx.fill();ctx.restore();
+ ctx.restore();
+}
 // La salute del pilota ora sta solo nella barra in basso: niente barra accanto al personaggio.

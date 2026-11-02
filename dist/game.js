@@ -36,9 +36,14 @@ function pay(kind,n=1){return typeof ecoSpend==='function'?ecoSpend(kind,n):true
 function canPay(kind,n=1){return typeof ecoCanPay==='function'?ecoCanPay(kind,n):true}
 let wingMissiles=[];
 const AIM_RESPONSE=16;
-function targetDpr(){return Math.max(1,Math.min(3,Math.max(devicePixelRatio||1,2))*renderQuality)}
+// Tetto di pixel per fotogramma: sui monitor grandi del PC la sovracampionatura 2x faceva disegnare 8-15 milioni di pixel a ogni fotogramma (un iPhone ne disegna circa 3).
+const PIXEL_BUDGET=4.2e6;
+function targetDpr(){const nat=devicePixelRatio||1,want=Math.min(3,Math.max(nat,2)),cap=Math.sqrt(PIXEL_BUDGET/Math.max(1,W*H));return Math.max(1,Math.min(want,Math.max(cap,Math.min(nat,1)))*renderQuality)}
 function applyCanvasScale(){dpr=targetDpr();canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';vignette=null}
-function adaptQuality(frameMs){if((state!=='play'&&state!=='platform')||paused||document.hidden||!(frameMs>0))return;frameSamples.push(frameMs);if(frameSamples.length<90)return;const median=frameSamples.slice().sort((a,b)=>a-b)[45];frameSamples=[];if(median>21&&renderQuality>.5){const before=dpr;renderQuality=Math.max(.5,renderQuality-.17);if(targetDpr()<before-.01)applyCanvasScale()}else if(median<11&&renderQuality<1){const before=dpr;renderQuality=Math.min(1,renderQuality+.1);if(targetDpr()>before+.01)applyCanvasScale()}}
+// Qualità adattiva con isteresi: scende se i fotogrammi sono lenti o a scatti, risale solo dopo 3 finestre buone di fila
+// e smette di risalire dopo 2 cali (prima saliva e scendeva di continuo, e ogni cambio ricrea la tela: uno scatto in più).
+let qualityGood=0,qualityDrops=0;
+function adaptQuality(frameMs){if((state!=='play'&&state!=='platform')||paused||document.hidden||!(frameMs>0)||frameMs>250)return;frameSamples.push(frameMs);if(frameSamples.length<90)return;const sorted=frameSamples.slice().sort((a,b)=>a-b),median=sorted[45],p90=sorted[81];frameSamples=[];if((median>21||p90>30)&&renderQuality>.5){qualityGood=0;qualityDrops++;const before=dpr;renderQuality=Math.max(.5,renderQuality-.17);if(targetDpr()<before-.01)applyCanvasScale()}else if(median<11&&p90<15&&renderQuality<1&&qualityDrops<2){if(++qualityGood<3)return;qualityGood=0;const before=dpr;renderQuality=Math.min(1,renderQuality+.1);if(targetDpr()>before+.01)applyCanvasScale()}else qualityGood=0}
 function makeGlowSprite(){try{const c=document.createElement('canvas');if(!c||!c.getContext)return null;c.width=c.height=64;const g=c.getContext('2d'),r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.1,'rgba(225,240,255,.6)');r.addColorStop(.35,'rgba(150,200,255,.14)');r.addColorStop(1,'rgba(150,200,255,0)');g.fillStyle=r;g.fillRect(0,0,64,64);return c}catch{return null}}
 function drawVignette(){if(!vignette){vignette=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*.38,W/2,H/2,Math.hypot(W,H)*.6);vignette.addColorStop(0,'rgba(0,0,0,0)');vignette.addColorStop(1,'rgba(0,3,9,.5)')}ctx.fillStyle=vignette;ctx.fillRect(0,0,W,H)}
 function resize(){W=innerWidth;H=innerHeight;applyCanvasScale();makeStars()}

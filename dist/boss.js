@@ -4,7 +4,7 @@
 // Se il canvas fuori schermo non c'è (test), si disegna direttamente.
 
 const bOrig={gBoss:typeof gBoss==='function'?gBoss:null};
-let bLayer=null,bTexCanvas=null;
+let bLayer=null,bTexCanvas=null,bFxLayer=null;
 
 function bPlate(c,points,fill,edge,light){c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fillStyle=fill;c.fill();if(edge){c.strokeStyle=edge;c.lineWidth=1.4;c.stroke()}if(light){c.save();c.clip();c.strokeStyle=light;c.lineWidth=3;c.beginPath();c.moveTo(points[0][0],points[0][1]);c.lineTo(points[1][0],points[1][1]);c.stroke();c.restore()}}
 function bRivets(c,pts){c.fillStyle='#9fb2c4';for(const [x,y] of pts){c.beginPath();c.arc(x,y,1.3,0,6.28);c.fill()}c.fillStyle='rgba(0,0,0,.5)';for(const [x,y] of pts){c.beginPath();c.arc(x+.5,y+.6,.8,0,6.28);c.fill()}}
@@ -269,7 +269,11 @@ gBoss=function(B,now){
  if(B.hit>0){c.fillStyle='rgba(255,255,255,.45)';c.fillRect(L,TOP,R-L,BOT-TOP)}
  c.restore();
  // contorno scuro e più contrasto: il robot si stacca dallo sfondo
- ctx.save();if('filter' in ctx)ctx.filter='drop-shadow(0px 0px 1.5px rgba(0,0,0,.95)) contrast(1.18) saturate(1.2) brightness(1.08)';ctx.drawImage(bLayer.c,0,0,cw,ch,B.x+L,B.y+TOP,cw/k,ch/k);ctx.restore();
+ // il filtro si applica su una tela piccola grande quanto il robot: sulla tela principale Chrome lo calcolava su tutto lo schermo a ogni fotogramma
+ let src=bLayer.c;
+ if('filter' in c){if(!bFxLayer||bFxLayer.c.width!==bLayer.c.width||bFxLayer.c.height!==bLayer.c.height)bFxLayer=gCanvas(bLayer.c.width,bLayer.c.height);
+  if(bFxLayer){const f=bFxLayer.g;f.setTransform(1,0,0,1,0,0);f.clearRect(0,0,cw,ch);f.filter='drop-shadow(0px 0px 1.5px rgba(0,0,0,.95)) contrast(1.18) saturate(1.2) brightness(1.08)';f.drawImage(bLayer.c,0,0,cw,ch,0,0,cw,ch);f.filter='none';src=bFxLayer.c}}
+ ctx.drawImage(src,0,0,cw,ch,B.x+L,B.y+TOP,cw/k,ch/k);
  // fumo e scintille dai punti danneggiati
  const dying=B.state==='distrutto';
  if(!dying&&dmg>.3&&Math.random()<dmg*.5){const p=B_SCORCH[Math.floor(Math.random()*Math.min(B_SCORCH.length,Math.ceil(dmg*6)))],wx=B.x+p[0]*B.face,wy=B.y+p[1];pf.fx.push({x:wx,y:wy,vx:(Math.random()-.5)*20,vy:-30-Math.random()*30,life:1.2,max:1.2,color:'rgba(60,60,66,.6)',r:5+Math.random()*6,soft:true});if(Math.random()<.3)pfBurst(wx,wy,'#ffd29a',2,.5)}
