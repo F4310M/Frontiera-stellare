@@ -500,7 +500,17 @@ const I18N_ROWS=[
 ["FOTO AGGIORNATA", "PHOTO UPDATED", "PHOTO MISE À JOUR", "FOTO ACTUALIZADA", "ФОТО ОБНОВЛЕНО", "照片已更新", "写真を更新しました"],
 ["IMMAGINE NON VALIDA", "INVALID IMAGE", "IMAGE NON VALIDE", "IMAGEN NO VÁLIDA", "НЕВЕРНОЕ ИЗОБРАЖЕНИЕ", "图片无效", "無効な画像"],
 ["Creare un nuovo pilota? I progressi di questo browser verranno cancellati. Se vuoi tenerli, prima premi SALVA PROGRESSI.", "Create a new pilot? The progress in this browser will be deleted. To keep it, press SAVE PROGRESS first.", "Créer un nouveau pilote ? La progression de ce navigateur sera effacée. Pour la garder, appuie d’abord sur SAUVEGARDER.", "¿Crear un nuevo piloto? El progreso de este navegador se borrará. Si quieres conservarlo, pulsa antes GUARDAR PROGRESO.", "Создать нового пилота? Прогресс в этом браузере будет удалён. Чтобы сохранить его, сначала нажми СОХРАНИТЬ ПРОГРЕСС.", "创建新飞行员？此浏览器中的进度将被删除。如需保留，请先点击“保存进度”。", "新しいパイロットを作成しますか？このブラウザの進行状況は消去されます。残したい場合は先に「進行状況を保存」を押してください。"],
-["VEDI LA CLASSIFICA", "SEE THE LEADERBOARD", "VOIR LE CLASSEMENT", "VER LA CLASIFICACIÓN", "ОТКРЫТЬ РЕЙТИНГ", "查看排行榜", "ランキングを見る"]
+["VEDI LA CLASSIFICA", "SEE THE LEADERBOARD", "VOIR LE CLASSEMENT", "VER LA CLASIFICACIÓN", "ОТКРЫТЬ РЕЙТИНГ", "查看排行榜", "ランキングを見る"],
+["GALLERIE SOTTERRANEE","UNDERGROUND TUNNELS","GALERIES SOUTERRAINES","GALERÍAS SUBTERRÁNEAS","ПОДЗЕМНЫЕ ТОННЕЛИ","地下隧道","地下トンネル"],
+["SALTA NEI RAGGI DI RISALITA PER TORNARE IN SUPERFICIE","JUMP INTO THE LIFT BEAMS TO RETURN TO THE SURFACE","SAUTE DANS LES RAYONS DE REMONTÉE POUR REVENIR À LA SURFACE","SALTA EN LOS RAYOS DE ASCENSO PARA VOLVER A LA SUPERFICIE","ПРЫГНИ В ПОДЪЁМНЫЙ ЛУЧ, ЧТОБЫ ВЕРНУТЬСЯ НА ПОВЕРХНОСТЬ","跳进上升光束返回地面","上昇ビームに飛び込んで地上へ戻れ"],
+["DI NUOVO IN SUPERFICIE","BACK ON THE SURFACE","DE RETOUR À LA SURFACE","DE NUEVO EN LA SUPERFICIE","СНОВА НА ПОВЕРХНОСТИ","重返地面","地上に戻った"],
+["INGRESSO ALLE GALLERIE · TIENI PREMUTO GIÙ SUL POZZO PER SCENDERE","TUNNEL ENTRANCE · HOLD DOWN ON THE SHAFT TO GO DOWN","ENTRÉE DES GALERIES · MAINTIENS BAS SUR LE PUITS POUR DESCENDRE","ENTRADA A LAS GALERÍAS · MANTÉN ABAJO SOBRE EL POZO PARA BAJAR","ВХОД В ТОННЕЛИ · ДЕРЖИ ВНИЗ НАД ШАХТОЙ, ЧТОБЫ СПУСТИТЬСЯ","隧道入口 · 在竖井上按住下键即可下去","トンネル入口 · 縦穴の上で下を長押しして降りる"],
+["FINE DELLA GALLERIA · SALTA NEL RAGGIO PER RISALIRE","END OF THE TUNNEL · JUMP INTO THE BEAM TO GO UP","FIN DE LA GALERIE · SAUTE DANS LE RAYON POUR REMONTER","FIN DE LA GALERÍA · SALTA EN EL RAYO PARA SUBIR","КОНЕЦ ТОННЕЛЯ · ПРЫГНИ В ЛУЧ, ЧТОБЫ ПОДНЯТЬСЯ","隧道尽头 · 跳进光束上升","トンネルの終点 · ビームに飛び込んで上昇"],
+["USCITA · SALTA NEL RAGGIO PER TORNARE IN SUPERFICIE","EXIT · JUMP INTO THE BEAM TO RETURN TO THE SURFACE","SORTIE · SAUTE DANS LE RAYON POUR REVENIR À LA SURFACE","SALIDA · SALTA EN EL RAYO PARA VOLVER A LA SUPERFICIE","ВЫХОД · ПРЫГНИ В ЛУЧ, ЧТОБЫ ВЕРНУТЬСЯ НА ПОВЕРХНОСТЬ","出口 · 跳进光束返回地面","出口 · ビームに飛び込んで地上へ戻る"],
+["PONTE DI COLONNE · VOLA COL JETPACK DA UNA COLONNA ALL’ALTRA","PILLAR BRIDGE · FLY WITH THE JETPACK FROM ONE PILLAR TO THE NEXT","PONT DE COLONNES · VOLE AVEC LE JETPACK D’UNE COLONNE À L’AUTRE","PUENTE DE COLUMNAS · VUELA CON EL JETPACK DE UNA COLUMNA A OTRA","МОСТ ИЗ КОЛОНН · ПЕРЕЛЕТАЙ НА ДЖЕТПАКЕ С КОЛОННЫ НА КОЛОННУ","石柱桥 · 用喷气背包在石柱间飞行","石柱の橋 · ジェットパックで柱から柱へ飛べ"],
+["RIFORNIMENTI","SUPPLIES","RAVITAILLEMENT","SUMINISTROS","ПРИПАСЫ","补给","補給物資"],
+["GALLERIE","TUNNELS","GALERIES","GALERÍAS","ТОННЕЛИ","隧道","トンネル"],
+["USCITA","EXIT","SORTIE","SALIDA","ВЫХОД","出口","出口"]
 ];
 
 // Lingua predefinita: inglese. La chiave è nuova (stellarLang): le vecchie scelte salvate (stellarLingua) non contano più, così tutti ripartono in inglese.

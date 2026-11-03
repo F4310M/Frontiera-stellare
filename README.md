@@ -60,6 +60,7 @@ dist/            il gioco (apri dist/index.html tramite un server locale)
   camera.js      zoom morbido della telecamera in volo
   battaglia.js   fase a terra: discesa col jetpack, nemici al riparo, passaggi col jetpack, esplosione del boss
   icone.js       icone SVG di frecce e pulsanti (caricato per primo)
+  sotterranei.js fase a terra più lunga: ponte di colonne col jetpack e gallerie sotterranee alternative
   godmode.js     GOD MODE dalle impostazioni: pilota e nave indistruttibili, tutti i pianeti giocabili
 tests/           test automatici (Node.js)
 ```
@@ -78,6 +79,7 @@ node tests/musica.test.cjs
 node tests/finale.test.cjs
 node tests/battaglia.test.cjs
 node tests/godmode.test.cjs
+node tests/sotterranei.test.cjs
 node tests/lingue.test.cjs
 ```
 
