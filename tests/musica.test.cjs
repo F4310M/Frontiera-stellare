@@ -20,7 +20,7 @@ console.log('PASS: brani ben formati');
 
 // Ogni scena ha il suo brano.
 const scene=()=>{const l=val('musLevel()'),s=val('musTheme()');return[s,val(`musTrackId("${s}","${l}")`)]};
-run('abort()');assert.deepEqual(scene(),['menu','menu'],'Mappa: Oltre le Stelle');
+run('abort()');assert.deepEqual(scene(),['menu','menu'],'Mappa: Orbita di Fuoco');
 run('selected=0;startGame();arrivalRemaining=0');assert.deepEqual(scene(),['spazio','spazio'],'Volo: Assalto Orbitale');
 run('player.x=world.x-world.r-300;player.y=world.y');assert.deepEqual(scene(),['spazio','soglia'],'Vicino al pianeta: Soglia Ostile');
 run('abort();vite=3;selected=0;startPlatform()');step(3.5);assert.deepEqual(scene(),['terra','terra'],'A terra: Fuoco sul Pianeta');
