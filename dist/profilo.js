@@ -1,4 +1,4 @@
-// Stellar Frontier — PROFILO DEL PILOTA e SALVATAGGIO DEI PROGRESSI.
+// Conex — PROFILO DEL PILOTA e SALVATAGGIO DEI PROGRESSI.
 // Al primo avvio si crea il pilota: nome, password e foto (rimpicciolita a una miniatura).
 // I progressi restano sempre nel browser: alla partita successiva si riparte dalla mappa con crediti,
 // vite, potenziamenti, pianeti liberati e punti. Una missione interrotta a metà ricomincia dall'inizio.
@@ -110,7 +110,7 @@ function profIdb(mode,fn){return new Promise(res=>{try{
  r.onupgradeneeded=()=>r.result.createObjectStore('file');r.onerror=()=>res(null);
  r.onsuccess=()=>{try{const q=fn(r.result.transaction('file',mode).objectStore('file'));q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)}catch(e){res(null)}};
 }catch(e){res(null)}})}
-function profFileName(){return 'StellarFrontier-'+String(prof.nome).replace(/\s+/g,'_')+PROF_EXT}
+function profFileName(){return 'Conex-'+String(prof.nome).replace(/\s+/g,'_')+PROF_EXT}
 function profDownload(name,text){
  const url=URL.createObjectURL(new Blob([text],{type:'application/octet-stream'})),a=document.createElement('a');
  a.href=url;a.download=name;a.style.display='none';document.body.appendChild(a);a.click();a.remove();
@@ -123,7 +123,7 @@ async function profSaveFile(){
   handle=await profIdb('readonly',s=>s.get('backup'));
   if(handle){try{const ok=handle.requestPermission?await handle.requestPermission({mode:'readwrite'}):'granted';if(ok!=='granted')handle=null}catch(e){handle=null}}
   if(!handle){
-   try{handle=await showSaveFilePicker({suggestedName:name,types:[{description:'Stellar Frontier',accept:{'application/octet-stream':[PROF_EXT]}}]});profIdb('readwrite',s=>s.put(handle,'backup'))}
+   try{handle=await showSaveFilePicker({suggestedName:name,types:[{description:'Conex',accept:{'application/octet-stream':[PROF_EXT]}}]});profIdb('readwrite',s=>s.put(handle,'backup'))}
    catch(e){if(e&&e.name==='AbortError')return false;handle=null}
   }
  }
