@@ -79,6 +79,7 @@ node tests/finale.test.cjs
 node tests/battaglia.test.cjs
 node tests/godmode.test.cjs
 node tests/lingue.test.cjs
+node tests/nave3d.test.cjs
 ```
 
 ## Classifica mondiale
