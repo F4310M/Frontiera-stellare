@@ -98,7 +98,7 @@ function musBuild(a){
 // ---- brani registrati di Fabio (cartella musica/). Ogni scena ha il suo; dove manca, o se un file
 // non si carica, suona la musica sintetica qui sotto. Ogni brano gira in loop con una dissolvenza incrociata.
 const MUS_TRACKS={
- menu:'musica/oltre-le-stelle.mp3',      // Oltre le Stelle: mappa e schermate
+ menu:'musica/orbita-di-fuoco.mp3',      // Orbita di Fuoco: menu principale (mappa) e schermate
  spazio:'musica/assalto-orbitale.mp3',   // Assalto Orbitale: fase 1 in volo
  soglia:'musica/soglia-ostile.mp3',      // Soglia Ostile: vicino al pianeta, flotta di guardia e meteoriti
  terra:'musica/fuoco-sul-pianeta.mp3',   // Fuoco sul Pianeta: fase 2 a terra
