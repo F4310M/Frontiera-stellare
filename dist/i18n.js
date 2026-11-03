@@ -199,7 +199,7 @@ const I18N_ROWS=[
 ["JETPACK PRONTO","JETPACK READY","JETPACK PRÊT","JETPACK LISTO","ДЖЕТПАК ГОТОВ","喷气背包就绪","ジェットパック準備完了"],
 ["LIBERI!","FREE!","LIBRES !","¡LIBRES!","СВОБОДНЫ!","自由了！","自由だ！"],
 ["LANCIATORE MULTIPLO","MULTI-LAUNCHER","LANCEUR MULTIPLE","LANZADOR MÚLTIPLE","МНОГОЗАРЯДНАЯ ПУСКОВАЯ","多重发射器","マルチランチャー"],
-["Un clic della rotella lancia più missili insieme. Ogni missile costa 25 CR.","One wheel click launches several missiles at once. Each missile costs 25 CR.","Un clic de molette lance plusieurs missiles à la fois. Chaque missile coûte 25 CR.","Un clic de rueda lanza varios misiles a la vez. Cada misil cuesta 25 CR.","Один клик колёсиком запускает несколько ракет. Каждая ракета стоит 25 CR.","点击一次滚轮同时发射多枚导弹。每枚导弹 25 CR。","ホイールクリック 1 回で複数のミサイルを発射。1 発 25 CR。"],
+["Un clic della rotella lancia più missili insieme, ognuno guidato su un bersaglio diverso. Ogni missile costa 25 CR.","One wheel click launches several missiles at once, each one homing on a different target. Each missile costs 25 CR.","Un clic de molette lance plusieurs missiles à la fois, chacun guidé vers une cible différente. Chaque missile coûte 25 CR.","Un clic de rueda lanza varios misiles a la vez, cada uno guiado hacia un objetivo distinto. Cada misil cuesta 25 CR.","Один клик колёсиком запускает несколько ракет, каждая наводится на свою цель. Каждая ракета стоит 25 CR.","点击一次滚轮同时发射多枚导弹，每枚追踪不同的目标。每枚导弹 25 CR。","ホイールクリック 1 回で複数のミサイルを発射し、それぞれ別の目標を追尾。1 発 25 CR。"],
 ["2 MISSILI INSIEME","2 MISSILES AT ONCE","2 MISSILES À LA FOIS","2 MISILES A LA VEZ","2 РАКЕТЫ СРАЗУ","同时 2 枚导弹","ミサイル 2 発同時"],
 ["3 MISSILI INSIEME","3 MISSILES AT ONCE","3 MISSILES À LA FOIS","3 MISILES A LA VEZ","3 РАКЕТЫ СРАЗУ","同时 3 枚导弹","ミサイル 3 発同時"],
 ["LASER POTENZIATO","UPGRADED LASER","LASER AMÉLIORÉ","LÁSER MEJORADO","УСИЛЕННЫЙ ЛАЗЕР","强化激光","強化レーザー"],
@@ -510,7 +510,10 @@ const I18N_ROWS=[
 ["PONTE DI COLONNE · VOLA COL JETPACK DA UNA COLONNA ALL’ALTRA","PILLAR BRIDGE · FLY WITH THE JETPACK FROM ONE PILLAR TO THE NEXT","PONT DE COLONNES · VOLE AVEC LE JETPACK D’UNE COLONNE À L’AUTRE","PUENTE DE COLUMNAS · VUELA CON EL JETPACK DE UNA COLUMNA A OTRA","МОСТ ИЗ КОЛОНН · ПЕРЕЛЕТАЙ НА ДЖЕТПАКЕ С КОЛОННЫ НА КОЛОННУ","石柱桥 · 用喷气背包在石柱间飞行","石柱の橋 · ジェットパックで柱から柱へ飛べ"],
 ["RIFORNIMENTI","SUPPLIES","RAVITAILLEMENT","SUMINISTROS","ПРИПАСЫ","补给","補給物資"],
 ["GALLERIE","TUNNELS","GALERIES","GALERÍAS","ТОННЕЛИ","隧道","トンネル"],
-["USCITA","EXIT","SORTIE","SALIDA","ВЫХОД","出口","出口"]
+["USCITA","EXIT","SORTIE","SALIDA","ВЫХОД","出口","出口"],
+["BERSAGLI AGGANCIATI","TARGETS LOCKED","CIBLES VERROUILLÉES","OBJETIVOS FIJADOS","ЦЕЛИ ЗАХВАЧЕНЫ","目标已锁定","ロックオン"],
+["AUTOGUIDATI SU BERSAGLI DIVERSI","HOMING ON SEPARATE TARGETS","GUIDÉS VERS DES CIBLES DIFFÉRENTES","GUIADOS HACIA OBJETIVOS DISTINTOS","НАВОДЯТСЯ НА РАЗНЫЕ ЦЕЛИ","追踪不同目标","別々の目標を追尾"],
+["CLIC ROTELLA","WHEEL CLICK","CLIC MOLETTE","CLIC RUEDA","КЛИК КОЛЁСИКОМ","点击滚轮","ホイールクリック"]
 ];
 
 // Lingua predefinita: inglese. La chiave è nuova (stellarLang): le vecchie scelte salvate (stellarLingua) non contano più, così tutti ripartono in inglese.

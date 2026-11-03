@@ -10,7 +10,7 @@ const ECO_COST={laser:1,missile:25,granata:20,fuel:2};
 const ECO_BOUNTY={1:4,2:6};
 // Potenziamenti in vendita al mercato.
 const ECO_ITEMS=[
- {id:'salvo',icon:'salvo',name:'LANCIATORE MULTIPLO',desc:'Un clic della rotella lancia più missili insieme. Ogni missile costa 25 CR.',levels:['2 MISSILI INSIEME','3 MISSILI INSIEME'],prices:[6500,13000]},
+ {id:'salvo',icon:'salvo',name:'LANCIATORE MULTIPLO',desc:'Un clic della rotella lancia più missili insieme, ognuno guidato su un bersaglio diverso. Ogni missile costa 25 CR.',levels:['2 MISSILI INSIEME','3 MISSILI INSIEME'],prices:[6500,13000]},
  {id:'laser',icon:'laser',name:'LASER POTENZIATO',desc:'Colpi più grossi e più potenti, nello spazio e a terra.',levels:['DANNO +50%','DANNO +100%','DANNO +150%'],prices:[3500,7000,12000]},
  {id:'shield',icon:'shield',name:'BARRIERA RINFORZATA',desc:'La barriera e lo scudo assorbono più colpi prima di esaurirsi.',levels:['RESISTENZA +35%','RESISTENZA +70%','RESISTENZA +105%'],prices:[2800,5500,9500]},
  {id:'speed',icon:'speed',name:'MOTORI POTENZIATI',desc:'La nave accelera e vola più veloce; il pilota corre più veloce.',levels:['VELOCITÀ +12%','VELOCITÀ +24%','VELOCITÀ +36%'],prices:[2400,5000,8800]},
