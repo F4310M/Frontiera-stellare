@@ -61,6 +61,7 @@ dist/            il gioco (apri dist/index.html tramite un server locale)
   battaglia.js   fase a terra: discesa col jetpack, nemici al riparo, passaggi col jetpack, esplosione del boss
   icone.js       icone SVG di frecce e pulsanti (caricato per primo)
   godmode.js     GOD MODE dalle impostazioni: pilota e nave indistruttibili, tutti i pianeti giocabili
+  facile.js      difficoltà: meno danni, nemici più lenti a sparare, boss con meno salute (numeri in FACILE)
 tests/           test automatici (Node.js)
 ```
 
@@ -78,6 +79,7 @@ node tests/musica.test.cjs
 node tests/finale.test.cjs
 node tests/battaglia.test.cjs
 node tests/godmode.test.cjs
+node tests/facile.test.cjs
 node tests/lingue.test.cjs
 ```
 
