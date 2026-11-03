@@ -45,7 +45,7 @@ function boardBuild(){
  }
  if(!$('boardOverlay')){
   const o=document.createElement('section');o.id='boardOverlay';o.className='overlay hidden';o.setAttribute('aria-label','CLASSIFICA');
-  o.innerHTML='<div class="brief-card board-card"><div class="settings-head"><div><p class="eyebrow">STELLAR FRONTIER</p><h2>CLASSIFICA</h2></div><button id="closeBoardX" class="close-btn" aria-label="Chiudi classifica">'+ico('close')+'</button></div>'+
+  o.innerHTML='<div class="brief-card board-card"><div class="settings-head"><div><p class="eyebrow">CONEX</p><h2>CLASSIFICA</h2></div><button id="closeBoardX" class="close-btn" aria-label="Chiudi classifica">'+ico('close')+'</button></div>'+
    '<p id="boardSub" class="board-sub">I PRIMI 100 PILOTI</p><div id="boardTabs" class="board-tabs hidden"><button data-view="mondo">'+ico('globe')+' MONDO</button><button data-view="locale">QUESTO BROWSER</button></div><div id="boardList" class="board-list"></div>'+
    '<p class="board-note">Punti: nemici abbattuti, coloni salvati, orbite conquistate e colonie liberate. Più alta la minaccia, più punti.</p><p id="boardWhere" class="board-note">La classifica è salvata in questo browser.</p>'+
    '<button id="closeBoard" class="launch-btn"><span>CHIUDI</span><b>'+ico('check')+'</b></button></div>';
