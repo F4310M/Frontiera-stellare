@@ -37,7 +37,13 @@ const ICONS={
  'missile':'<path d="M5 19l3-3M14.5 4.5c2-1 4.2-1.3 5-1 .3.8 0 3-1 5L12 15l-3-3zM9 12l-4 .5 2-3h4M12 15l-.5 4 3-2v-4"/>',
  'boost':'<path d="M4 6l6 6-6 6M11 6l6 6-6 6M18 6v12"/>',
  'brake':'<path d="M8.5 3h7L21 8.5v7L15.5 21h-7L3 15.5v-7z"/><path d="M8 12h8"/>',
- 'god':'<path d="M12 3l8 3v6c0 4.8-3.4 8-8 9-4.6-1-8-4.2-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>'
+ 'god':'<path d="M12 3l8 3v6c0 4.8-3.4 8-8 9-4.6-1-8-4.2-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+ // profilo del pilota e salvataggi
+ 'save':'<path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/>',
+ 'upload':'<path d="M12 16V4M7 9l5-5 5 5M4 15v5h16v-5"/>',
+ 'camera':'<path d="M4 8h3.5L9 5.5h6L16.5 8H20v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+ 'key':'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/>',
+ 'user':'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>'
 };
 function ico(name,cls){
  const p=ICONS[name];if(!p)return'';

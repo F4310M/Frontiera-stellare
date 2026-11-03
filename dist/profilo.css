@@ -1,0 +1,73 @@
+/* Stellar Frontier — profilo del pilota e salvataggi (profilo.js) */
+.prof-overlay{z-index:40}
+.prof-card{width:min(760px,94vw);padding:30px 34px;text-align:left;max-height:94vh;overflow:auto}
+.prof-cols{display:grid;grid-template-columns:170px 1fr;gap:26px;align-items:start}
+.prof-left{display:flex;flex-direction:column;align-items:center;gap:10px}
+.prof-left .prof-hint{text-align:center}
+.prof-photo{position:relative;width:150px;height:150px;border-radius:50%;border:2px dashed rgba(140,233,236,.45);background:radial-gradient(circle,rgba(81,230,255,.08),rgba(4,16,28,.9));color:var(--cyan);cursor:pointer;overflow:hidden;padding:0;font:600 10px 'Chakra Petch',sans-serif;letter-spacing:1.5px;transition:.2s}
+.prof-photo:hover{border-color:var(--cyan);box-shadow:0 0 22px rgba(81,230,255,.25)}
+.prof-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.prof-photo span{position:relative;display:block;line-height:1.7}
+.prof-photo img:not(.hidden)+span{position:absolute;left:0;right:0;bottom:0;padding:6px 0 10px;background:linear-gradient(transparent,rgba(2,8,16,.85));opacity:0;transition:.2s}
+.prof-photo:hover img:not(.hidden)+span{opacity:1}
+.prof-photo .ico{width:26px;height:26px}
+.prof-right{display:flex;flex-direction:column;gap:12px;min-width:0}
+.prof-field{display:flex;flex-direction:column;gap:6px}
+.prof-field>span,.prof-label{font:600 10px 'Chakra Petch',sans-serif;letter-spacing:2px;color:var(--muted)}
+.prof-label{margin:22px 0 10px}
+.prof-input{width:100%;height:44px;padding:0 12px;border:1px solid rgba(81,230,255,.4);border-radius:6px;background:#04101c;color:var(--text);font:600 16px 'Chakra Petch',sans-serif;letter-spacing:1.5px;cursor:text!important;outline:none}
+.prof-input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(81,230,255,.15)}
+.prof-hint{color:var(--muted);font-size:11px;line-height:1.55;margin:0}
+.prof-card>.prof-hint{margin-top:12px}
+.prof-modes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.prof-mode{display:flex;flex-direction:column;gap:7px;text-align:left;padding:14px 16px;border:1px solid var(--line);border-radius:8px;background:rgba(25,52,77,.16);color:var(--text);cursor:pointer;transition:.2s}
+.prof-mode b{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:600 11px 'Chakra Petch',sans-serif;letter-spacing:1.5px}
+.prof-mode b i{font-style:normal;font-size:8px;padding:3px 6px;border-radius:4px;background:rgba(69,246,165,.15);color:#45f6a5}
+.prof-mode small{color:var(--muted);font-size:10.5px;line-height:1.5}
+.prof-mode.on{border-color:var(--cyan);background:rgba(81,230,255,.09);box-shadow:inset 0 0 0 1px rgba(81,230,255,.35)}
+.prof-mode .ico{width:16px;height:16px;color:var(--cyan)}
+.prof-msg{min-height:16px;margin:12px 0 0;font:600 10px 'Chakra Petch',sans-serif;letter-spacing:1.5px;color:#ff7a8a}
+.prof-msg.ok{color:var(--cyan)}
+.prof-card .launch-btn{margin-top:10px}
+.prof-card .text-btn,.prof-pw .text-btn{display:flex;align-items:center;justify-content:center;gap:6px;margin:14px auto 0}
+.prof-card .text-btn .ico{width:14px;height:14px}
+.prof-name{margin:0;font:600 26px 'Chakra Petch',sans-serif;letter-spacing:2px;word-break:break-word}
+.prof-actions{display:flex;gap:8px;flex-wrap:wrap}
+.prof-actions .settings-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-width:180px}
+.prof-actions .settings-btn .ico{width:15px;height:15px}
+.prof-pw .prof-input{margin-top:10px}
+.prof-pw h2{margin-bottom:8px}
+/* barra in alto della mappa */
+.prof-chip{display:flex;align-items:center;gap:8px;padding:0 12px 0 4px}
+.prof-chip img{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid rgba(140,233,236,.5)}
+.prof-chip span{margin:0!important;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prof-save{position:relative;display:flex;align-items:center;gap:2px;color:#45f6a5!important;border-color:rgba(69,246,165,.45)!important}
+.prof-save .ico{width:15px;height:15px}
+.prof-dot{display:none;position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:50%;background:var(--orange);box-shadow:0 0 8px var(--orange)}
+.prof-save.dirty .prof-dot{display:block}
+.prof-pause-save{display:flex;align-items:center;justify-content:center;gap:6px;margin:16px auto 0;color:#45f6a5}
+.prof-pause-save .ico{width:14px;height:14px}
+.prof-toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);z-index:60;max-width:90vw;padding:12px 20px;border:1px solid rgba(81,230,255,.45);border-radius:8px;background:rgba(4,16,28,.95);color:var(--cyan);font:600 11px 'Chakra Petch',sans-serif;letter-spacing:1.5px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.45)}
+/* classifica: foto accanto al nome */
+.board-name{display:flex;align-items:center;gap:8px;min-width:0}
+.board-name em{font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board-ava{width:24px;height:24px;flex:0 0 24px;border-radius:50%;object-fit:cover;border:1px solid rgba(140,233,236,.35)}
+.map-ava{width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:-4px;margin-right:6px}
+.score-who{display:none;align-items:center;justify-content:center;gap:10px;margin:6px 0 2px;font:600 18px 'Chakra Petch',sans-serif;letter-spacing:2px}
+.score-ava{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--cyan)}
+.score-see{display:none}
+.score-entry.prof-auto .score-who{display:flex}
+.score-entry.prof-auto .score-see{display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 0}
+.score-entry.prof-auto .score-see .ico{width:14px;height:14px}
+.score-entry.prof-auto label,.score-entry.prof-auto .score-row{display:none}
+@media(max-width:700px){
+ .prof-card{padding:22px 18px}
+ .prof-cols,.prof-modes{grid-template-columns:1fr}
+ .prof-photo{width:110px;height:110px}
+ .prof-chip span,.prof-save span{display:none}
+}
+/* con il pilota e SALVA PROGRESSI la barra in alto ha due pulsanti in più: più compatta */
+#mapScreen .top-actions{gap:10px}
+#mapScreen .top-actions .settings-btn{white-space:nowrap}
+@media(max-width:1500px){#mapScreen .sector{display:none}}
+@media(max-width:1250px){#mapScreen .top-actions .settings-btn:not(.prof-save) span{display:none}#mapScreen .prof-chip span{display:inline!important}}
