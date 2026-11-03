@@ -32,6 +32,8 @@ Gioco d'azione nel browser in due fasi, scritto in JavaScript puro su canvas, se
 - **Vite:** 3 in tutto il gioco, condivise tra le due fasi. La pillola **1UP**, rarissima, regala una vita (massimo 5). Senza vite è **GAME OVER**: crediti, potenziamenti e pianeti liberati si azzerano.
 - **Crediti:** ogni colpo, missile, granata e unità di carburante (jetpack compreso) costa crediti. Si guadagnano con le taglie sui nemici e con il premio della missione, pagato solo distruggendo il boss.
 - **Mercato:** dalla mappa si comprano potenziamenti: lanciatore multiplo, laser potenziato, doppio laser, barriera, motori, iniettori e granate.
+- **Lanciatore multiplo:** con 2 o 3 missili ogni missile aggancia un nemico diverso (il mirino compare su ognuno) e lo insegue. Se c'è un solo nemico in vista, vanno tutti su di lui.
+- **Menu:** ogni finestra si adatta alla risoluzione dello schermo, su PC e su telefono, così si vede tutta senza scorrere (fa eccezione la lista della classifica).
 - **Missioni:** scegliendo un pianeta dalla mappa si parte sempre dallo spazio; la fase a terra si raggiunge solo conquistando l'orbita.
 - **Lingue:** inglese (predefinito), italiano, francese, spagnolo, russo, cinese e giapponese. Si sceglie dal menu in alto nella mappa o nelle impostazioni.
 - **Punteggio e classifica:** i punti arrivano da nemici abbattuti, coloni salvati, orbite conquistate e colonie liberate, e crescono con la minaccia del pianeta. Alla fine del gioco (GAME OVER o vittoria su OMEGA) si scrive il nome (massimo 10 lettere). La classifica mostra i primi 100 ed è salvata nel browser.
@@ -80,6 +82,7 @@ node tests/finale.test.cjs
 node tests/battaglia.test.cjs
 node tests/godmode.test.cjs
 node tests/sotterranei.test.cjs
+node tests/multi-aggancio.test.cjs
 node tests/lingue.test.cjs
 ```
 
