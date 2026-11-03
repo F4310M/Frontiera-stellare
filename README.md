@@ -1,6 +1,6 @@
-# Stellar Frontier
+# Conex
 
-*(in origine "Frontiera Stellare")*
+*(in origine "Frontiera Stellare", poi "Stellar Frontier")*
 
 Gioco d'azione nel browser in due fasi, scritto in JavaScript puro su canvas, senza librerie e senza compilazione.
 
