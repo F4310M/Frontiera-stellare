@@ -89,3 +89,8 @@
 #mapScreen .top-actions .settings-btn{white-space:nowrap}
 @media(max-width:1500px){#mapScreen .sector{display:none}}
 @media(max-width:1250px){#mapScreen .top-actions .settings-btn:not(.prof-save) span{display:none}#mapScreen .prof-chip span{display:inline!important}}
+/* ricomincia il gioco */
+.restart-btn{flex:0 0 auto;padding:10px 16px;border:1px solid rgba(255,90,110,.6);border-radius:5px;background:rgba(80,10,20,.45);color:#ff8a98;font:700 10px 'Chakra Petch',sans-serif;letter-spacing:2px;cursor:pointer}
+.restart-btn:hover{background:rgba(140,20,40,.6);color:#fff}
+.restart-card .restart-yes{background:#ff5a6e;border-color:#ff5a6e}
+.restart-card .restart-yes:hover{background:#ff8a98}
