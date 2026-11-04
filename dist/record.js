@@ -72,8 +72,9 @@ function recShow(o){
 }
 // Fine di una missione: si salva il record e si mostra la posizione.
 function recMission(){
- if(!coOn){recShow(null);return}
  if(recEnded){recEnded=false;return}   // fine partita: ci pensa l'invio finale (scoreSubmit)
+ myAdd(score);
+ if(!coOn){recShow(null);return}
  const pts=Math.round(score),n=recName();
  if(!(pts>0)){recShow({name:n,pos:'—',sub:'NESSUN PUNTO ANCORA'});return}
  recShow({name:n,pos:'…',sub:'PUNTI '+scoreFmt(pts)+' · CALCOLO DELLA POSIZIONE…'});
@@ -95,7 +96,7 @@ function recMission(){
 {
  const f=finish;finish=function(win){const before=state;const r=f.apply(this,arguments);if(state!==before&&(state==='won'||state==='lost'))recMission();return r};
  const pff=pfFinish;pfFinish=function(win){const before=state;const r=pff.apply(this,arguments);if(state!==before&&(state==='won'||state==='lost'))recMission();return r};
- const se=scoreEnd;scoreEnd=function(){recEnded=true;if(coOn)recShow({name:recName(),pos:'…',sub:'PUNTI '+scoreFmt(score)});return se.apply(this,arguments)};
+ const se=scoreEnd;scoreEnd=function(){recEnded=true;myAdd(score);myRunEnd();if(coOn)recShow({name:recName(),pos:'…',sub:'PUNTI '+scoreFmt(score)});return se.apply(this,arguments)};
 }
 // Fine partita (GAME OVER o OMEGA): la riga della partita riceve il punteggio finale, senza crearne un'altra.
 {
@@ -129,3 +130,41 @@ function recMission(){
 // Una nuova missione nasconde il riquadro della precedente.
 if(typeof brief==='function'){const b=brief;brief=function(){recEnded=false;recShow(null);return b.apply(this,arguments)}}
 recBox();
+
+// ---- IL TUO MIGLIOR RECORD: i 5 punteggi migliori del pilota (scheda accanto a MONDO)
+// Ogni partita è una riga che cresce missione dopo missione; si tengono le 5 migliori.
+const MY_KEY='stellarMieiRecord',MY_RUN='stellarPartita',MY_MAX=5;
+function myLoad(){try{const b=JSON.parse(localStorage.getItem(MY_KEY)||'null');return Array.isArray(b)?b.filter(r=>r&&Number.isFinite(r.s)&&r.s>0&&typeof r.p==='string'):null}catch(e){return null}}
+function mySave(b){localStorage.setItem(MY_KEY,JSON.stringify(b))}
+function myRun(){let id=localStorage.getItem(MY_RUN);if(!id){id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);localStorage.setItem(MY_RUN,id)}return id}
+function myRunEnd(){localStorage.removeItem(MY_RUN)}
+// Prima volta: si parte dai punteggi del pilota già nella classifica di questo browser.
+function myList(){
+ let b=myLoad();
+ if(!b){const n=recName();b=n?boardLoad().filter(r=>r.n===n).slice(0,MY_MAX).map((r,i)=>({p:'old'+i,s:r.s,d:r.d||''})):[];mySave(b)}
+ return b;
+}
+function myAdd(points){
+ const pts=Math.round(points);if(!(pts>0))return;
+ const b=myList(),p=myRun(),r=b.find(x=>x.p===p),d=new Date().toISOString().slice(0,10);
+ if(r){if(pts>r.s){r.s=pts;r.d=d}}else b.push({p,s:pts,d});
+ b.sort((x,y)=>y.s-x.s);mySave(b.slice(0,MY_MAX));
+}
+function myRender(list){
+ const b=myList(),n=recName()||cleanName(localStorage.getItem('stellarUltimoNome'))||'—',cur=localStorage.getItem(MY_RUN);
+ boardShow(list,b.map(r=>({n,s:r.s,d:r.d,p:r.p})),r=>!!cur&&r.p===cur,'Nessun record ancora: completa una missione per registrare il tuo primo record.');
+}
+{
+ const brl=boardRenderLocal;
+ boardRenderLocal=function(list){if(coOn&&coView==='locale')return myRender(list);return brl.apply(this,arguments)};
+ const bt=boardTabs;
+ boardTabs=function(){
+  const r=bt.apply(this,arguments);
+  if(coOn&&coView==='locale'){
+   const sub=$('boardSub');if(sub)sub.textContent='I TUOI 5 MIGLIORI RECORD';
+   const note=$('boardWhere');if(note)note.textContent='Ogni partita conta come un record e cresce a ogni missione. Restano i tuoi 5 migliori.';
+  }
+  return r;
+ };
+ if(typeof document!=='undefined'&&document.querySelector){const t=document.querySelector('#boardTabs button[data-view="locale"]');if(t)t.textContent='IL TUO MIGLIOR RECORD'}
+}

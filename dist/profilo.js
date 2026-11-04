@@ -11,7 +11,7 @@
 
 const PROF_KEY='stellarProfilo',PROF_ITER=250000,PROF_EXT='.sfsave',PROF_GAME='Stellar Frontier',PROF_FORMAT=1,PROF_PW_MIN=6;
 // Chiavi del browser che fanno parte dei progressi (e impostazioni che viaggiano con il pilota).
-const PROF_PROGRESS=['frontieraCrediti','frontieraPotenziamenti','frontieraVite','frontieraPhaseOneComplete','frontieraPhaseTwoComplete','frontieraPianetiLiberati','frontieraOmegaLibero','stellarPunti','stellarRecord'];
+const PROF_PROGRESS=['frontieraCrediti','frontieraPotenziamenti','frontieraVite','frontieraPhaseOneComplete','frontieraPhaseTwoComplete','frontieraPianetiLiberati','frontieraOmegaLibero','stellarPunti','stellarRecord','stellarMieiRecord','stellarPartita'];
 const PROF_SETTINGS=['frontieraSound','frontieraMusica','stellarLang','stellarVolumeMusica','stellarVolumeEffetti','stellarGodMode'];
 const PROF_IMG=/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/,PROF_MINI_MAX=8000;
 function profImgOk(s,max){return typeof s==='string'&&s.length<=(max||60000)&&PROF_IMG.test(s)}
