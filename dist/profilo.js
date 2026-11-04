@@ -11,7 +11,7 @@
 
 const PROF_KEY='stellarProfilo',PROF_ITER=250000,PROF_EXT='.sfsave',PROF_GAME='Stellar Frontier',PROF_FORMAT=1,PROF_PW_MIN=6;
 // Chiavi del browser che fanno parte dei progressi (e impostazioni che viaggiano con il pilota).
-const PROF_PROGRESS=['frontieraCrediti','frontieraPotenziamenti','frontieraVite','frontieraPhaseOneComplete','frontieraPhaseTwoComplete','frontieraPianetiLiberati','frontieraOmegaLibero','stellarPunti'];
+const PROF_PROGRESS=['frontieraCrediti','frontieraPotenziamenti','frontieraVite','frontieraPhaseOneComplete','frontieraPhaseTwoComplete','frontieraPianetiLiberati','frontieraOmegaLibero','stellarPunti','stellarRecord'];
 const PROF_SETTINGS=['frontieraSound','frontieraMusica','stellarLang','stellarVolumeMusica','stellarVolumeEffetti','stellarGodMode'];
 const PROF_IMG=/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/,PROF_MINI_MAX=8000;
 function profImgOk(s,max){return typeof s==='string'&&s.length<=(max||60000)&&PROF_IMG.test(s)}
@@ -161,7 +161,17 @@ function profEmblem(nome){
 function profPhotos(src){return{foto:profThumb(src,128,40000),mini:profThumb(src,40,PROF_MINI_MAX)}}
 
 // ---- classifica: foto accanto al nome, invio automatico a fine gioco
-function profAva(a,cls){return profImgOk(a,PROF_MINI_MAX)?`<img class="${cls||'board-ava'}" src="${a}" alt="">`:''}
+// Foto del pilota in classifica. Se la riga non ha la foto: quella del profilo, se il nome è il tuo,
+// altrimenti un tondo colorato con l'iniziale.
+function profAva(a,cls,nome){
+ cls=cls||'board-ava';
+ if(!profImgOk(a,PROF_MINI_MAX)&&nome&&prof&&prof.mini&&cleanName(nome)===prof.nome)a=prof.mini;
+ if(profImgOk(a,PROF_MINI_MAX))return `<img class="${cls}" src="${a}" alt="">`;
+ if(!nome)return '';
+ let h=0;for(const ch of String(nome))h=(h*31+ch.codePointAt(0))>>>0;
+ const c=(String(nome).trim().match(/[\p{L}\p{N}]/u)||['?'])[0].toUpperCase();
+ return `<span class="${cls} ava-ini" style="background:linear-gradient(135deg,hsl(${h%360},70%,42%),hsl(${(h+80)%360},70%,18%))">${c}</span>`;
+}
 if(typeof coRow==='function'){const cr=coRow;coRow=function(doc){const r=cr(doc),f=(doc&&doc.fields)||{};r.a=profImgOk(f.a&&f.a.stringValue,PROF_MINI_MAX)?f.a.stringValue:'';return r}}
 if(typeof coSend==='function'){
  coSend=async function(row){
@@ -190,7 +200,7 @@ if(typeof boardRows==='function'){
  boardRows=function(b,hi){
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   return '<div class="board-row head"><span>POS.</span><span>NOME</span><span>PUNTI</span><span>DATA</span></div>'+
-   b.map((r,i)=>`<div class="board-row${hi(r,i)?' me':''}${i<3?' podium':''}"><span>${i+1}</span><span class="board-name">${profAva(r.a)}<em>${esc(r.n)}</em></span><span>${scoreFmt(r.s)}</span><span>${esc(r.d||'')}</span></div>`).join('');
+   b.map((r,i)=>`<div class="board-row${hi(r,i)?' me':''}${i<3?' podium':''}"><span>${i+1}</span><span class="board-name">${profAva(r.a,'',r.n)}<em>${esc(r.n)}</em></span><span>${scoreFmt(r.s)}</span><span>${esc(r.d||'')}</span></div>`).join('');
  };
 }
 if(typeof mapBoardRender==='function'){
@@ -202,7 +212,7 @@ if(typeof mapBoardRender==='function'){
   rows=(rows||[]).slice(0,MAP_BOARD_ROWS);
   if(!rows.length){list.innerHTML='<p class="board-empty">Nessun punteggio ancora: completa una partita per entrare in classifica.</p>';return}
   list.innerHTML=(offline?'<p class="board-offline">OFFLINE</p>':'')+rows.map((r,i)=>
-   `<div class="map-board-row${i<3?' top'+(i+1):''}${coMyId&&r.id===coMyId?' me':''}"><span class="pos">${i+1}</span><span class="name">${profAva(r.a,'map-ava')}${esc(r.n)}</span><span class="pts">${scoreFmt(r.s)}</span></div>`).join('');
+   `<div class="map-board-row${i<3?' top'+(i+1):''}${coMyId&&r.id===coMyId?' me':''}"><span class="pos">${i+1}</span><span class="name">${profAva(r.a,'map-ava',r.n)}${esc(r.n)}</span><span class="pts">${scoreFmt(r.s)}</span></div>`).join('');
  };
 }
 // A fine gioco il punteggio parte da solo con il nome e la foto del pilota (niente casella da riempire).
