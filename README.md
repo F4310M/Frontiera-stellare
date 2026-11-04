@@ -64,6 +64,7 @@ dist/            il gioco (apri dist/index.html tramite un server locale)
   icone.js       icone SVG di frecce e pulsanti (caricato per primo)
   sotterranei.js fase a terra più lunga: ponte di colonne col jetpack e gallerie sotterranee alternative
   godmode.js     GOD MODE dalle impostazioni: pilota e nave indistruttibili, tutti i pianeti giocabili
+  facile.js      difficoltà: meno danni, nemici più lenti a sparare, boss con meno salute (numeri in FACILE)
 tests/           test automatici (Node.js)
 ```
 
@@ -83,6 +84,7 @@ node tests/battaglia.test.cjs
 node tests/godmode.test.cjs
 node tests/sotterranei.test.cjs
 node tests/multi-aggancio.test.cjs
+node tests/facile.test.cjs
 node tests/lingue.test.cjs
 ```
 
