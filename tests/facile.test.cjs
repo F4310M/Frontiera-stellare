@@ -45,7 +45,7 @@ assert.equal(val('(pf.theme||pfTheme(pf.p)).fallDamage'),fd,'il valore del tema 
 console.log('PASS: il pilota subisce il 60% dei danni');
 
 // 4) Boss con l'80% della salute
-const exp=val('Math.round(Math.round((130+pf.p.difficulty*35)*pfBossInfo(pf.p).hp)*.8)');
+const exp=val('Math.round(Math.round((130+pf.p.difficulty*35)*pfBossInfo(pf.p).hp)*FACILE.saluteBoss)');
 run('pfSpawnBoss()');
 assert.equal(val('pf.boss.max'),exp);assert.equal(val('pf.boss.hp'),exp);
 console.log('PASS: boss con meno salute ('+exp+')');
@@ -55,7 +55,7 @@ run('globalThis.E={fire:.01};fcRicarica([E]);E.fire=1.5;fcRicarica([E])');
 assert(near(val('E.fire'),.01+1.49*1.35),'ricarica allungata: '+val('E.fire'));
 run('E.fire-=.016;fcRicarica([E])');assert(near(val('E.fire'),.01+1.49*1.35-.016),'il timer che scende non cambia');
 // in partita: un nemico dello spazio che ha appena sparato aspetta più a lungo
-run("startGame();paused=false;enemies=[];rocks=[];wrecks=[];monsters=[];spawnEnemy(player.x+250,player.y,false);enemies[0].x=player.x+250;enemies[0].y=player.y;enemies[0].fire=.001;update(1/60)");
+run("startGame();paused=false;enemies=[];rocks=[];wrecks=[];monsters=[];spawnEnemy(player.x+250,player.y,false);enemies[0].x=player.x+250;enemies[0].y=player.y;enemies[0].fire=.001;fcRicarica(enemies);update(1/60)");
 assert(val('enemies[0].fire')>1.5*1.35-.05,'dopo il colpo il nemico aspetta di più: '+val('enemies[0].fire'));
 console.log('PASS: nemici più lenti a sparare');
 

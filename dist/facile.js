@@ -4,16 +4,21 @@
 // - Fase 2 (a terra): il pilota subisce meno danni da colpi, contatti, boss e cadute nel burrone.
 // - Nemici (spazio e terra): sparano meno spesso (il tempo di ricarica di ogni colpo è più lungo).
 // - Boss a terra: meno salute.
+// - Navi nemiche (2026-11-04): sul primo pianeta bastano 2 colpi di laser; sugli altri hanno il 25% di salute in meno.
+//   Anche i ribelli a terra hanno meno salute (2 colpi sul primo pianeta).
 // Va caricato dopo godmode.js e i18n.js (avvolge le loro versioni delle funzioni).
 
 const FACILE={
  danniNave:.6,     // danni alla nave nello spazio: 60% di prima (meteorite grande −75% → −45%)
  danniPilota:.6,   // danni al pilota a terra: 60% di prima (caduta −25 → −15)
  ricaricaNemici:1.35, // i nemici aspettano il 35% in più tra un colpo e l'altro
- saluteBoss:.8     // salute dei boss a terra: 80% di prima
+ saluteBoss:.7,    // salute dei boss a terra: 70% di prima
+ colpiPrimoPianeta:2, // navi nemiche e ribelli del primo pianeta: si abbattono con 2 colpi di laser base
+ saluteNemici:.75,  // navi nemiche degli altri pianeti: 75% della salute
+ saluteRibelli:.8   // ribelli a terra degli altri pianeti: 80% della salute
 };
 const fcScale=(n,k)=>n>0?Math.max(1,Math.round(n*k)):n;
-const gOrigFacile={damage,pfDamage,pfFell,pfSpawnBoss,update,status};
+const gOrigFacile={damage,pfDamage,pfFell,pfSpawnBoss,update,status,spawnEnemy,pfSpawnEnemy,battSpawnCover:typeof battSpawnCover==='function'?battSpawnCover:null};
 
 // ---- danni
 damage=function(n,piercing=false,shieldFirst=false){return gOrigFacile.damage(fcScale(n,FACILE.danniNave),piercing,shieldFirst)};
@@ -62,3 +67,14 @@ update=function(dt){
  if(typeof pf!=='undefined'&&pf)fcRicarica(pf.enemies);
  return r;
 };
+
+// ---- nemici con meno salute (2026-11-04)
+function fcPrimo(){const p=typeof pf!=='undefined'&&pf&&state==='platform'?pf.p:planets[selected];return!!p&&!p.final&&(p.difficulty||1)<=1}
+function fcSalute(e,k){
+ if(!e||typeof e.hp!=='number'||e.big)return;
+ const hp=fcPrimo()?Math.min(e.hp,FACILE.colpiPrimoPianeta):Math.max(2,Math.round(e.hp*k));
+ e.hp=hp;if('maxHp' in e)e.maxHp=hp;if('max' in e)e.max=hp;
+}
+spawnEnemy=function(...a){const n=enemies.length,r=gOrigFacile.spawnEnemy(...a);for(let i=n;i<enemies.length;i++)fcSalute(enemies[i],FACILE.saluteNemici);return r};
+pfSpawnEnemy=function(...a){const n=pf?pf.enemies.length:0,r=gOrigFacile.pfSpawnEnemy(...a);if(pf)for(let i=n;i<pf.enemies.length;i++)fcSalute(pf.enemies[i],FACILE.saluteRibelli);return r};
+if(gOrigFacile.battSpawnCover)battSpawnCover=function(...a){const n=pf.enemies.length,r=gOrigFacile.battSpawnCover(...a);for(let i=n;i<pf.enemies.length;i++)fcSalute(pf.enemies[i],FACILE.saluteRibelli);return r};
