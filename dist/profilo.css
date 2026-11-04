@@ -60,6 +60,24 @@
 .score-entry.prof-auto .score-see{display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 0}
 .score-entry.prof-auto .score-see .ico{width:14px;height:14px}
 .score-entry.prof-auto label,.score-entry.prof-auto .score-row{display:none}
+/* tondo con l'iniziale per chi non ha la foto */
+.ava-ini{display:inline-flex;align-items:center;justify-content:center;color:rgba(255,255,255,.92);font:700 11px 'Chakra Petch',sans-serif;line-height:1;box-sizing:border-box}
+.map-ava.ava-ini{font-size:10px;vertical-align:-4px}
+.board-ava.ava-ini{font-size:12px}
+/* posizione mondiale nella schermata del risultato */
+.world-rank{display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid rgba(81,230,255,.35);border-radius:8px;background:linear-gradient(135deg,rgba(6,30,44,.75),rgba(4,14,24,.6));text-align:left}
+.world-rank.hidden{display:none}
+.world-rank.top3{border-color:rgba(255,215,106,.55);background:linear-gradient(135deg,rgba(44,32,6,.7),rgba(4,14,24,.6))}
+.world-rank-ava{flex:0 0 48px;width:48px;height:48px}
+.world-rank-img{width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--cyan)}
+.world-rank.top3 .world-rank-img{border-color:#ffd76a}
+.world-rank-img.ava-ini{font-size:22px}
+.world-rank-txt{display:flex;flex-direction:column;gap:3px;min-width:0}
+.world-rank-txt small{display:flex;align-items:center;gap:6px;font:600 9px 'Chakra Petch',sans-serif;letter-spacing:2px;color:var(--cyan)}
+.world-rank-txt small .ico{width:12px;height:12px}
+.world-rank-pos{font:700 20px 'Chakra Petch',sans-serif;letter-spacing:1.5px;color:#fff}
+.world-rank.top3 .world-rank-pos{color:#ffd76a}
+.world-rank-sub{font:600 10px 'Chakra Petch',sans-serif;letter-spacing:1.2px;color:var(--muted)}
 @media(max-width:700px){
  .prof-card{padding:22px 18px}
  .prof-cols,.prof-modes{grid-template-columns:1fr}
