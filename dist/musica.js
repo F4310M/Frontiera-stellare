@@ -98,11 +98,11 @@ function musBuild(a){
 // ---- brani registrati di Fabio (cartella musica/). Ogni scena ha il suo; dove manca, o se un file
 // non si carica, suona la musica sintetica qui sotto. Ogni brano gira in loop con una dissolvenza incrociata.
 const MUS_TRACKS={
- menu:'musica/orbita-di-fuoco.mp3',      // Orbita di Fuoco: menu principale (mappa) e schermate
- spazio:'musica/assalto-orbitale.mp3',   // Assalto Orbitale: fase 1 in volo
- soglia:'musica/soglia-ostile.mp3',      // Soglia Ostile: vicino al pianeta, flotta di guardia e meteoriti
- terra:'musica/fuoco-sul-pianeta.mp3',   // Fuoco sul Pianeta: fase 2 a terra
- boss:'musica/boss-soglia-ostile.mp3'    // Soglia Ostile (boss): boss di ogni pianeta e IMPERATORE OMEGA
+ menu:'musica/monolith-at-the-edge.mp3',  // Monolith at the Edge: menu principale (mappa) e schermate (dal 2026-11-04)
+ spazio:'musica/titans-last-stand.mp3',   // Titan's Last Stand: guerra nello spazio, fase 1 in volo
+ soglia:'musica/the-final-maneuver.mp3',  // The Final Maneuver: avvicinamento al pianeta di destinazione e ingresso in orbita
+ terra:'musica/kinetic-front.mp3',        // Kinetic Front: combattimento a terra
+ boss:'musica/titans-final-strike.mp3'    // Titan's Final Strike: boss finale di ogni pianeta e IMPERATORE OMEGA
 };
 const MUS_TRACK_GAIN=2.2,MUS_XFADE=1.2;
 function musTrackId(song,level){
@@ -155,7 +155,7 @@ function musLevel(){
  if(state==='platform'&&typeof pf!=='undefined'&&pf){if(pf.phase==='boss'||pf.phase==='vittoria')return'boss';if(pf.phase==='atterraggio'||pf.phase==='sconfitta')return'calm';return'battle'}
  if(state==='won'&&typeof pf!=='undefined'&&pf&&pf.phase==='vittoria')return'boss';
  if(state==='play'||state==='dying'){if(typeof nearAtmosphere==='function'&&nearAtmosphere())return'boss';return'battle'}
- if(state==='orbit')return'battle';
+ if(state==='orbit')return'boss'; // ingresso in orbita: resta il brano dell'avvicinamento
  return'calm';
 }
 // Brano deciso dallo stato del gioco.

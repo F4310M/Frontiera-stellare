@@ -23,6 +23,7 @@ Gioco d'azione nel browser in due fasi, scritto in JavaScript puro su canvas, se
 | Mira | Mouse (la prua segue il cursore) | Mouse |
 | Fuoco | Clic sinistro o Spazio | Clic sinistro |
 | Speciale | Rotella: missile · Shift destro: post-bruciatore · F: freno | Rotella o E: granata · W/Spazio: salto, in aria **jetpack** · in volo col jetpack tieni S per planare |
+| Colpo speciale (1 per fase) | Q: trottola laser | Q: bombardamento via radio |
 | Scudo | Tasto destro del mouse | Tasto destro del mouse |
 | Pausa | P | P |
 | Musica | M | M |
@@ -34,10 +35,12 @@ Gioco d'azione nel browser in due fasi, scritto in JavaScript puro su canvas, se
 - **Mercato:** dalla mappa si comprano potenziamenti: lanciatore multiplo, laser potenziato, doppio laser, barriera, motori, iniettori e granate.
 - **Lanciatore multiplo:** con 2 o 3 missili ogni missile aggancia un nemico diverso (il mirino compare su ognuno) e lo insegue. Se c'è un solo nemico in vista, vanno tutti su di lui.
 - **Menu:** ogni finestra si adatta alla risoluzione dello schermo, su PC e su telefono, così si vede tutta senza scorrere (fa eccezione la lista della classifica).
+- **Colpo speciale:** una sola volta nello spazio e una sola volta a terra in ogni missione (tasto Q, sul telefono il pulsante SPECIALE). Nello spazio la nave gira velocissima su sé stessa sparando laser e distrugge tutti i nemici sullo schermo. A terra il pilota chiama la nave via radio: passa sopra e sgancia una bomba che distrugge tutti i nemici sullo schermo e toglie 1/4 dell'energia al boss.
+- **Boss:** prima dello scontro il robot si costruisce da solo, sfiata vapore e accumula energia nel nucleo; in quei secondi non si può colpire.
 - **Missioni:** scegliendo un pianeta dalla mappa si parte sempre dallo spazio; la fase a terra si raggiunge solo conquistando l'orbita.
 - **Lingue:** inglese (predefinito), italiano, francese, spagnolo, russo, cinese e giapponese. Si sceglie dal menu in alto nella mappa o nelle impostazioni.
 - **Punteggio e classifica:** i punti arrivano da nemici abbattuti, coloni salvati, orbite conquistate e colonie liberate, e crescono con la minaccia del pianeta. Alla fine del gioco (GAME OVER o vittoria su OMEGA) si scrive il nome (massimo 10 lettere). La classifica mostra i primi 100 ed è salvata nel browser.
-- **Colonna sonora:** ogni scena ha il suo brano e si passa dall'uno all'altro in dissolvenza: *Orbita di Fuoco* nel menu principale (mappa), *Assalto Orbitale* in volo, *Soglia Ostile* vicino al pianeta, *Fuoco sul Pianeta* a terra e *Soglia Ostile (boss)* contro i boss e IMPERATORE OMEGA. Alla vittoria suona un'orchestra procedurale, che fa anche da riserva se i brani non si caricano (per esempio aprendo il gioco direttamente da disco). Si attiva o spegne nelle impostazioni o con il tasto M. Nelle impostazioni ci sono anche due cursori, per il volume della musica (40% di partenza) e per quello degli effetti sonori.
+- **Colonna sonora:** ogni scena ha il suo brano e si passa dall'uno all'altro in dissolvenza: *Monolith at the Edge* nel menu principale (mappa), *Titan's Last Stand* nella guerra nello spazio, *The Final Maneuver* vicino al pianeta e durante l'ingresso in orbita, *Kinetic Front* a terra e *Titan's Final Strike* contro i boss e IMPERATORE OMEGA. Alla vittoria suona un'orchestra procedurale, che fa anche da riserva se i brani non si caricano (per esempio aprendo il gioco direttamente da disco). Si attiva o spegne nelle impostazioni o con il tasto M. Nelle impostazioni ci sono anche due cursori, per il volume della musica (40% di partenza) e per quello degli effetti sonori.
 - **Pianeti:** LYRA (mare), VESPER (deserto), NIMBUS (tempesta), KHEPRI (foresta) e UMBRA (lava), ognuno con il suo boss. Liberati tutti e cinque, si sblocca **OMEGA**, il pianeta finale con IMPERATORE OMEGA.
 
 ## Struttura
@@ -64,6 +67,11 @@ dist/            il gioco (apri dist/index.html tramite un server locale)
   icone.js       icone SVG di frecce e pulsanti (caricato per primo)
   sotterranei.js fase a terra più lunga: ponte di colonne col jetpack e gallerie sotterranee alternative
   godmode.js     GOD MODE dalle impostazioni: pilota e nave indistruttibili, tutti i pianeti giocabili
+  facile.js      difficoltà: meno danni, nemici più lenti a sparare, boss e nemici con meno salute (numeri in FACILE)
+  assalto.js     a terra: più ribelli al riparo, spinta nello scontro, scena quando il pilota perde una vita
+  spirale.js     ingresso in orbita: la nave scende a spirale verso il pianeta, rimpicciolendo e arroventandosi
+  montaggio.js   entrata in scena del boss (si costruisce, vapore, energia) e texture metalliche migliori
+  speciale.js    colpo speciale (tasto Q): trottola laser nello spazio, bombardamento via radio a terra
 tests/           test automatici (Node.js)
 ```
 
@@ -83,6 +91,8 @@ node tests/battaglia.test.cjs
 node tests/godmode.test.cjs
 node tests/sotterranei.test.cjs
 node tests/multi-aggancio.test.cjs
+node tests/facile.test.cjs
+node tests/speciale.test.cjs
 node tests/lingue.test.cjs
 ```
 

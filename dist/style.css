@@ -543,3 +543,15 @@ body.touch .settings-side .setting-block{margin:0}
  .prof-card .prof-modes{grid-template-columns:1fr 1fr}
  #landBrief .brief-card{width:min(780px,94vw)!important}
 }
+/* Colpo speciale (speciale.js): indicatore sotto l'obiettivo e pulsante sul telefono */
+.spec-badge{position:fixed;left:25px;top:92px;z-index:6;pointer-events:none;display:flex;align-items:center;gap:8px;padding:7px 13px 7px 9px;border:1px solid rgba(255,190,90,.55);background:linear-gradient(90deg,rgba(40,22,4,.85),rgba(20,12,4,.35));font:600 9px 'Chakra Petch';letter-spacing:2px;color:#ffd79a;box-shadow:0 0 16px rgba(255,160,60,.18)}
+.spec-badge b{display:grid;place-items:center;width:18px;height:18px;color:#ffb348;animation:specPulse 1.6s ease-in-out infinite}
+.spec-badge b svg{width:18px;height:18px}
+.spec-badge.busy{border-color:#8cf2ff;color:#d8fbff;background:linear-gradient(90deg,rgba(4,30,44,.88),rgba(4,20,30,.35))}
+.spec-badge.busy b{color:#8cf2ff;animation-duration:.3s}
+.spec-badge.used{border-color:rgba(255,255,255,.12);color:rgba(200,210,220,.45);background:rgba(3,11,20,.5);box-shadow:none}
+.spec-badge.used b{color:rgba(200,210,220,.35);animation:none}
+@keyframes specPulse{50%{transform:scale(1.18);filter:drop-shadow(0 0 6px #ffb348)}}
+body.touch .spec-badge{top:64px;left:12px;padding:4px 9px 4px 6px;font-size:8px}
+.touch-btn.tb-special{border-color:rgba(255,190,90,.7);color:#ffd79a}
+.touch-btn.tb-special.used{opacity:.3}

@@ -6,6 +6,20 @@
 const I18N_LANGS=[['en','English'],['it','Italiano'],['fr','Français'],['es','Español'],['ru','Русский'],['zh','中文'],['ja','日本語']];
 const I18N_COL={it:0,en:1,fr:2,es:3,ru:4,zh:5,ja:6};
 const I18N_ROWS=[
+["PILOTA COLPITO", "PILOT DOWN", "PILOTE TOUCHÉ", "PILOTO ABATIDO", "ПИЛОТ РАНЕН", "飞行员中弹", "パイロット被弾"],
+["IL ROBOT SI STA ASSEMBLANDO", "THE ROBOT IS ASSEMBLING ITSELF", "LE ROBOT S’ASSEMBLE TOUT SEUL", "EL ROBOT SE ESTÁ ENSAMBLANDO", "РОБОТ СОБИРАЕТ СЕБЯ", "机器人正在自我组装", "ロボットが自己組立中"],
+["COLPO SPECIALE · TROTTOLA LASER", "SPECIAL ATTACK · LASER SPIN", "ATTAQUE SPÉCIALE · TOUPIE LASER", "ATAQUE ESPECIAL · PEONZA LÁSER", "СПЕЦУДАР · ЛАЗЕРНЫЙ ВОЛЧОК", "特殊攻击 · 激光旋风", "必殺技 · レーザースピン"],
+["BERSAGLI ELIMINATI", "TARGETS ELIMINATED", "CIBLES ÉLIMINÉES", "OBJETIVOS ELIMINADOS", "ЦЕЛИ УНИЧТОЖЕНЫ", "目标已清除", "目標排除"],
+["RADIO · RICHIESTA DI BOMBARDAMENTO", "RADIO · AIRSTRIKE REQUESTED", "RADIO · BOMBARDEMENT DEMANDÉ", "RADIO · BOMBARDEO SOLICITADO", "РАДИО · ЗАПРОС БОМБАРДИРОВКИ", "无线电 · 请求轰炸", "無線 · 爆撃要請"],
+["NAVE IN ARRIVO · SGANCIO DELLA BOMBA", "SHIP INBOUND · DROPPING THE BOMB", "VAISSEAU EN APPROCHE · LARGAGE DE LA BOMBE", "NAVE LLEGANDO · SOLTANDO LA BOMBA", "КОРАБЛЬ НА ПОДХОДЕ · СБРОС БОМБЫ", "飞船抵达 · 投下炸弹", "艦接近 · 爆弾投下"],
+["BOMBARDAMENTO · NEMICI ELIMINATI", "AIRSTRIKE · ENEMIES ELIMINATED", "BOMBARDEMENT · ENNEMIS ÉLIMINÉS", "BOMBARDEO · ENEMIGOS ELIMINADOS", "БОМБАРДИРОВКА · ВРАГИ УНИЧТОЖЕНЫ", "轰炸 · 敌人已清除", "爆撃 · 敵を排除"],
+["BOMBARDAMENTO COMPLETATO", "AIRSTRIKE COMPLETE", "BOMBARDEMENT TERMINÉ", "BOMBARDEO COMPLETADO", "БОМБАРДИРОВКА ЗАВЕРШЕНА", "轰炸完成", "爆撃完了"],
+["COLPO SPECIALE IN CORSO", "SPECIAL ATTACK ACTIVE", "ATTAQUE SPÉCIALE EN COURS", "ATAQUE ESPECIAL EN CURSO", "СПЕЦУДАР В ДЕЙСТВИИ", "特殊攻击进行中", "必殺技 発動中"],
+["COLPO SPECIALE USATO", "SPECIAL ATTACK USED", "ATTAQUE SPÉCIALE UTILISÉE", "ATAQUE ESPECIAL USADO", "СПЕЦУДАР ИСПОЛЬЗОВАН", "特殊攻击已使用", "必殺技 使用済み"],
+["COLPO SPECIALE · Q", "SPECIAL ATTACK · Q", "ATTAQUE SPÉCIALE · Q", "ATAQUE ESPECIAL · Q", "СПЕЦУДАР · Q", "特殊攻击 · Q", "必殺技 · Q"],
+["COLPO SPECIALE", "SPECIAL ATTACK", "ATTAQUE SPÉCIALE", "ATAQUE ESPECIAL", "СПЕЦУДАР", "特殊攻击", "必殺技"],
+["SPECIALE", "SPECIAL", "SPÉCIAL", "ESPECIAL", "СПЕЦ", "特殊", "必殺"],
+["NESSUN SEGNALE RADIO SOTTOTERRA", "NO RADIO SIGNAL UNDERGROUND", "PAS DE SIGNAL RADIO SOUS TERRE", "SIN SEÑAL DE RADIO BAJO TIERRA", "НЕТ РАДИОСИГНАЛА ПОД ЗЕМЛЁЙ", "地下没有无线电信号", "地下では無線が届かない"],
 ["TI STAI ALLONTANANDO TROPPO DALL’OBIETTIVO · SEGUI LA FRECCIA","YOU ARE DRIFTING TOO FAR FROM THE TARGET · FOLLOW THE ARROW","TU T’ÉLOIGNES TROP DE L’OBJECTIF · SUIS LA FLÈCHE","TE ESTÁS ALEJANDO DEMASIADO DEL OBJETIVO · SIGUE LA FLECHA","ТЫ СЛИШКОМ УДАЛЯЕШЬСЯ ОТ ЦЕЛИ · СЛЕДУЙ ЗА СТРЕЛКОЙ","你离目标太远了 · 跟随箭头","目標から離れすぎている · 矢印に従え"],
 ["NAVE DA GUERRA NEMICA IN AVVICINAMENTO","ENEMY WARSHIP APPROACHING","NAVIRE DE GUERRE ENNEMI EN APPROCHE","BUQUE DE GUERRA ENEMIGO ACERCÁNDOSE","ПРИБЛИЖАЕТСЯ ВРАЖЕСКИЙ КРЕЙСЕР","敌方战舰正在接近","敵戦艦接近中"],
 ["NAVE DA GUERRA DISTRUTTA","WARSHIP DESTROYED","NAVIRE DE GUERRE DÉTRUIT","BUQUE DE GUERRA DESTRUIDO","КРЕЙСЕР УНИЧТОЖЕН","战舰已摧毁","戦艦撃破"],
