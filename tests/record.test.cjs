@@ -103,4 +103,21 @@ function game(fs_,ls){
   assert(!/</.test(run(`profAva('','x','<img>')`).replace(/<span[^>]*>|<\/span>/g,'')),'niente HTML dal nome');
   console.log('PASS: foto e iniziali in classifica');
  }
+ // 4) IL TUO MIGLIOR RECORD: una riga per partita che cresce, restano le 5 migliori
+ {
+  const F=firestore(true),ls=storage(),{run}=game(F,ls);
+  await run(`profCreate('Fabio','segreta1','',${JSON.stringify(MINI)},'pc')`);
+  run('score=1000;state="play";finish(true)');await run('recQ');
+  run('score=2500;state="platform";pfFinish(true)');await run('recQ');
+  let m=JSON.parse(ls.getItem('stellarMieiRecord'));
+  assert.equal(m.length,1,'stessa partita: una riga');assert.equal(m[0].s,2500);
+  run('score=3100;state="play";gameOver=true;finish(false);gameOver=false');await new Promise(r=>setTimeout(r,30));await run('recQ');
+  m=JSON.parse(ls.getItem('stellarMieiRecord'));assert.equal(m[0].s,3100,'fine partita: record finale');
+  assert.equal(ls.getItem('stellarPartita'),null,'partita chiusa');
+  for(const v of [500,9000,700,4000,6000,200]){run(`score=${v};state="play";gameOver=true;finish(false);gameOver=false`);await new Promise(r=>setTimeout(r,30))}
+  m=JSON.parse(ls.getItem('stellarMieiRecord'));
+  assert.deepEqual(m.map(r=>r.s),[9000,6000,4000,3100,700],'le 5 migliori, in ordine');
+  assert(run('PROF_PROGRESS').includes('stellarMieiRecord'),'nel backup del profilo');
+  console.log('PASS: i tuoi 5 migliori record');
+ }
 })().catch(e=>{console.error(e);process.exit(1)});
