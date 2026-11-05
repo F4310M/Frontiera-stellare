@@ -94,6 +94,7 @@ node tests/multi-aggancio.test.cjs
 node tests/facile.test.cjs
 node tests/speciale.test.cjs
 node tests/lingue.test.cjs
+node tests/nave3d.test.cjs
 ```
 
 ## Classifica mondiale
