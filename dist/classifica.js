@@ -229,7 +229,7 @@ function mapBoardBuild(){
  if(typeof document==='undefined'||!document.createElement||!document.querySelector)return;
  const side=document.querySelector('#mapScreen .mission-copy');if(!side||$('mapBoard'))return;
  const d=document.createElement('div');d.id='mapBoard';d.className='map-board';
- d.innerHTML='<div class="map-board-head"><span class="map-board-globe">'+ico('globe')+'</span><b>CLASSIFICA MONDIALE</b></div>'+
+ d.innerHTML='<div class="map-board-head"><span class="map-board-globe">'+ico('globe')+'</span><b>CLASSIFICA MONDIALE</b><em id="mapBoardMe" class="map-board-me hidden"></em></div>'+
   '<div id="mapBoardList" class="map-board-list"><p class="board-empty">CARICAMENTO…</p></div>'+
   '<button id="mapBoardAll" class="map-board-all"><span>VEDI TUTTA</span><b>'+ico('arrow-right')+'</b></button>';
  side.appendChild(d);
@@ -240,10 +240,31 @@ async function mapBoardRender(){
  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  let rows,offline=false;
  if(coOn){try{rows=await coTop(false)}catch(e){rows=boardLoad();offline=true}}else rows=boardLoad();
+ mapBoardMe(offline);
  rows=(rows||[]).slice(0,MAP_BOARD_ROWS);
  if(!rows.length){list.innerHTML='<p class="board-empty">Nessun punteggio ancora: completa una partita per entrare in classifica.</p>';return}
  list.innerHTML=(offline?'<p class="board-offline">OFFLINE</p>':'')+rows.map((r,i)=>
   `<div class="map-board-row${i<3?' top'+(i+1):''}${coMyId&&r.id===coMyId?' me':''}"><span class="pos">${i+1}</span><span class="name">${esc(r.n)}</span><span class="pts">${scoreFmt(r.s)}</span></div>`).join('');
+}
+// Accanto al titolo: "TU N° 42", la posizione mondiale del miglior punteggio del pilota (solo nei primi 10.000).
+let mapMeCache={s:-1,rank:0,t:0};
+function mapBestScore(){
+ let best=Math.round(typeof score==='number'?score:0);
+ if(typeof myList==='function'){try{for(const r of myList())if(r.s>best)best=Math.round(r.s)}catch(e){}}
+ return best;
+}
+async function mapBoardMe(offline){
+ const el=$('mapBoardMe');if(!el)return;
+ const best=mapBestScore();let rank=0;
+ if(best>0){
+  if(coOn&&!offline){
+   if(mapMeCache.s===best&&Date.now()-mapMeCache.t<60000)rank=mapMeCache.rank;
+   else{try{rank=await coRank(best);mapMeCache={s:best,rank,t:Date.now()}}catch(e){rank=0}}
+  }else{const b=boardLoad(),i=b.findIndex(r=>r.s<=best);rank=i<0?(b.length<BOARD_SIZE?b.length+1:0):i+1}
+ }
+ const on=rank>0&&rank<=WORLD_SIZE;
+ el.classList.toggle('hidden',!on);
+ if(on)el.textContent='TU N° '+scoreFmt(rank);
 }
 // si aggiorna quando la mappa è visibile: all'avvio, ogni minuto e dopo un nuovo punteggio
 function mapBoardTick(){const m=$('mapScreen');if(m&&m.classList&&m.classList.contains('active')&&!document.hidden)mapBoardRender()}
