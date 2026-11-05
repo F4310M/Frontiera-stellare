@@ -214,7 +214,7 @@ if(typeof mapBoardRender==='function'){
   if(!rows.length){list.innerHTML='<p class="board-empty">Nessun punteggio ancora: completa una partita per entrare in classifica.</p>';return}
   const run=typeof recLoad==='function'?recLoad():null;
   list.innerHTML=(offline?'<p class="board-offline">OFFLINE</p>':'')+rows.map((r,i)=>
-   `<div class="map-board-row${i<3?' top'+(i+1):''}${(coMyId&&r.id===coMyId)||(run&&r.id===run.id)?' me':''}"><span class="pos">${i+1}</span><span class="name">${profAva(r.a,'map-ava',r.n)}${esc(r.n)}</span><span class="pts">${scoreFmt(r.s)}</span></div>`).join('');
+   `<div class="map-board-row${i<3?' top'+(i+1):''}${(coMyId&&r.id===coMyId)||(run&&r.id===run.id)||(typeof boardIsMe==='function'&&boardIsMe(r))?' me':''}"><span class="pos">${i+1}</span><span class="name">${profAva(r.a,'map-ava',r.n)}${esc(r.n)}</span><span class="pts">${scoreFmt(r.s)}</span></div>`).join('');
  };
 }
 // A fine gioco il punteggio parte da solo con il nome e la foto del pilota (niente casella da riempire).

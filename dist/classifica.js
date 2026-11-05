@@ -150,7 +150,7 @@ async function boardRender(){
   await coFlush();
   const b=await coTop(false);
   if(coView!=='mondo')return;
-  boardShow(list,b,r=>coMyId&&r.id===coMyId,'Nessun punteggio ancora: completa una partita per entrare in classifica.');
+  boardShow(list,b,r=>(coMyId&&r.id===coMyId)||boardIsMe(r),'Nessun punteggio ancora: completa una partita per entrare in classifica.');
   if(coMore&&list.appendChild&&document.createElement){
    const m=document.createElement('button');m.className='board-more';m.textContent='ALTRI 100';
    m.onclick=async()=>{m.disabled=true;const top=list.scrollTop;try{await coNext()}catch(e){}await boardRender();list.scrollTop=top};
@@ -244,7 +244,7 @@ async function mapBoardRender(){
  rows=(rows||[]).slice(0,MAP_BOARD_ROWS);
  if(!rows.length){list.innerHTML='<p class="board-empty">Nessun punteggio ancora: completa una partita per entrare in classifica.</p>';return}
  list.innerHTML=(offline?'<p class="board-offline">OFFLINE</p>':'')+rows.map((r,i)=>
-  `<div class="map-board-row${i<3?' top'+(i+1):''}${coMyId&&r.id===coMyId?' me':''}"><span class="pos">${i+1}</span><span class="name">${esc(r.n)}</span><span class="pts">${scoreFmt(r.s)}</span></div>`).join('');
+  `<div class="map-board-row${i<3?' top'+(i+1):''}${(coMyId&&r.id===coMyId)||boardIsMe(r)?' me':''}"><span class="pos">${i+1}</span><span class="name">${esc(r.n)}</span><span class="pts">${scoreFmt(r.s)}</span></div>`).join('');
 }
 // Accanto al titolo: "TU N° 42", la posizione mondiale del miglior punteggio del pilota (solo nei primi 10.000).
 let mapMeCache={s:-1,rank:0,t:0};
@@ -252,6 +252,13 @@ function mapBestScore(){
  let best=Math.round(typeof score==='number'?score:0);
  if(typeof myList==='function'){try{for(const r of myList())if(r.s>best)best=Math.round(r.s)}catch(e){}}
  return best;
+}
+// La riga del pilota: la riga della partita in corso, oppure il suo nome con il suo miglior punteggio.
+function boardIsMe(r){
+ if(!r)return false;
+ const run=typeof recLoad==='function'?recLoad():null;if(run&&r.id&&r.id===run.id)return true;
+ const n=typeof recName==='function'?recName():'';
+ return !!n&&r.n===n&&Math.round(r.s)===mapBestScore();
 }
 async function mapBoardMe(offline){
  const el=$('mapBoardMe');if(!el)return;
