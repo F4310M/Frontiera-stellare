@@ -601,3 +601,11 @@ body.touch .spec-badge{top:64px;left:12px;padding:4px 9px 4px 6px;font-size:8px}
 .save-new:hover{border-color:var(--cyan);color:#fff}
 body.has-save #launchBtn,body.has-save #mapScreen .planet-panel .keyhint,body.has-save #phase2Btn{display:none!important}
 #mapScreen .planet-panel .save-box .save-resume,.planet-panel .save-box .save-resume{background:linear-gradient(110deg,#ffe3a6,#ffc65c);border-color:#ffd27a;color:#1d1300}
+
+/* ---- La riga del pilota in classifica ben in evidenza (2026-11-05) */
+.map-board-row.me{position:relative;margin:3px -4px;padding:6px 12px;border-radius:9px;background:linear-gradient(90deg,rgba(81,230,255,.32),rgba(81,230,255,.1));box-shadow:inset 3px 0 0 var(--cyan),0 0 0 1px rgba(81,230,255,.65),0 0 18px rgba(81,230,255,.35);font-size:14px;font-weight:700;color:#fff;animation:me-glow 2.4s ease-in-out infinite}
+.map-board-row.me .pos,.map-board-row.me .name{color:#fff;text-shadow:0 0 8px rgba(81,230,255,.8)}
+.map-board-row.me .pts{color:#bff8ff;font-size:14px;text-shadow:0 0 8px rgba(81,230,255,.8)}
+.board-row.me{background:linear-gradient(90deg,rgba(81,230,255,.32),rgba(81,230,255,.1))!important;box-shadow:inset 3px 0 0 var(--cyan),0 0 0 1px rgba(81,230,255,.6);color:#fff;font-weight:700;font-size:1.08em}
+@keyframes me-glow{50%{box-shadow:inset 3px 0 0 var(--cyan),0 0 0 1px rgba(81,230,255,.9),0 0 26px rgba(81,230,255,.5)}}
+@media(prefers-reduced-motion:reduce){.map-board-row.me{animation:none}}
