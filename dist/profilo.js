@@ -209,10 +209,12 @@ if(typeof mapBoardRender==='function'){
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   let rows,offline=false;
   if(coOn){try{rows=await coTop(false)}catch(e){rows=boardLoad();offline=true}}else rows=boardLoad();
+  if(typeof mapBoardMe==='function')mapBoardMe(offline);
   rows=(rows||[]).slice(0,MAP_BOARD_ROWS);
   if(!rows.length){list.innerHTML='<p class="board-empty">Nessun punteggio ancora: completa una partita per entrare in classifica.</p>';return}
+  const run=typeof recLoad==='function'?recLoad():null;
   list.innerHTML=(offline?'<p class="board-offline">OFFLINE</p>':'')+rows.map((r,i)=>
-   `<div class="map-board-row${i<3?' top'+(i+1):''}${coMyId&&r.id===coMyId?' me':''}"><span class="pos">${i+1}</span><span class="name">${profAva(r.a,'map-ava',r.n)}${esc(r.n)}</span><span class="pts">${scoreFmt(r.s)}</span></div>`).join('');
+   `<div class="map-board-row${i<3?' top'+(i+1):''}${(coMyId&&r.id===coMyId)||(run&&r.id===run.id)?' me':''}"><span class="pos">${i+1}</span><span class="name">${profAva(r.a,'map-ava',r.n)}${esc(r.n)}</span><span class="pts">${scoreFmt(r.s)}</span></div>`).join('');
  };
 }
 // A fine gioco il punteggio parte da solo con il nome e la foto del pilota (niente casella da riempire).
