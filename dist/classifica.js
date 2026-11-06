@@ -145,7 +145,7 @@ async function boardRender(){
  const list=$('boardList');if(!list)return;
  boardTabs();
  if(coView!=='mondo'){boardRenderLocal(list);return}
- if(!coCache)list.innerHTML='<p class="board-empty">CARICAMENTO…</p>';
+ if(!coCache)list.innerHTML='<p class="board-empty board-loading">CARICAMENTO…</p>';
  try{
   await coFlush();
   const b=await coTop(false);
@@ -230,7 +230,7 @@ function mapBoardBuild(){
  const side=document.querySelector('#mapScreen .mission-copy');if(!side||$('mapBoard'))return;
  const d=document.createElement('div');d.id='mapBoard';d.className='map-board';
  d.innerHTML='<div class="map-board-head"><span class="map-board-globe">'+ico('globe')+'</span><b>CLASSIFICA MONDIALE</b><em id="mapBoardMe" class="map-board-me hidden"></em></div>'+
-  '<div id="mapBoardList" class="map-board-list"><p class="board-empty">CARICAMENTO…</p></div>'+
+  '<div id="mapBoardList" class="map-board-list"><p class="board-empty board-loading">CARICAMENTO…</p></div>'+
   '<button id="mapBoardAll" class="map-board-all"><span>VEDI TUTTA</span><b>'+ico('arrow-right')+'</b></button>';
  side.appendChild(d);
  $('mapBoardAll').onclick=()=>{coView=coOn?'mondo':'locale';boardOpen()};
