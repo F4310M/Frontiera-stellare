@@ -23,7 +23,7 @@ Gioco d'azione nel browser in due fasi, scritto in JavaScript puro su canvas, se
 | Mira | Mouse (la prua segue il cursore) | Mouse |
 | Fuoco | Clic sinistro o Spazio | Clic sinistro |
 | Speciale | Rotella: missile · Shift destro: post-bruciatore · F: freno | Rotella o E: granata · W/Spazio: salto, in aria **jetpack** · in volo col jetpack tieni S per planare |
-| Colpo speciale (1 per fase) | Q: trottola laser | Q: bombardamento via radio |
+| Colpo speciale | Q: trottola laser | Q: bombardamento via radio |
 | Scudo | Tasto destro del mouse | Tasto destro del mouse |
 | Pausa | P | P |
 | Musica | M | M |
@@ -35,7 +35,7 @@ Gioco d'azione nel browser in due fasi, scritto in JavaScript puro su canvas, se
 - **Mercato:** dalla mappa si comprano potenziamenti: lanciatore multiplo, laser potenziato, doppio laser, barriera, motori, iniettori e granate.
 - **Lanciatore multiplo:** con 2 o 3 missili ogni missile aggancia un nemico diverso (il mirino compare su ognuno) e lo insegue. Se c'è un solo nemico in vista, vanno tutti su di lui.
 - **Menu:** ogni finestra si adatta alla risoluzione dello schermo, su PC e su telefono, così si vede tutta senza scorrere (fa eccezione la lista della classifica).
-- **Colpo speciale:** una sola volta nello spazio e una sola volta a terra in ogni missione (tasto Q, sul telefono il pulsante SPECIALE). Nello spazio la nave gira velocissima su sé stessa sparando laser e distrugge tutti i nemici sullo schermo. A terra il pilota chiama la nave via radio: passa sopra e sgancia una bomba che distrugge tutti i nemici sullo schermo e toglie 1/4 dell'energia al boss.
+- **Colpo speciale:** una carica per la missione nello spazio e una per ogni guerriero a terra (tasto Q, sul telefono il pulsante SPECIALE). Nello spazio la nave gira velocissima su sé stessa sparando laser e distrugge tutti i nemici sullo schermo. A terra il pilota chiama la nave via radio: passa sopra e sgancia una bomba che distrugge tutti i nemici sullo schermo e toglie 1/4 dell'energia al boss.
 - **Boss:** prima dello scontro il robot si costruisce da solo, sfiata vapore e accumula energia nel nucleo; in quei secondi non si può colpire.
 - **Missioni:** scegliendo un pianeta dalla mappa si parte sempre dallo spazio; la fase a terra si raggiunge solo conquistando l'orbita.
 - **Lingue:** inglese (predefinito), italiano, francese, spagnolo, russo, cinese e giapponese. Si sceglie dal menu in alto nella mappa o nelle impostazioni.

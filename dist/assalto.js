@@ -3,7 +3,7 @@
 // 2) Quando il pilota si scontra con un soldato, anche il soldato viene spinto via (non solo il pilota).
 // 3) Quando il pilota perde una vita c'è una scena: barcolla, cade in ginocchio, poi si sdraia a terra,
 //    la spia della tuta lampeggia sempre più veloce ed esplode. Dopo arriva il pilota di riserva (terra.js).
-//    Una caduta nel burrone resta immediata; con la GOD MODE non c'è nessuna scena.
+//    Nel burrone l'esplosione è immediata; con la GOD MODE non c'è nessuna scena.
 // Va caricato dopo facile.js: avvolge le versioni più esterne delle funzioni.
 
 const ASS={coverMin:4,coverGap:380,shove:340,shoveUp:230,shoveCd:.3,stumble:.35,kneel:.75,down:1.75,lie:2.45,boom:3.15,end:3.75};
@@ -57,12 +57,16 @@ pfUpdateEnemies=function(dt){
 };
 
 // ---------------------------------------------------------------- 3) scena della vita persa
-pfLoseLife=function(){
- if(!pf)return asOrig.pfLoseLife();
- // seconda chiamata (fine della scena o caduta durante la scena): la vita si perde davvero
- if(pf.morte){pf.morte=null;return asOrig.pfLoseLife()}
+pfLoseLife=function(fall=false){
+ if(!pf||pf.lives<=0)return;
  const P=pf.pilot;
- if((typeof godMode!=='undefined'&&godMode)||!P.visible||P.y>PF_VH+40||pf.phase==='vittoria')return asOrig.pfLoseLife();
+ if((typeof godMode!=='undefined'&&godMode)||pf.phase==='vittoria')return asOrig.pfLoseLife(fall);
+ if(fall){
+  pf.morte={t:0,fall:true};
+  Object.assign(P,{hp:0,visible:false,barrier:false,jetOn:false,vx:0,vy:0});
+  return;
+ }
+ if(pf.morte||!P.visible)return;
  pf.morte={t:0,x:P.x,face:P.face||1,boom:false,beep:0};
  Object.assign(P,{hp:0,barrier:false,jetOn:false,inv:0,vx:P.vx*.35});
  pfStatus('PILOTA COLPITO',3200);
@@ -70,6 +74,10 @@ pfLoseLife=function(){
 };
 function asUpdateDeath(dt){
  const M=pf.morte,P=pf.pilot,t0=M.t;M.t+=dt;const t=M.t;
+ if(M.fall){
+  if(t>=.6){pf.morte=null;asOrig.pfLoseLife(true)}
+  return;
+ }
  P.hp=0;P.barrier=false;P.jetOn=false;P.inv=0;mouse.down=false;
  if(P.ground)P.vx*=Math.max(0,1-dt*8);
  M.x=P.x;
@@ -91,7 +99,7 @@ function asUpdateDeath(dt){
   if(typeof gFlash==='function')gFlash(x,y,340,'#ffb05a',.55);
   pf.cam.shake=Math.max(pf.cam.shake,1);sfx('boom',1.6);P.visible=false;
  }
- if(t>=ASS.end){P.visible=true;pfLoseLife()}
+ if(t>=ASS.end){pf.morte=null;asOrig.pfLoseLife(true)}
 }
 updatePlatform=function(dt){
  if(pf&&pf.morte&&!paused)asUpdateDeath(dt);
@@ -100,7 +108,7 @@ updatePlatform=function(dt){
 // Posa del pilota durante la scena.
 gTrooper=function(o,pal,now){
  const M=typeof pf!=='undefined'&&pf&&pf.morte;
- if(!M||o!==pf.pilot)return asOrig.gTrooper(o,pal,now);
+ if(!M||M.fall||o!==pf.pilot)return asOrig.gTrooper(o,pal,now);
  const t=M.t,f=M.face,kneel=asSmooth((t-ASS.stumble)/(ASS.kneel-ASS.stumble)),fall=asSmooth((t-ASS.down)/(ASS.lie-ASS.down));
  const stumble=t<ASS.stumble?Math.sin(t/ASS.stumble*Math.PI)*.22:0;
  const droop=f>0?1.15:Math.PI-1.15; // il fucile punta a terra
@@ -116,7 +124,7 @@ gTrooper=function(o,pal,now){
 };
 drawPlatform=function(){
  asOrig.drawPlatform();
- const M=typeof pf!=='undefined'&&pf&&pf.morte;if(!M)return;
+ const M=typeof pf!=='undefined'&&pf&&pf.morte;if(!M||M.fall)return;
  const t=M.t,P=pf.pilot,s=pfScale();
  // spia rossa sul petto che lampeggia
  if(P.visible&&t>ASS.stumble&&!M.boom){

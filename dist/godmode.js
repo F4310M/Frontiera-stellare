@@ -34,8 +34,8 @@ pfFell=function(){
  Object.assign(P,{x:P.lastGround,y:g,vx:0,vy:0,inv:1.2,jetOn:false});
  pfStatus('GOD MODE · RIPORTATO A TERRA',1400);
 };
-pfLoseLife=function(){
- if(!godMode)return gOrigGod.pfLoseLife();
+pfLoseLife=function(...args){
+ if(!godMode)return gOrigGod.pfLoseLife(...args);
  const P=pf&&pf.pilot;if(P)P.hp=100;
 };
 

@@ -66,7 +66,15 @@ const before=val('pf.kills');
 assert.equal(val('spcUse()'),true,'bombardamento richiesto');
 step(3.5);
 assert(val('pf.kills')>=before+3,'i nemici sullo schermo sono distrutti');
-assert.equal(val('spcUse()'),false,'una sola bomba per missione');
+assert.equal(val('spcUse()'),false,'una sola bomba per guerriero');
+run("Object.assign(pf.pilot,{hp:100,shield:12,shieldDelay:5,jetHeat:100,jetLock:true,jetOn:true,y:PF_VH});pfFell()");
+assert(val("pf.morte?.fall&&!pf.pilot.visible&&pf.fx.some(f=>f.color==='#fff1c9')"),'Il pilota esplode subito quando precipita');
+step(.7);assert(val('pf.lives===1&&pf.drop&&!pf.drop.released'),'La nave arriva dopo l’esplosione');
+step(3.5);
+assert(val('pf.pilot.visible&&pf.pilot.ground&&pf.pilot.shield===100&&pf.pilot.shieldDelay===0&&pf.pilot.jetHeat===0&&pfJetReady(pf.pilot)'),'Il sostituto atterra con barriera e jetpack carichi');
+assert.equal(val('spcUse()'),true,'Il sostituto può richiedere un nuovo bombardamento');
+run('pfFell()');step(.7);
+assert(val("pf.lives===0&&pf.phase==='sconfitta'&&!pf.drop"),'A zero vite la partita termina');
 console.log('PASS: spinta, scena della vita persa, bombardamento');
 
 // 6) boss: entrata in scena, invulnerabile, poi la bomba toglie 1/4

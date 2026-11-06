@@ -47,10 +47,10 @@ assert(run('pf.pilot.x')>=run('pf.cam.x')+16-1e-6,'Il pilota non esce a sinistra
 run('keys={Space:true}');step(.05);assert(run('pf.pilot.vy')<0,'Salto');step(.3);run('keys={}');step(1);assert.equal(run('pf.pilot.ground'),true,'Atterra dopo il salto');
 console.log('PASS: corsa, scorrimento solo in avanti, salto');
 
-// Burrone: caduta costa salute e riporta a terra.
+// Burrone: la caduta fa esplodere il pilota e consuma una vita.
 run('const pit=pf.solids.findIndex((s,i)=>i&&s.x>pf.solids[i-1].x+pf.solids[i-1].w);const a=pf.solids[pit-1];pf.cam.x=a.x+a.w-600;pf.pilot.x=a.x+a.w-30;pf.pilot.y=a.y;pf.pilot.lastGround=a.x+a.w-60;pf.pilot.vx=0;pf.pilot.vy=0;pf.pilot.hp=100;pf.pilot.inv=0');
 run('keys={KeyD:true}');step(.4);run('keys={}');step(1.5);
-assert.equal(run('pf.pilot.hp'),75,'Caduta nel burrone: −25');assert.equal(run('pf.pilot.ground'),true,'Riportato sul bordo');
+assert.equal(run('pf.lives'),2,'Caduta nel burrone: −1 vita');assert.equal(run('pf.pilot.hp'),100,'Il sostituto riparte con la salute piena');
 console.log('PASS: burroni');
 
 // Combattimento con mira del mouse.
