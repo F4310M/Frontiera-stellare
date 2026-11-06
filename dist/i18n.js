@@ -6,6 +6,8 @@
 const I18N_LANGS=[['en','English'],['it','Italiano'],['fr','Français'],['es','Español'],['ru','Русский'],['zh','中文'],['ja','日本語']];
 const I18N_COL={it:0,en:1,fr:2,es:3,ru:4,zh:5,ja:6};
 const I18N_ROWS=[
+["BOSS FINALE", "FINAL BOSS", "BOSS FINAL", "JEFE FINAL", "ФИНАЛЬНЫЙ БОСС", "最终头目", "最終ボス"],
+["SCONFITTO", "DEFEATED", "VAINCU", "DERROTADO", "ПОВЕРЖЕН", "已击败", "撃破済み"],
 ["PILOTA COLPITO", "PILOT DOWN", "PILOTE TOUCHÉ", "PILOTO ABATIDO", "ПИЛОТ РАНЕН", "飞行员中弹", "パイロット被弾"],
 ["IL ROBOT SI STA ASSEMBLANDO", "THE ROBOT IS ASSEMBLING ITSELF", "LE ROBOT S’ASSEMBLE TOUT SEUL", "EL ROBOT SE ESTÁ ENSAMBLANDO", "РОБОТ СОБИРАЕТ СЕБЯ", "机器人正在自我组装", "ロボットが自己組立中"],
 ["COLPO SPECIALE · TROTTOLA LASER", "SPECIAL ATTACK · LASER SPIN", "ATTAQUE SPÉCIALE · TOUPIE LASER", "ATAQUE ESPECIAL · PEONZA LÁSER", "СПЕЦУДАР · ЛАЗЕРНЫЙ ВОЛЧОК", "特殊攻击 · 激光旋风", "必殺技 · レーザースピン"],
