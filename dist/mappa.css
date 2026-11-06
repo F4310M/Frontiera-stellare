@@ -17,3 +17,41 @@
 .brief-card .brief-back:hover{color:#e5ffff;border-color:#9fc3d6aa}
 #briefing .brief-card .brief-back{order:-1;align-self:flex-start;margin:0 0 2px;padding:6px 12px;font-size:10px}
 @media (min-height:521px),(orientation:portrait){#briefing .brief-card .brief-back{order:0;margin:14px auto 16px}}
+/* ---- Menu dei pianeti (menu-pianeti.js): pianeti che ruotano, ombra colorata del pannello, boss finale, spazio più scuro ---- */
+#mapScreen{background:linear-gradient(90deg,rgba(1,4,10,.86),rgba(1,4,10,.3) 48%,rgba(1,4,10,.72))}
+.planet-node .planet.mp-rot,.preview-orb.mp-rot{overflow:hidden;background:var(--planet)}
+.mp-rot .mp-surf{position:absolute;top:0;left:0;width:400%;height:100%;background-repeat:repeat-x;background-size:50% 100%;animation:mp-spin 60s linear infinite;will-change:transform;pointer-events:none}
+.mp-rot .mp-shade{position:absolute;inset:0;border-radius:50%;pointer-events:none;background:radial-gradient(ellipse at 28% 23%,rgba(234,255,255,.42),transparent 32%),radial-gradient(circle at 50% 50%,transparent 58%,rgba(0,3,12,.3) 100%);box-shadow:inset -15px -9px 19px rgba(0,3,12,.88),inset 2px 1px 3px rgba(217,251,255,.6)}
+.preview-orb.mp-rot .mp-shade{box-shadow:inset -35px -18px 38px #010714,inset 2px 2px 5px #c8f4ff88}
+@media(max-width:850px),(max-height:520px){.preview-orb.mp-rot .mp-shade{box-shadow:inset -16px -9px 18px #010714,inset 1px 1px 3px #c8f4ff88}}
+@keyframes mp-spin{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.mp-rot .mp-surf{animation:none}}
+/* ombra del pannello nel colore del pianeta selezionato */
+#mapScreen .planet-panel{box-shadow:0 32px 90px #0007,0 0 70px color-mix(in srgb,var(--panel-accent,#7ddce8) 30%,transparent),0 0 22px color-mix(in srgb,var(--panel-accent,#7ddce8) 22%,transparent),inset 0 1px 0 #dcf6ff10;border-color:color-mix(in srgb,var(--panel-accent,#7ddce8) 45%,transparent);transition:box-shadow .5s,border-color .5s}
+/* boss finale nelle info */
+#mapScreen .planet-panel dl .boss-row,.planet-panel dl .boss-row{display:flex;align-items:center;justify-content:flex-start;gap:12px;padding:8px 0}
+.boss-row .boss-pic{flex:0 0 auto;width:96px;height:64px;display:grid;place-items:center;border-radius:6px;background:radial-gradient(ellipse at 50% 100%,color-mix(in srgb,var(--panel-accent,#8ce9ec) 26%,transparent),transparent 70%),#040c17;border:1px solid color-mix(in srgb,var(--panel-accent,#8ce9ec) 22%,transparent);overflow:hidden}
+.boss-row .boss-pic img{max-width:88px;max-height:58px;object-fit:contain;animation:mp-boss 3.2s ease-in-out infinite}
+.boss-row.no-pic .boss-pic img{display:none}
+.boss-row .boss-txt{display:flex;flex-direction:column;gap:2px;min-width:0;text-align:left}
+.boss-row .boss-label{font:600 8px 'Chakra Petch',monospace;letter-spacing:2px;color:#8aa3b5}
+.boss-row b{font:700 12px 'Chakra Petch',monospace;letter-spacing:1.5px;color:#f1fbff}
+.boss-row small{font:9px 'Chakra Petch',monospace;letter-spacing:.8px;color:color-mix(in srgb,var(--panel-accent,#8ce9ec) 70%,#cfe3ee);line-height:1.35}
+.boss-row.locked .boss-pic img{filter:brightness(0) drop-shadow(0 0 1px #ff2a6a) drop-shadow(0 0 4px #ff2a6a99);opacity:.9;animation:none}
+.boss-row.locked .boss-pic{background:radial-gradient(ellipse at 50% 60%,#ff2a6a44,transparent 70%),#05070d}
+.boss-row.beaten .boss-pic img{filter:grayscale(1) brightness(.6);animation:none}
+.boss-row.beaten small{color:#7dffb8;letter-spacing:2px}
+@keyframes mp-boss{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@media(prefers-reduced-motion:reduce){.boss-row .boss-pic img{animation:none}}
+@media(min-width:851px) and (max-height:850px){#mapScreen .planet-panel dl .boss-row{padding:5px 0}.boss-row .boss-pic{width:72px;height:46px}.boss-row .boss-pic img{max-width:66px;max-height:42px}#mapScreen .planet-panel .keyhint{display:none}}
+/* boss finale sui telefoni: riga intera e compatta sotto i tre dati */
+@media (max-height:520px),(max-width:600px) and (orientation:portrait){
+ #mapScreen .planet-panel dl:has(.boss-row){flex-wrap:wrap}
+ #mapScreen .planet-panel dl .boss-row{grid-column:1/-1;flex:1 0 100%;box-sizing:border-box;padding:4px 8px!important;gap:10px;border:1px solid #abcde80f;border-radius:8px;background:#03101d55}
+ #mapScreen .boss-row .boss-pic{width:52px;height:32px}
+ #mapScreen .boss-row .boss-pic img{max-width:48px;max-height:29px}
+ #mapScreen .boss-row .boss-txt{flex-direction:row;flex-wrap:wrap;align-items:baseline;column-gap:8px}
+ #mapScreen .boss-row .boss-label{flex-basis:100%}
+ #mapScreen .boss-row b{font-size:11px}
+ #mapScreen .boss-row small{font-size:8px}
+}
