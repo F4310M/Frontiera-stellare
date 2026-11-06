@@ -131,7 +131,7 @@ function coPending(){try{const q=JSON.parse(localStorage.getItem('stellarInAttes
 function coPendingSave(q){localStorage.setItem('stellarInAttesa',JSON.stringify(q.slice(-20)))}
 async function coFlush(){
  if(!coOn||coBusy)return;coBusy=1;
- try{let q=coPending();while(q.length){if(await coRank(q[0].s)<=WORLD_SIZE)await coSend(q[0]);q=q.slice(1);coPendingSave(q)}}catch(e){}
+ try{let q=coPending();while(q.length){try{if(await coRank(q[0].s)<=WORLD_SIZE)await coSend(q[0])}catch(e){if(!/firestore 4\d\d/.test(String(e&&e.message)))throw e}q=q.slice(1);coPendingSave(q)}}catch(e){}
  coBusy=0;
 }
 function boardTabs(){

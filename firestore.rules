@@ -31,12 +31,14 @@ service cloud.firestore {
         && r.n.size() <= 20
         && r.n.matches('^[\\p{L}\\p{N} ]+$')
         // punti: numero intero positivo, con un tetto contro i valori assurdi
+        // (una partita completa vale circa 100-200 mila punti)
         && r.s is int
         && r.s > 0
-        && r.s <= 50000000
-        // data: AAAA-MM-GG
+        && r.s <= 3000000
+        // data: AAAA-MM-GG, solo di oggi o dei giorni appena prima (per i punteggi inviati in ritardo)
         && r.d is string
         && r.d.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && dataRecente(r.d)
         // foto del pilota (facoltativa): miniatura JPEG piccola
         && (!('a' in r)
             || (r.a is string
@@ -44,6 +46,11 @@ service cloud.firestore {
                 && r.a.matches('^data:image/jpeg;base64,[A-Za-z0-9+/]+=*$')))
         // impronta della chiave segreta della partita (facoltativa)
         && (!('h' in r) || (r.h is string && r.h.matches('^[0-9a-f]{64}$')));
+    }
+    function dataRecente(d) {
+      let t = timestamp.date(int(d[0:4]), int(d[5:7]), int(d[8:10]));
+      return t <= request.time + duration.value(1, 'd')
+        && t >= request.time - duration.value(4, 'd');
     }
     // tutto il resto del database è chiuso
     match /{document=**} {
