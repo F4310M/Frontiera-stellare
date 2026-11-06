@@ -169,11 +169,11 @@ function mpSpace(){
  if(MP.space&&MP.space.W===W&&MP.space.H===H&&MP.space.PW===PW)return MP.space;
  const sc=Math.max(.7,Math.min(1.6,Math.min(W,H)/900)),sky=mpCanvas(PW,PH),k=PW/Math.max(1,W);
  if(sky){ // cielo scuro, nebulosa tenue e tante stelline fisse: disegnati una volta, a piena risoluzione
-  const g=sky.g;g.fillStyle='#010309';g.fillRect(0,0,PW,PH);
-  const neb=g.createRadialGradient(PW*.7,PH*.2,0,PW*.7,PH*.2,PW*.6);neb.addColorStop(0,'rgba(23,67,115,.10)');neb.addColorStop(.45,'rgba(45,25,91,.05)');neb.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=neb;g.fillRect(0,0,PW,PH);
+  const g=sky.g;g.fillStyle='#000103';g.fillRect(0,0,PW,PH);
+  const neb=g.createRadialGradient(PW*.7,PH*.2,0,PW*.7,PH*.2,PW*.6);neb.addColorStop(0,'rgba(23,67,115,.05)');neb.addColorStop(.45,'rgba(45,25,91,.025)');neb.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=neb;g.fillRect(0,0,PW,PH);
   const n=Math.floor(W*H/900);
   for(let i=0;i<n;i++){const x=mpHash(i*3+11)*PW,y=mpHash(i*3+12)*PH,v=mpHash(i*3+13),hue=mpHash(i*5+7);
-   g.globalAlpha=.12+v*v*.55;g.fillStyle=hue<.08?'#ffd8b0':hue<.18?'#b8d4ff':'#dce8f4';const z=(v>.93?1.5:v>.7?1:.7)*k;g.fillRect(x,y,z,z)}
+   g.globalAlpha=.08+v*v*.42;g.fillStyle=hue<.08?'#ffd8b0':hue<.18?'#b8d4ff':'#dce8f4';const z=(v>.93?1.5:v>.7?1:.7)*k;g.fillRect(x,y,z,z)}
   g.globalAlpha=1;
  }
  const twinkle=Array.from({length:Math.min(320,Math.floor(W*H/7000))},(_,i)=>({x:mpHash(i*7+101)*W,y:mpHash(i*7+102)*H,z:1+mpHash(i*7+103)*1.3,ph:mpHash(i*7+104)*6.283,sp:.6+mpHash(i*7+105)*1.8,c:mpHash(i*7+106)<.15?'#ffe2bf':'#e6f3ff'}));
@@ -193,7 +193,7 @@ function mpDrawSpace(t){
  ctx.save();
  if(!S.sky){ctx.fillStyle='rgba(0,1,5,.5)';ctx.fillRect(0,0,W,H)}
  // stelle che pulsano
- for(const s of S.twinkle){const k=calm?.6:.5+.5*Math.sin(t*s.sp+s.ph);ctx.globalAlpha=.15+.75*k*k;ctx.fillStyle=s.c;ctx.fillRect(s.x,s.y,s.z,s.z)}
+ for(const s of S.twinkle){const k=calm?.6:.5+.5*Math.sin(t*s.sp+s.ph);ctx.globalAlpha=.1+.6*k*k;ctx.fillStyle=s.c;ctx.fillRect(s.x,s.y,s.z,s.z)}
  // pianeti lontani con un alone che pulsa
  for(const {f,s} of S.far){
   if(!s)continue;const k=calm?.5:.5+.5*Math.sin(t*f.sp+f.ph),x=f.x*W,y=f.y*H,R=f.r*S.sc*1.35;
