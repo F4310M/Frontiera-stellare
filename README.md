@@ -51,6 +51,8 @@ dist/            il gioco (apri dist/index.html tramite un server locale)
   pianeta.js     pianeta di destinazione generato a ogni missione
   fase2.js       fase 2: livello a piattaforme, pilota, ribelli, coloni, boss
   grafica2.js    grafica a terra: sfondi, terreno, luci, personaggi
+  palazzi.js     a terra: palazzi della colonia in lontananza in alta qualità e skyline nella nebbia
+  nave-gadget.js nello spazio: la nave cambia aspetto con i potenziamenti comprati (cannoni, missili, motori...)
   boss.js        disegno dei boss di ogni pianeta
   economia.js    crediti, spese, premi e mercato
   finale.js      vite, pillola 1UP, game over e pianeta finale
@@ -95,6 +97,7 @@ node tests/facile.test.cjs
 node tests/speciale.test.cjs
 node tests/lingue.test.cjs
 node tests/nave3d.test.cjs
+node tests/palazzi-nave.test.cjs
 ```
 
 ## Classifica mondiale
