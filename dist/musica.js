@@ -16,7 +16,7 @@
 // I cambi di brano sfumano in dissolvenza; ogni pianeta suona in una tonalità diversa.
 // Usa lo stesso audio del gioco: se l'audio di bordo è spento, tace anche la musica.
 
-const MUS_MASTER=.34;
+const MUS_MASTER=.2; // volume base della musica (era .34): più bassa per lasciare spazio agli effetti
 const MUS_VOL={calm:.75,battle:.9,boss:1};
 const MUS_CHORD={m:[0,3,7],M:[0,4,7],s:[0,5,7]};
 const MUS_SHIFT=[0,3,-2,5,-4,1];

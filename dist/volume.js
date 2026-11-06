@@ -1,5 +1,5 @@
 // Volume di musica ed effetti sonori, regolabile nelle impostazioni e salvato nel browser.
-// La musica parte più bassa (40%) per non coprire gli effetti.
+// La musica parte più bassa (40%) per non coprire gli effetti; i volumi base sono MUS_MASTER (musica.js) e SFX_GAIN (game.js).
 const VOLUME_DEFAULT={music:40,sfx:100};
 const VOLUME_KEY={music:'stellarVolumeMusica',sfx:'stellarVolumeEffetti'};
 function volumePercent(kind){
@@ -14,7 +14,7 @@ function setVolume(kind,percent){
  if(input&&+input.value!==percent)input.value=String(percent);if(out)out.textContent=percent+'%';
  if(input&&input.style)input.style.setProperty('--fill',percent+'%');
  // Effetti: subito sul volume generale degli effetti. Musica: la applica musTick al prossimo giro.
- if(kind==='sfx'&&typeof sfxOutput!=='undefined'&&sfxOutput&&typeof audioCtx!=='undefined'&&audioCtx)sfxOutput.gain.setTargetAtTime(.75*percent/100,audioCtx.currentTime,.05);
+ if(kind==='sfx'&&typeof sfxOutput!=='undefined'&&sfxOutput&&typeof audioCtx!=='undefined'&&audioCtx)sfxOutput.gain.setTargetAtTime((typeof SFX_GAIN!=='undefined'?SFX_GAIN:1)*percent/100,audioCtx.currentTime,.05);
 }
 for(const kind of['music','sfx']){
  const input=$(kind+'Volume');setVolume(kind,volumePercent(kind));
