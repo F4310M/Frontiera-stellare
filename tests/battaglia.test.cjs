@@ -18,9 +18,16 @@ assert(val('pf.pilot.visible&&pf.pilot.landing&&pf.pilot.jetOn'),'Il pilota scen
 assert(val('pf.pilot.y<PF_FLOOR-80'),'Il pilota parte dall\'alto');
 step(2.2);
 assert.equal(val('pf.phase'),'missione');assert(val('pf.pilot.ground&&!pf.pilot.landing'),'Il pilota è atterrato');
-assert(val('pfShipPose().y<PF_FLOOR-180'),'La nave resta sospesa in aria');
+assert(val('pfShipPose().y<PF_FLOOR-180'),'La nave resta in aria sopra il pilota');
 run('pfDrawShipOnPad(1);drawPlatform()');
-console.log('PASS: discesa col jetpack, nave sospesa');
+// dopo l'atterraggio la nave riparte e vola via
+assert(val('pf.shipLeaveT!=null'),'Partenza della nave programmata');
+run('globalThis.posA=pfShipPose()');step(1.2);
+assert(val('pfShipPose().leaving&&pfShipPose().x>posA.x+200&&pfShipPose().y<posA.y'),'La nave vola via in avanti e in alto');
+run('pfDrawShipOnPad(1);drawPlatform()');
+step(4);assert(val('pfShipPose().gone&&!pfOnScreen(pfShipPose().x,200)'),'La nave è sparita');
+run('pfDrawShipOnPad(1);drawPlatform()');
+console.log('PASS: discesa col jetpack, la nave riparte e vola via');
 
 // 2) Passaggi col jetpack: parete alta e burrone largo in ogni pianeta
 for(let i=0;i<5;i++){

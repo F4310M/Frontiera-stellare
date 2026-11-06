@@ -8,7 +8,7 @@
 //    rottami e fungo di fumo. Con lo scoppio parte la musica epica di vittoria (vedi musica.js).
 // Si carica dopo terra.js: avvolge le funzioni della fase a terra senza cambiare quelle originali.
 
-const BATT={shipHoverY:PF_FLOOR-250,landSpeed:175,coverH:40,coverW:40,boomBlast:3.1,boomEnd:11.5};
+const BATT={shipHoverY:PF_FLOOR-250,landSpeed:175,coverH:40,coverW:40,boomBlast:3.1,boomEnd:11.5,leaveDelay:.7,leaveTime:4};
 const bt={buildPlatformLevel,pfUpdateLanding,pfUpdatePilot,pfUpdateJetpack,pfShipPose,pfDrawShipOnPad,pfUpdateEnemies,pfDrawEnemy,gEnemy,pfDrawProp,pfShotObstacle,pfUpdateBoss,updatePlatform,pfDrawBanner,gBoss:typeof gBoss==='function'?gBoss:null,gCollectLights:typeof gCollectLights==='function'?gCollectLights:null,terraUpdateDrop:typeof terraUpdateDrop==='function'?terraUpdateDrop:null};
 function battDown(){return!!(keys.KeyS||keys.ArrowDown)}
 
@@ -56,6 +56,10 @@ function battAddCovers(L,d,rnd){
 pfShipPose=function(){
  const t=pf.t,x=330,hy=BATT.shipHoverY,bob=Math.sin(t*1.7)*5;
  if(pf.phase==='atterraggio'&&t<1.9){const k=t/1.9,e=1-(1-k)**3;return{x:x-260*(1-e),y:hy+bob*e-(hy+160)*(1-e),thrust:1}}
+ // pilota a terra: la nave riparte, si impenna e vola via verso est
+ const k=pf.shipLeaveT!=null?t-pf.shipLeaveT:-1;
+ if(k>0){if(k>BATT.leaveTime)return{x:-1e5,y:-1e5,thrust:0,gone:true};
+  return{x:x+60*k+260*k*k,y:hy+bob-40*k-60*k*k,thrust:Math.max(0,.5-k),tilt:-Math.min(.32,k*.45),leaving:true}}
  return{x,y:hy+bob,thrust:.5};
 };
 pfUpdateLanding=function(dt){
@@ -77,6 +81,7 @@ function battLandingStep(P,dt){
  if(g-P.y<60&&Math.random()<dt*30)pfBurst(P.x+(Math.random()-.5)*30,g-2,'#c7d6e2',1,.9,true,{vy:-40});
  if(prevY<=g&&P.y>=g){
   Object.assign(P,{y:g,vy:0,vx:0,ground:true,landing:false,jetOn:false,landed:true,landedAt:pf.t,lastGround:P.x});
+  if(pf.shipLeaveT==null)pf.shipLeaveT=pf.t+BATT.leaveDelay;
   for(let i=0;i<18;i++)pfBurst(P.x+(Math.random()-.5)*50,g-2,'#c7d6e2',1,1.2,true,{vy:-50-Math.random()*60});
   noise(.12,.03,700);tone(160,.12,'triangle',.03,90);pf.cam.shake=Math.max(pf.cam.shake,.18);
  }
@@ -96,7 +101,7 @@ if(bt.terraUpdateDrop)terraUpdateDrop=function(dt){
 pfDrawShipOnPad=function(now){
  bt.pfDrawShipOnPad(now);
  const pose=pfShipPose();
- if(pfOnScreen(pose.x,200)&&!paused&&Math.random()<.35)pfBurst(pose.x+(Math.random()-.5)*90,PF_FLOOR-3,'#b9c8d4',1,.9,true,{vx:(Math.random()<.5?-1:1)*90,vy:-30});
+ if(!pose.leaving&&pfOnScreen(pose.x,200)&&!paused&&Math.random()<.35)pfBurst(pose.x+(Math.random()-.5)*90,PF_FLOOR-3,'#b9c8d4',1,.9,true,{vx:(Math.random()<.5?-1:1)*90,vy:-30});
  if(pf.boom&&pf.boom.gone)battDrawWreck(now);
 };
 
@@ -348,9 +353,15 @@ function battDrawWreck(now){
 pfDrawBanner=function(){if(pf&&pf.boom)battDrawBoom(performance.now()/1000);bt.pfDrawBanner()};
 
 // ---------------------------------------------------------------- ciclo: rallentatore e fine missione più lunga
+// rombo dei motori quando la nave riparte dopo aver lasciato il pilota
+function battShipLeaveSound(){
+ if(pf.shipLeft||pf.shipLeaveT==null||pf.t<pf.shipLeaveT)return;
+ pf.shipLeft=true;noise(.7,.03,900);tone(110,.9,'sawtooth',.02,380);
+}
 updatePlatform=function(dt){
  if(!pf)return bt.updatePlatform(dt);
  const k=battBoom(dt);
+ battShipLeaveSound();
  if(pf.phase==='vittoria'&&pf.boom)pf.endT=pf.boom.t>=BATT.boomEnd?99:0;
  bt.updatePlatform(dt*k);
  if(state==='platform'&&pf)battJetHints();
