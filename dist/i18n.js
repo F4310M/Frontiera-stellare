@@ -469,6 +469,8 @@ const I18N_ROWS=[
 ["REGISTRO DEI PILOTI", "PILOT REGISTRY", "REGISTRE DES PILOTES", "REGISTRO DE PILOTOS", "РЕЕСТР ПИЛОТОВ", "飞行员登记处", "パイロット登録"],
 ["NUOVO PILOTA · AZZERA I PROGRESSI", "NEW PILOT · RESET PROGRESS", "NOUVEAU PILOTE · EFFACER LA PROGRESSION", "NUEVO PILOTO · BORRAR EL PROGRESO", "НОВЫЙ ПИЛОТ · СБРОСИТЬ ПРОГРЕСС", "新飞行员 · 清除进度", "新しいパイロット · 進行状況をリセット"],
 ["NUOVO PILOTA", "NEW PILOT", "NOUVEAU PILOTE", "NUEVO PILOTO", "НОВЫЙ ПИЛОТ", "新飞行员", "新しいパイロット"],
+["PROFILO DEL PILOTA", "PILOT PROFILE", "PROFIL DU PILOTE", "PERFIL DEL PILOTO", "ПРОФИЛЬ ПИЛОТА", "飞行员档案", "パイロットプロフィール"],
+["Apri il tuo file .sfsave con la password del salvataggio.", "Open your .sfsave file with the save password.", "Ouvre ton fichier .sfsave avec le mot de passe de la sauvegarde.", "Abre tu archivo .sfsave con la contraseña de la partida guardada.", "Открой файл .sfsave с паролем сохранения.", "使用存档密码打开 .sfsave 文件。", "セーブ時のパスワードで .sfsave ファイルを開きます。"],
 ["Nuovo pilota", "New pilot", "Nouveau pilote", "Nuevo piloto", "Новый пилот", "新飞行员", "新しいパイロット"],
 ["Chiudi", "Close", "Fermer", "Cerrar", "Закрыть", "关闭", "閉じる"],
 ["SCEGLI LA FOTO", "CHOOSE PHOTO", "CHOISIR LA PHOTO", "ELEGIR FOTO", "ВЫБРАТЬ ФОТО", "选择照片", "写真を選ぶ"],

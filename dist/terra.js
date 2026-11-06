@@ -97,9 +97,11 @@ pfDrawBarrier=function(P,now){
 
 // ---- 4) pilota di riserva sganciato dalla navetta
 const DROP={come:1.1,release:1.35,leave:1.9,end:3.2,hover:200};
-pfLoseLife=function(){
- tOrig.pfLoseLife();
- const P=pf.pilot;if(!pf||pf.lives<=0||pf.phase==='sconfitta')return;
+pfLoseLife=function(...args){
+ if(!pf||pf.lives<=0||(pf.drop&&!pf.drop.released))return;
+ tOrig.pfLoseLife(...args);
+ if(pf.lives<=0||pf.phase==='sconfitta'){pf.drop=null;return}
+ const P=pf.pilot;
  const g=(pfGroundAt(P.x)??PF_FLOOR);
  pf.drop={t:0,x:P.x,g,released:false};
  P.visible=false;P.barrier=false;P.vx=P.vy=0;P.inv=DROP.release+2.2;
@@ -116,7 +118,11 @@ function terraUpdateDrop(dt){
  D.t+=dt;const P=pf.pilot;
  if(!D.released&&D.t>=DROP.release){
   D.released=true;const s=terraDropPose(D);
-  Object.assign(P,{visible:true,x:s.x+40,y:s.y+36,vx:0,vy:60,ground:false,hp:100,shield:100,inv:2.4});
+  Object.assign(P,{visible:true,x:s.x+40,y:s.y+36,vx:0,vy:60,ground:false,onPlat:false,
+   hp:100,shield:100,shieldDelay:0,barrier:false,inv:2.4,fire:0,jetOn:false,
+   jetHeat:0,jetLock:false,jetMin:0,jetGlide:false,landing:false,crouch:false,
+   jumpBuf:0,coyote:0,dropT:0,sotHold:0});
+  if(typeof spcResetGround==='function')spcResetGround();
   tone(520,.12,'sine',.02,780);
  }
  if(D.t>=DROP.end)pf.drop=null;

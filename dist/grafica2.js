@@ -30,6 +30,14 @@ const G_MAT={
  lava:{dark:[14,10,10],mid:[40,30,28],light:[86,68,62],strata:.15,ridge:1,speck:[120,96,88],emis:[255,120,40],top:[34,24,22],top2:[70,52,46],lip:[20,14,13],rim:'#ff9a5a',liquid:['#ffd166','#ff6a1a','#4a0602'],foam:'rgba(255,240,180,.95)',grade:['#ffd9c6','#86625c'],sun:[255,120,80],sunPos:[.22,.24],rays:.07},
  tempesta:{dark:[28,24,50],mid:[62,54,104],light:[126,114,184],strata:.45,ridge:0,speck:[222,212,255],top:[110,92,190],top2:[196,180,255],lip:[70,56,140],rim:'#d8ccff',liquid:['rgba(150,130,240,.0)','#3a2d78','#0a0820'],foam:'rgba(225,215,255,.5)',grade:['#e4dcff','#837c9f'],sun:[210,200,255],sunPos:[.5,.1],rays:0}
 };
+const G_ORBIT={
+ mare:{x:.76,y:158,size:118,tint:'#8deaff',moons:2},
+ deserto:{x:.30,y:172,size:144,tint:'#ffc891',rings:true},
+ foresta:{x:.25,y:148,size:122,tint:'#bcebad',moons:1},
+ lava:{x:.75,y:148,size:166,tint:'#ff795b',moons:1},
+ tempesta:{x:.72,y:125,size:134,tint:'#c9afff',rings:true},
+ abisso:{x:.57,y:168,size:186,tint:'#ff6894',eclipse:true}
+};
 function gMat(){return G_MAT[(pf.theme||pfTheme(pf.p)).mat||(pf.theme||pfTheme(pf.p)).id]||G_MAT.mare}
 function gRes(){return Math.max(1,Math.min(2.4,pfScale()*(typeof dpr==='number'?dpr:1)))}
 
@@ -40,22 +48,70 @@ function gReady(){
  if(gfx&&gfx.pf===pf&&Math.abs(gfx.res-res)<.3)return gfx.ok;
  gfx={pf,res,ok:false,solids:new Map(),plats:new Map(),tint:new Map(),layers:null,tex:null,light:null,clouds:null};
  const t=gCanvas(4,4);if(!t)return false;
- try{gfx.tex=gMakeTexture();gfx.light=gMakeLightSprite();gfx.layers=gMakeLayers();gfx.clouds=gMakeClouds();gfx.ok=true}catch(err){console.warn('grafica fase 2 non disponibile',err);gfx.ok=false}
+ try{gfx.tex=gMakeTexture();gfx.light=gMakeLightSprite();gfx.layers=gMakeLayers();gfx.clouds=gMakeClouds();gfx.orbit=gMakeOrbit();gfx.ok=true}catch(err){console.warn('grafica fase 2 non disponibile',err);gfx.ok=false}
  return gfx.ok;
 }
 // Texture rocciosa ripetibile (256×256 unità di mondo) generata pixel per pixel.
 function gMakeTexture(){
- const m=gMat(),T=256,R=2,N=T*R,cv=gCanvas(N,N),img=cv.g.createImageData(N,N),d=img.data,seed=pfHash(pf.p.code)&0xffff;
+ const m=gMat(),id=pf.theme.mat||pf.theme.id,T=256,R=2,N=T*R,cv=gCanvas(N,N),img=cv.g.createImageData(N,N),d=img.data,seed=pfHash(pf.p.code)&0xffff;
  for(let py=0;py<N;py++){const v=py/N;for(let px=0;px<N;px++){
-  const u=px/N,n=gFbm2p(u,v,6,5,seed),fine=gN2p(u*64,v*64,64,seed+7),strata=.5+.5*Math.sin(v*Math.PI*2*9+n*7);
+  const u=px/N,n=gFbm2p(u,v,6,5,seed),fine=gN2p(u*64,v*64,64,seed+7);
+  const band=id==='deserto'?v*15+u*2:id==='mare'?v*8-u*3:v*9;
+  const strata=.5+.5*Math.sin(band*Math.PI*2+n*7);
   let t=n*.8+(strata-.5)*m.strata*.55+(fine-.5)*.22;t=Math.max(0,Math.min(1,t*1.15-.06));
   let c=t<.5?gMix(m.dark,m.mid,t*2):gMix(m.mid,m.light,(t-.5)*2);
   const crack=Math.abs(gFbm2p(u,v,5,3,seed+99)-.5);if(crack<.012)c=gMix(c,[0,0,0],.55*(1-crack/.012));
+  if(id==='deserto'&&strata>.92)c=gMix(c,m.top2,(strata-.92)*2.8);
+  if(id==='mare'&&crack>=.012&&crack<.021)c=gMix(c,m.speck,.24*(.021-crack)/.009);
+  if((id==='tempesta'||id==='abisso')&&fine>.63&&crack<.034)c=gMix(c,m.speck,.24);
+  if(id==='foresta'&&fine>.52&&n>.57)c=gMix(c,m.top,.18);
   if(m.ridge){const r=1-Math.abs(2*gFbm2p(u,v,4,4,seed+333)-1);if(r>.93)c=gMix(c,m.emis,Math.min(1,(r-.93)/.05))}
   if(gHash(px*928371+py*1237+seed)>.993)c=gMix(c,m.speck,.55);
   const o=(py*N+px)*4;d[o]=c[0];d[o+1]=c[1];d[o+2]=c[2];d[o+3]=255}}
  cv.g.putImageData(img,0,0);
  return{c:cv.c,size:T,res:R};
+}
+function gMakeOrbit(){
+ const key=pf.theme.mat||pf.theme.id,o=G_ORBIT[key]||G_ORBIT.mare;
+ const cv=gCanvas(320,216),g=cv.g,x=160,y=108,r=51,tint=gHex(o.tint);
+ const halo=g.createRadialGradient(x,y,r*.68,x,y,r*1.86);
+ halo.addColorStop(0,gRgb(tint,o.eclipse?.78:.48));
+ halo.addColorStop(.48,gRgb(tint,.15));halo.addColorStop(1,gRgb(tint,0));
+ g.fillStyle=halo;g.fillRect(0,0,320,216);
+ const ring=(from,to)=>{
+  for(let i=0;i<3;i++){
+   g.strokeStyle=gRgb(tint,[.48,.28,.17][i]);g.lineWidth=[4,2,1][i];
+   g.beginPath();g.ellipse(x,y,78+i*9,16+i*2,-.26,from,to);g.stroke();
+  }
+ };
+ if(o.rings)ring(Math.PI,2*Math.PI);
+ g.save();
+ g.beginPath();g.arc(x,y,r,0,2*Math.PI);g.clip();
+ const face=g.createLinearGradient(x-r,y-r,x+r,y+r*.8);
+ face.addColorStop(0,o.eclipse?'#130813':gRgb(gMix(tint,[255,255,255],.65)));
+ face.addColorStop(.45,o.eclipse?'#0c0610':o.tint);
+ face.addColorStop(1,'#080b1b');
+ g.fillStyle=face;g.fillRect(x-r,y-r,r*2,r*2);
+ if(!o.eclipse){
+  const rnd=pfRng(pfHash('orbita'+pf.p.code));
+  for(let i=0;i<18;i++){
+   const h=y-r+i*6+rnd()*5;
+   g.strokeStyle=gRgb(i%2?tint:[19,23,52],.12+rnd()*.15);
+   g.lineWidth=1+rnd()*5;g.beginPath();g.moveTo(x-r,h);
+   g.bezierCurveTo(x-r*.35,h-11,x+r*.38,h+19,x+r,h-14);g.stroke();
+  }
+ }
+ g.restore();
+ g.strokeStyle=gRgb(tint,o.eclipse?.95:.55);g.lineWidth=o.eclipse?2:1;
+ g.beginPath();g.arc(x,y,r,Math.PI*.86,Math.PI*1.9);g.stroke();
+ if(o.rings)ring(0,Math.PI);
+ for(let i=0;i<(o.moons||0);i++){
+  const mx=x-105+i*196,my=y-41+i*59,mr=9-i*4;
+  const moon=g.createLinearGradient(mx-mr,my-mr,mx+mr,my+mr);
+  moon.addColorStop(0,gRgb(gMix(tint,[255,255,255],.72)));moon.addColorStop(1,'#11172a');
+  g.fillStyle=moon;g.beginPath();g.arc(mx,my,mr,0,Math.PI*2);g.fill();
+ }
+ return {c:cv.c,...o};
 }
 function gPattern(g){
  const p=g.createPattern(gfx.tex.c,'repeat');
@@ -147,8 +203,17 @@ function gLayerDetails(g,id,k,sp,prof,col,dark,rnd,rim){
   for(let i=0;i<4;i++){const x=rnd()*G_TL,y=gProfAt(prof,x);g.fillStyle=gRgb(col);g.beginPath();g.moveTo(x-10,y+2);g.lineTo(x-4,y-40-rnd()*30);g.lineTo(x+6,y-36);g.lineTo(x+12,y+2);g.fill()}
  }
  if(id==='mare'&&k>0){
-  // faraglioni con un faro sullo strato più vicino
+  // Faraglioni e un arco naturale davanti alla costa.
   for(let i=0;i<3+k;i++){const x=rnd()*G_TL,h=40+rnd()*80*(k/2+.5),w=14+rnd()*24,y=sp.base;g.fillStyle=gRgb(col);g.beginPath();g.moveTo(x-w,y+4);g.lineTo(x-w*.6,y-h);g.lineTo(x+w*.4,y-h-8);g.lineTo(x+w,y+4);g.fill();g.strokeStyle=rim;g.globalAlpha=.25;g.beginPath();g.moveTo(x-w*.6,y-h);g.lineTo(x+w*.4,y-h-8);g.stroke();g.globalAlpha=1}
+  if(k===2){
+   const x=180+rnd()*(G_TL-360),y=sp.base+38;
+   g.fillStyle=gRgb(col);g.beginPath();g.moveTo(x-109,y);
+   g.bezierCurveTo(x-104,y-137,x+88,y-158,x+115,y);
+   g.lineTo(x+78,y);g.bezierCurveTo(x+56,y-102,x-53,y-98,x-71,y);
+   g.closePath();g.fill();
+   g.strokeStyle=gRgb(lighter,.75);g.beginPath();g.moveTo(x-100,y-30);
+   g.bezierCurveTo(x-63,y-130,x+68,y-131,x+107,y-29);g.stroke();
+  }
  }
  if(id==='tempesta'&&k>0){
   // isole di roccia sospese tra banchi di nubi
@@ -166,6 +231,8 @@ function gDrawLayer(L,cx,VW){
 }
 function gDrawSky(VW,now){
  const th=pf.theme,m=gMat(),sx=VW*m.sunPos[0],sy=PF_VH*m.sunPos[1];
+ const orbit=gfx.orbit,k=orbit.size/102,x=VW*orbit.x-pf.cam.x*.004;
+ ctx.drawImage(orbit.c,x-160*k,orbit.y-108*k,320*k,216*k);
  if(th.id!=='tempesta'){
   ctx.save();ctx.globalCompositeOperation='lighter';
   const big=th.id==='lava'?260:200;ctx.globalAlpha=.5;ctx.drawImage(gTinted(gRgb(m.sun)),sx-big,sy-big,big*2,big*2);
@@ -199,7 +266,10 @@ function gSolidCache(sd){
  if(id==='deserto'){for(let i=0;i<sd.w/300;i++){const fx=x0+40+rnd()*(sd.w-80),fy=y+70+rnd()*80;g.strokeStyle='rgba(245,225,185,.45)';g.lineWidth=1.5;g.beginPath();for(let a=0;a<12;a+=.3){const r=a*1.6;g.lineTo(fx+Math.cos(a)*r,fy+Math.sin(a)*r)}g.stroke()}}
  if(id==='mare'){for(let i=0;i<sd.w/24;i++){const bx=x0+rnd()*sd.w,by=y+8+rnd()*40;g.fillStyle='rgba(230,240,235,.55)';g.beginPath();g.arc(bx,by,1.5+rnd()*2.5,0,6.28);g.fill();g.fillStyle='rgba(40,60,60,.6)';g.beginPath();g.arc(bx,by,.8,0,6.28);g.fill()}}
  if(id==='lava'){g.save();g.lineCap='round';for(let i=0;i<sd.w/70;i++){let cx=x0+rnd()*sd.w,cy=y+4;g.strokeStyle='rgba(255,140,50,.85)';g.shadowBlur=10;g.shadowColor='#ff5a1f';g.lineWidth=1+rnd()*1.8;g.beginPath();g.moveTo(cx,cy);for(let j=0;j<6;j++){cx+=(rnd()-.5)*24;cy+=8+rnd()*14;g.lineTo(cx,cy)}g.stroke()}g.restore()}
- if(id==='tempesta'){for(let i=0;i<sd.w/90;i++)gCrystal(g,x0+rnd()*sd.w,y+30+rnd()*140,6+rnd()*12,rnd()*6.28,['#d6c8ff','#6a54c8'])}
+ if(id==='tempesta'){
+  const crystal=pf.theme.mat==='abisso'?['#ff9eba','#9b2452']:['#d6c8ff','#6a54c8'];
+  for(let i=0;i<sd.w/90;i++)gCrystal(g,x0+rnd()*sd.w,y+30+rnd()*140,6+rnd()*12,rnd()*6.28,crystal);
+ }
  // ombre: profondità, occlusione sotto il bordo e ai lati
  let gr=g.createLinearGradient(0,y+10,0,y+230);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.7)');g.fillStyle=gr;g.fillRect(x0-pad,y,w,h);
  gr=g.createLinearGradient(0,y+6,0,y+30);gr.addColorStop(0,'rgba(0,0,0,.45)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(x0-pad,y+6,w,24);
@@ -641,7 +711,6 @@ drawPlatform=function(){
  ctx.clearRect(0,0,W,H);
  const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,th.sky[0]);sky.addColorStop(.5,th.sky[1]);sky.addColorStop(.82,th.sky[2]);sky.addColorStop(1,th.sky[0]);ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
  ctx.save();ctx.globalAlpha=th.id==='deserto'?.35:1;ctx.beginPath();ctx.rect(0,0,W,H*.6);ctx.clip();drawStarfield(0,0);ctx.restore();
- drawWorld({x:W*.82-cx*s*.01,y:H*.17,r:Math.min(W,H)*.075,p:planets[(selected+2)%planets.length]});
  ctx.save();
  if(pf.cam.shake>0){const k=pf.cam.shake;ctx.translate((Math.random()-.5)*k*16,(Math.random()-.5)*k*12)}
  ctx.scale(s,s);

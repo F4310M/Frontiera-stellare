@@ -34,14 +34,12 @@ assert.equal(val("$('statusText').textContent"),'IMPATTO METEORITE · SCAFO −1
 assert(val("I18N_ROWS.some(r=>r[0]==='IMPATTO METEORITE · SCAFO −45%'&&r[1]==='METEOR IMPACT · HULL −45%')"),'riga tradotta per −45%');
 console.log('PASS: messaggi dei meteoriti con il danno vero');
 
-// 3) A terra: colpi e cadute fanno meno male
+// 3) A terra: il danno dei colpi è ridotto, cadere resta fatale.
 run('godMode=false;vite=3;viteSave();selected=0;startPlatform()');step(4.6);
 run('Object.assign(pf.pilot,{hp:100,inv:0,barrier:false,visible:true});pfDamage(20)');
 assert.equal(val('pf.pilot.hp'),88,'colpo a terra: 20 → 12');
-const fd=val('(pf.theme||pfTheme(pf.p)).fallDamage');
-run('Object.assign(pf.pilot,{hp:100,inv:0});pfFell()');
-assert.equal(val('pf.pilot.hp'),100-Math.round(fd*.6),'caduta: '+fd+' → '+Math.round(fd*.6));
-assert.equal(val('(pf.theme||pfTheme(pf.p)).fallDamage'),fd,'il valore del tema resta quello originale');
+run('Object.assign(pf.pilot,{hp:100,inv:0,y:PF_VH});pfFell()');
+assert.equal(val('pf.lives'),2,'Una caduta consuma una vita anche con i danni ridotti');
 console.log('PASS: il pilota subisce il 60% dei danni');
 
 // 4) Boss con l'80% della salute

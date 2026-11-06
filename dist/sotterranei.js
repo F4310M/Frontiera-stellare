@@ -286,13 +286,13 @@ pfShotObstacle=function(b){
  return{x,y:SOT.ceil};
 };
 // Se il pilota cade nella galleria, quello di riserva arriva in superficie.
-pfLoseLife=function(){
+pfLoseLife=function(...args){
  if(pf&&pf.under){
   // risale dal pozzo più vicino alle sue spalle (sempre su terreno solido)
   const x=pf.pilot.x,sec=pf.sot.sections.find(s=>x>=s.x0-700&&x<=s.x1+800)||pf.sot.sections[0],sx=sec.shafts.filter(v=>v<=x+40).pop()??sec.x0;
   pf.sotT=null;sotSwitch(false,sx);
  }
- sotOrig.pfLoseLife();
+ sotOrig.pfLoseLife(...args);
 };
 // Il conteggio dei coloni resta quello della superficie: la galleria è un percorso alternativo.
 function sotHostTotal(){return pf.sup?pf.sup.hostages.length:pf.hostages.length}
