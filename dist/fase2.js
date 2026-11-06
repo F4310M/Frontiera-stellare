@@ -802,9 +802,9 @@ function pfDrawShipOnPad(now){
  const pose=pfShipPose();if(!pfOnScreen(pose.x,140))return;
  ctx.save();
  if(pose.thrust>0)for(const ox of [-26,22])drawPlume(pose.x+ox,pose.y+30,0,1,(40+Math.random()*16)*pose.thrust+8,6*pose.thrust+2,'#51e6ff');
- ctx.strokeStyle='#5a6f80';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(pose.x-30,pose.y+18);ctx.lineTo(pose.x-40,pose.y+44);ctx.moveTo(pose.x+24,pose.y+18);ctx.lineTo(pose.x+34,pose.y+44);ctx.stroke();
+ if(!pose.leaving){ctx.strokeStyle='#5a6f80';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(pose.x-30,pose.y+18);ctx.lineTo(pose.x-40,pose.y+44);ctx.moveTo(pose.x+24,pose.y+18);ctx.lineTo(pose.x+34,pose.y+44);ctx.stroke();}// zampe ritirate quando la nave riparte
  ctx.translate(pose.x,pose.y);ctx.scale(2.3,2.3);
- drawShip({x:0,y:0,angle:0,forward:pf.phase==='atterraggio'&&pf.t<1.9?1:0,strafe:0,barrier:false,boostState:'ready'});
+ drawShip({x:0,y:0,angle:pose.tilt||0,forward:(pf.phase==='atterraggio'&&pf.t<1.9)||pose.leaving?1:0,strafe:0,barrier:false,boostState:pose.leaving?'active':'ready'});
  ctx.restore();
  if(pf.phase==='atterraggio'&&pf.t>2.1&&pf.t<3.3){ctx.save();ctx.globalCompositeOperation='screen';ctx.fillStyle=`rgba(140,240,255,${.35*Math.sin((pf.t-2.1)/1.2*Math.PI)})`;ctx.fillRect(pose.x+28,pose.y-4,22,30);ctx.restore()}
 }

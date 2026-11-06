@@ -56,10 +56,10 @@ function n3DrawShip(ship){
  const sp=n3GetSprite();if(!sp)return false;
  const now=performance.now()/1000,go=ship.forward>0;
  ctx.save();ctx.translate(ship.x||0,ship.y||0);
- ctx.rotate(Math.sin(now*1.3)*.025);// leggero dondolio in volo
+ ctx.rotate((ship.angle||0)+Math.sin(now*1.3)*.025);// leggero dondolio in volo (e prua in su quando riparte)
  ctx.scale(N3_SCALE,N3_SCALE);
  // fiamme dagli ugelli posteriori (come nello spazio): lunghe in arrivo, corte in sospensione
- for(const py of [-7,7])drawPlume(-21.5,py*N3_C+4*N3_S,-1,0,go?38:12+Math.random()*3,go?4:2.6,'#51e6ff');
+ for(const py of [-7,7])drawPlume(-21.5,py*N3_C+4*N3_S,-1,0,go?(ship.boostState==='active'?80:38):12+Math.random()*3,go?(ship.boostState==='active'?6:4):2.6,'#51e6ff');
  ctx.drawImage(sp.c,sp.L,sp.T,sp.w,sp.h);
  ctx.restore();
  return true;
