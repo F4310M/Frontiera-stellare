@@ -101,7 +101,7 @@ const MUS_TRACKS={
  menu:'musica/monolith-at-the-edge.mp3',  // Monolith at the Edge: menu principale (mappa) e schermate (dal 2026-11-04)
  spazio:'musica/titans-last-stand.mp3',   // Titan's Last Stand: guerra nello spazio, fase 1 in volo
  soglia:'musica/the-final-maneuver.mp3',  // The Final Maneuver: avvicinamento al pianeta di destinazione e ingresso in orbita
- terra:'musica/kinetic-front.mp3',        // Kinetic Front: combattimento a terra
+ terra:'musica/the-last-perimeter.mp3',   // The Last Perimeter: combattimento a terra, fase 2 (dal 2026-11-06)
  boss:'musica/titans-final-strike.mp3'    // Titan's Final Strike: boss finale di ogni pianeta e IMPERATORE OMEGA
 };
 const MUS_TRACK_GAIN=2.2,MUS_XFADE=1.2;
