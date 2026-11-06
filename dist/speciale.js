@@ -1,5 +1,5 @@
 // Conex — COLPO SPECIALE (2026-11-04). Tasto Q (sul telefono il pulsante SPECIALE).
-// Si può usare una sola volta per missione nello spazio e una sola volta a terra.
+// Una carica per la missione nello spazio e una per ogni guerriero a terra.
 // - Spazio: la nave gira velocissima su sé stessa sparando laser in ogni direzione e distrugge tutti i nemici
 //   che sono sullo schermo in quel momento (navi, nave da guerra, creature, missili e razzi nemici).
 //   Mentre gira non subisce danni.
@@ -19,7 +19,8 @@ function spcIco(n){return typeof ico==='function'?ico(n):''}
 
 // ---- reset a inizio fase
 startGame=function(...a){const r=spcOrig.startGame(...a);spc.space=false;spc.spin=null;spc.beams=[];spcBadge();return r};
-startPlatform=function(...a){const r=spcOrig.startPlatform(...a);spc.ground=false;spc.strike=null;spc.flash=0;spcBadge();return r};
+function spcResetGround(){spc.ground=false;spc.strike=null;spc.flash=0;spcBadge()}
+startPlatform=function(...a){const r=spcOrig.startPlatform(...a);spcResetGround();return r};
 
 // ---- attivazione
 function spcUse(){

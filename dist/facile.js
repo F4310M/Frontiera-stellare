@@ -10,7 +10,7 @@
 
 const FACILE={
  danniNave:.6,     // danni alla nave nello spazio: 60% di prima (meteorite grande −75% → −45%)
- danniPilota:.6,   // danni al pilota a terra: 60% di prima (caduta −25 → −15)
+ danniPilota:.6,   // danni da combattimento subiti dal pilota a terra
  ricaricaNemici:1.35, // i nemici aspettano il 35% in più tra un colpo e l'altro
  saluteBoss:.7,    // salute dei boss a terra: 70% di prima
  colpiPrimoPianeta:2, // navi nemiche e ribelli del primo pianeta: si abbattono con 2 colpi di laser base
@@ -18,17 +18,11 @@ const FACILE={
  saluteRibelli:.8   // ribelli a terra degli altri pianeti: 80% della salute
 };
 const fcScale=(n,k)=>n>0?Math.max(1,Math.round(n*k)):n;
-const gOrigFacile={damage,pfDamage,pfFell,pfSpawnBoss,update,status,spawnEnemy,pfSpawnEnemy,battSpawnCover:typeof battSpawnCover==='function'?battSpawnCover:null};
+const gOrigFacile={damage,pfDamage,pfSpawnBoss,update,status,spawnEnemy,pfSpawnEnemy,battSpawnCover:typeof battSpawnCover==='function'?battSpawnCover:null};
 
 // ---- danni
 damage=function(n,piercing=false,shieldFirst=false){return gOrigFacile.damage(fcScale(n,FACILE.danniNave),piercing,shieldFirst)};
 pfDamage=function(n,dir=1,piercing=false){return gOrigFacile.pfDamage(fcScale(n,FACILE.danniPilota),dir,piercing)};
-pfFell=function(){
- const th=pf&&(pf.theme||(typeof pfTheme==='function'?pfTheme(pf.p):null));
- if(!th||typeof th.fallDamage!=='number')return gOrigFacile.pfFell();
- const fd=th.fallDamage;th.fallDamage=fcScale(fd,FACILE.danniPilota);
- try{return gOrigFacile.pfFell()}finally{th.fallDamage=fd}
-};
 
 // ---- i messaggi dei meteoriti mostrano il danno vero
 const FC_TESTI=[['IMPATTO METEORITE · SCAFO −75%',75],['IMPATTO METEORITE · SCAFO −16%',16]].map(([t,n])=>[t,t.replace('−'+n+'%','−'+fcScale(n,FACILE.danniNave)+'%'),n]);

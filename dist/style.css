@@ -609,3 +609,67 @@ body.has-save #launchBtn,body.has-save #mapScreen .planet-panel .keyhint,body.ha
 .board-row.me{background:linear-gradient(90deg,rgba(81,230,255,.32),rgba(81,230,255,.1))!important;box-shadow:inset 3px 0 0 var(--cyan),0 0 0 1px rgba(81,230,255,.6);color:#fff;font-weight:700;font-size:1.08em}
 @keyframes me-glow{50%{box-shadow:inset 3px 0 0 var(--cyan),0 0 0 1px rgba(81,230,255,.9),0 0 26px rgba(81,230,255,.5)}}
 @media(prefers-reduced-motion:reduce){.map-board-row.me{animation:none}}
+
+/* Interfaccia di bordo */
+body{font-family:Inter,"Segoe UI",system-ui,sans-serif}
+#mapScreen .brand,#mapScreen .mission-copy h1,#mapScreen .planet-panel h2,
+.brief-card h2,.eyebrow,.launch-btn{
+ font-family:"Chakra Petch","Bahnschrift","Segoe UI",sans-serif;
+}
+#mapScreen .topbar{
+ background:linear-gradient(105deg,#0c2235b3,transparent 58%);
+ border-bottom-color:#99d9fc38;
+}
+#mapScreen .brand{font-size:clamp(13px,1.4vw,20px);font-weight:700}
+.brand-mark{background:linear-gradient(145deg,#163c50,#071624);box-shadow:inset 0 0 13px #6ee7ff32}
+#mapScreen .mission-copy h1{
+ color:#f2f8ff;font-weight:700;letter-spacing:-.035em;
+ text-shadow:0 3px 28px #020610;
+}
+#mapScreen .mission-copy h1 em{text-shadow:none}
+#mapScreen .planet-panel{
+ background:radial-gradient(ellipse at top,color-mix(in srgb,var(--panel-accent,#8ce9ec) 16%,transparent),transparent 55%),
+ linear-gradient(150deg,#122b42,#081323 68%);
+ backdrop-filter:none;
+}
+#mapScreen .planet-preview{
+ background:radial-gradient(ellipse at 46% 70%,color-mix(in srgb,var(--panel-accent,#8ce9ec) 20%,transparent),transparent 68%),
+ linear-gradient(135deg,#071321,#030912);
+}
+#mapScreen .planet-preview span{color:#e3f2ff;font-size:10px}
+#mapScreen .planet-node.selected:before{border-color:#a4f4ff;box-shadow:0 0 14px #72dfff66}
+#mapScreen .planet-node.selected .node-label{color:#d0f9ff;text-shadow:0 0 12px #72dfff88}
+.overlay{background:#020813d6;backdrop-filter:none}
+.brief-card{
+ background:radial-gradient(ellipse at 18% 0%,#1b3c55,transparent 60%),#0a1627;
+ border-color:#a2dbfb4d;
+ box-shadow:0 24px 64px #0009,inset 0 1px 0 #c3efff25;
+ scrollbar-color:#41647e #0a1627;
+}
+.brief-card h2{font-weight:700;letter-spacing:.075em;color:#f0f8ff}
+.brief-card>p:not(.eyebrow),.setting-block p,.control-grid small{color:#b7cbdc}
+.settings-card .setting-block{
+ border:1px solid #a2dbfb28;border-radius:10px;
+ background:#071322a6;
+}
+.settings-card .close-btn{border-radius:8px;color:#c8e4f8}
+.brief-card .text-btn{color:#afcee2}
+.brief-card .text-btn:hover{color:#effbff}
+.launch-btn,#mapScreen .launch-btn:not(.save-resume){
+ background:linear-gradient(112deg,#d0fff0,#75d9fa);
+ border-color:#a7e9f6;color:#071b29;font-weight:700;
+}
+.launch-btn:hover,#mapScreen .launch-btn:not(.save-resume):hover{
+ background:linear-gradient(112deg,#e8fff8,#a4ecff);
+ box-shadow:0 5px 22px #72dfff40;
+}
+.launch-btn:disabled{opacity:.65;cursor:default;transform:none}
+button:focus-visible,input:focus-visible,select:focus-visible{
+ outline:2px solid #ffe7a5;outline-offset:3px;
+}
+.planet-node:focus-visible{border-radius:50%}
+@media (prefers-reduced-motion:reduce){
+ #mapScreen .planet-panel,#mapScreen .planet-panel .launch-btn::before{animation:none}
+ .launch-btn,.planet-node .planet{transition:none}
+ .launch-btn:hover{transform:none}
+}

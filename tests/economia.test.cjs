@@ -68,5 +68,5 @@ console.log('PASS: premio della missione e riepilogo della fase 2');
 const themes=['mare','deserto','tempesta','foresta','lava'];
 for(let i=0;i<5;i++){run(`selected=${i};startPlatform()`);assert.equal(val('pf.theme.id'),themes[i]);step(4);run('drawPlatform()');assert(val('pf.deco.themeBack.flora.length')>5,'Decorazioni del tema');run('abort()')}
 assert.equal(val('pfTheme({color:"#3070e0"}).id'),'mare');assert.equal(val('pfTheme({color:"#e02020"}).id'),'lava');assert.equal(val('pfTheme({color:"#30c040"}).id'),'foresta');assert.equal(val('pfTheme({color:"#f0d040"}).id'),'deserto');
-run('selected=4;startPlatform();pf.pilot.visible=true;pf.pilot.hp=100;pf.pilot.lastGround=400;pfFell()');assert.equal(val('pf.pilot.hp'),65,'La lava brucia di più');
+run('selected=4;startPlatform();pf.pilot.visible=true;pf.pilot.y=PF_VH;globalThis.beforeFall=pf.lives;pfFell()');assert.equal(val('pf.lives'),val('beforeFall-1'),'La caduta nella lava consuma una vita');
 console.log('PASS: temi mare, deserto, foresta, lava, tempesta');

@@ -63,7 +63,7 @@ drawSupplies=function(){
 
 // ---- fase 2: le vite del pilota sono le stesse del gioco
 startPlatform=function(...a){vOrig.startPlatform(...a);if(typeof pf!=='undefined'&&pf)pf.lives=vite};
-pfLoseLife=function(){vOrig.pfLoseLife();if(pf){vite=Math.max(0,pf.lives);viteSave()}};
+pfLoseLife=function(...args){vOrig.pfLoseLife(...args);if(pf){vite=Math.max(0,pf.lives);viteSave()}};
 pfHitEnemy=function(e,n){const was=e.hp;vOrig.pfHitEnemy(e,n);if(was>0&&e.hp<=0&&vite<VITE_MAX&&Math.random()<LIFEUP_CHANCE.ribelle)pf.pickups.push({x:e.x,y:e.y-30,vy:-260,kind:'vita',life:25,ground:false})};
 pfUpdatePickups=function(dt){
  const P=pf.pilot;
@@ -94,7 +94,7 @@ pfFinish=function(win){
 
 // Tema del pianeta finale: stessi effetti della tempesta, colori cremisi.
 PF_THEMES.abisso=Object.assign({},PF_THEMES.tempesta,{mat:'abisso',name:'ABISSO',brief:'La cittadella del Fronte Ombra galleggia sopra un abisso cremisi: sotto le piattaforme c’è il vuoto.',banner:'CITTADELLA OMEGA · ULTIMA BATTAGLIA',
- sky:['#12020a','#3a0a1e','#8a1a3a'],far:'#2a0614',near:'#3a0a1c',rim:'#ff8aa8',top:'#a02048',body:['#3a0a1c','#10020a'],edge:'#ffb0c4',haze:'#ff5a7a',fall:'PRECIPITATO NELL’ABISSO',fallDamage:30,splash:['#ffd0dc','#c8183e']});
+ sky:['#12020a','#3a0a1e','#8a1a3a'],far:'#2a0614',near:'#3a0a1c',rim:'#ff8aa8',top:'#a02048',body:['#3a0a1c','#10020a'],edge:'#ffb0c4',haze:'#ff5a7a',fall:'PRECIPITATO NELL’ABISSO',splash:['#ffd0dc','#c8183e']});
 if(typeof G_MAT!=='undefined')G_MAT.abisso=Object.assign({},G_MAT.tempesta,{dark:[30,8,16],mid:[74,22,38],light:[146,54,78],speck:[255,200,214],top:[150,30,62],top2:[255,120,146],lip:[90,20,42],rim:'#ff8aa8',liquid:['rgba(240,80,120,0)','#5a0f2a','#12020a'],foam:'rgba(255,190,210,.5)',grade:['#ffe2e8','#8a6070'],sun:[255,150,170]});
 if(typeof PL_THEMES!=='undefined')PL_THEMES.abisso={gas:true,bands:['#1a0610','#5a0f2a','#a0204a','#ff5a7a','#3a0a1a','#7a1838','#e0406a'],clouds:.66,cloudAmt:.3,ice:2,atm:[255,80,120]};
 PF_BOSS.omega={id:'omega',name:'IMPERATORE OMEGA',sub:'SIGNORE DEL FRONTE OMBRA',brief:'il signore del Fronte Ombra nella sua armatura da guerra',w:150,h:240,hp:1.6,speed:1.45,dmg:1.5,gun:{x:44,y:178,len:76},pod:{x:-34,y:250},moves:['raffica','carica','missili','onda','passi']};

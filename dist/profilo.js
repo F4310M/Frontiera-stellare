@@ -1,5 +1,5 @@
 // Conex — PROFILO DEL PILOTA e SALVATAGGIO DEI PROGRESSI.
-// Al primo avvio si crea il pilota: nome, password e foto (rimpicciolita a una miniatura).
+// Al primo avvio si può aprire un salvataggio o creare un pilota.
 // I progressi restano sempre nel browser: alla partita successiva si riparte dalla mappa con crediti,
 // vite, potenziamenti, pianeti liberati e punti. Una missione interrotta a metà ricomincia dall'inizio.
 // SALVA PROGRESSI scrive un file .sfsave sul PC, criptato con la password (AES-GCM 256, chiave PBKDF2-SHA256):
@@ -239,6 +239,10 @@ let profModo='pc',profNewPhoto=null,profToastT=0;
 function profHtml(){
  const I=n=>typeof ico==='function'?ico(n):'';
  return{
+ accesso:'<div class="brief-card prof-card prof-access"><p class="eyebrow">REGISTRO DEI PILOTI</p><h2>PROFILO DEL PILOTA</h2>'+
+  '<button id="profImportSaved" class="launch-btn"><span>IMPORTA UN SALVATAGGIO</span><b>'+I('upload')+'</b></button>'+
+  '<p class="prof-hint">Apri il tuo file .sfsave con la password del salvataggio.</p>'+
+  '<button id="profNewPilot" class="prof-new-choice" type="button"><span>NUOVO PILOTA</span><b>'+I('arrow-right')+'</b></button></div>',
  nuovo:'<div class="brief-card prof-card"><div class="settings-head"><div><p class="eyebrow">REGISTRO DEI PILOTI</p><h2>NUOVO PILOTA</h2></div><button id="profNewX" class="close-btn hidden" aria-label="Chiudi">'+I('close')+'</button></div>'+
   '<div class="prof-cols"><div class="prof-left"><button id="profPhotoBtn" class="prof-photo" type="button" aria-label="Scegli la foto del pilota"><img id="profPhotoImg" alt="" class="hidden"><span>'+I('camera')+'<br>SCEGLI LA FOTO</span></button>'+
   '<input id="profPhotoFile" type="file" accept="image/*" class="hidden"><p class="prof-hint">La foto viene rimpicciolita e compare in classifica accanto al tuo nome.</p></div>'+
@@ -328,7 +332,7 @@ function profAskPw(o){return new Promise(done=>{
 })}
 // SALVA PROGRESSI: alla prima volta della sessione chiede la password, poi salva con un clic.
 async function profSaveClick(){
- if(!prof){profOpenNew();return false}
+ if(!prof){profOpenAccess();return false}
  if(!profCryptoOk()){profToast('QUESTO BROWSER NON PERMETTE LA CRITTOGRAFIA: APRI IL GIOCO DA HTTPS O DA LOCALHOST');return false}
  if(!profKeyMem){
   const pw=await profAskPw({title:'SALVA PROGRESSI',text:'Scrivi la password del pilota per criptare il file.',forgot:true,check:async pw=>(await profUnlock(pw))?null:'PASSWORD ERRATA'});
@@ -341,24 +345,30 @@ async function profSaveClick(){
 }
 function profPickFile(accept){return new Promise(res=>{
  const f=document.createElement('input');f.type='file';f.accept=accept;f.style.display='none';
+ f.oncancel=()=>{f.remove();res(null)};
  f.onchange=()=>{const x=f.files&&f.files[0];f.remove();res(x||null)};document.body.appendChild(f);f.click();
 })}
 async function profImportClick(){
  if(!profCryptoOk()){profToast('QUESTO BROWSER NON PERMETTE LA CRITTOGRAFIA: APRI IL GIOCO DA HTTPS O DA LOCALHOST');return}
  const file=await profPickFile(PROF_EXT+',application/octet-stream,application/json');if(!file)return;
  if(file.size>400000){profToast('FILE DI SALVATAGGIO NON VALIDO');return}
- const text=await file.text();let u=null;
+ let text,u=null;
+ try{text=await file.text()}catch(e){profToast('FILE DI SALVATAGGIO NON VALIDO');return}
  const pw=await profAskPw({title:'IMPORTA',text:prof?'Scrivi la password con cui è stato salvato il file. I progressi di questo browser verranno sostituiti.':'Scrivi la password con cui è stato salvato il file.',
   check:async pw=>{u=await profUnpack(text,pw);return null}});
  if(pw===null||!u)return;
  profApply(u);profToast('PROGRESSI IMPORTATI');setTimeout(profReload,700);
+}
+function profOpenAccess(){
+ show('profAccess',true);
+ $('profImportSaved').focus();
 }
 function profOpenNew(canClose){
  profOverlay('profNew',profHtml().nuovo,'Nuovo pilota');
  show('profNewX',!!canClose);profMsg('profNewMsg','');show('profNew',true);
  setTimeout(()=>{try{$('profName').focus()}catch(e){}},80);
 }
-function profOpenPanel(){if(!prof)return profOpenNew();profRefresh();profMsg('profPanelMsg','');show('profPanel',true)}
+function profOpenPanel(){if(!prof)return profOpenAccess();profRefresh();profMsg('profPanelMsg','');show('profPanel',true)}
 async function profPhotoFrom(file){const img=await profReadImage(file);return profPhotos(img)}
 async function profCreateClick(){
  const nome=cleanName($('profName').value),pw=$('profPw').value;
@@ -402,7 +412,16 @@ function profBuild(){
   const w=document.createElement('div');w.id='scoreWho';w.className='score-who';entry.insertBefore(w,$('scoreMsg'));
   const v=document.createElement('button');v.id='scoreSeeBoard';v.className='text-btn score-see';v.innerHTML=I('trophy')+' <span>VEDI LA CLASSIFICA</span>';v.onclick=()=>boardOpen();entry.appendChild(v);
  }
- // nuovo pilota
+ // accesso e nuovo pilota
+ const access=profOverlay('profAccess',H.accesso,'Profilo del pilota');
+ access.setAttribute('role','dialog');access.setAttribute('aria-modal','true');
+ access.onkeydown=e=>{
+  if(e.key!=='Tab')return;
+  e.preventDefault();
+  (document.activeElement===$('profImportSaved')?$('profNewPilot'):$('profImportSaved')).focus();
+ };
+ $('profImportSaved').onclick=()=>profImportClick();
+ $('profNewPilot').onclick=()=>{show('profAccess',false);profOpenNew(true)};
  profOverlay('profNew',H.nuovo,'Nuovo pilota');
  for(const b of document.querySelectorAll('#profNew .prof-mode'))b.onclick=()=>{profModo=b.dataset.modo;for(const x of document.querySelectorAll('#profNew .prof-mode'))x.classList.toggle('on',x===b)};
  $('profPhotoBtn').onclick=()=>$('profPhotoFile').click();
@@ -415,7 +434,7 @@ function profBuild(){
  nm.oninput=()=>{const c=nm.value.replace(/[^\p{L}\p{N} ]/gu,'').slice(0,SCORE_MAX_NAME);if(c!==nm.value)nm.value=c};
  $('profCreate').onclick=()=>profCreateClick();
  $('profImportLink').onclick=()=>profImportClick();
- $('profNewX').onclick=()=>show('profNew',false);
+ $('profNewX').onclick=()=>{show('profNew',false);if(!prof)profOpenAccess()};
  // pannello del pilota
  profOverlay('profPanel',H.pannello,'Profilo');
  $('profPanelX').onclick=()=>show('profPanel',false);
@@ -430,10 +449,10 @@ function profBuild(){
  };
  $('profPanelNew').onclick=()=>{
   if(!confirm(profT('Creare un nuovo pilota? I progressi di questo browser verranno cancellati. Se vuoi tenerli, prima premi SALVA PROGRESSI.')))return;
-  profReset();show('profPanel',false);profRefresh();if(typeof eco!=='undefined')profReload();else profOpenNew();
+  profReset();show('profPanel',false);profRefresh();if(typeof eco!=='undefined')profReload();else profOpenAccess();
  };
  profRefresh();
  if(typeof setInterval==='function')setInterval(()=>{if(prof&&$('profSaveBtn'))$('profSaveBtn').classList.toggle('dirty',profDirty())},3000);
- if(!prof)profOpenNew(false);
+ if(!prof)profOpenAccess();
 }
 profBuild();

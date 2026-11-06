@@ -70,19 +70,19 @@ function pfGroundAt(x){for(const s of pf.solids)if(x>=s.x&&x<s.x+s.w)return s.y;
 const PF_THEMES={
  mare:{id:'mare',name:'MARE',brief:'La colonia sorge su isole e piattaforme in mezzo all’oceano: attento a non cadere in mare.',banner:'COLONIA SUL MARE · LIBERA GLI OSTAGGI',
   sky:['#03101d','#0a3550','#2a86ad'],far:'#0b2c44',near:'#0a3a55',rim:'#7fdcff',top:'#4fb7c9',body:['#1d4250','#08161e'],edge:'#8ff3ff',haze:'#3ca8d5',
-  pit:'acqua',fall:'CADUTO IN MARE',fallDamage:25,decor:'onde',ambient:'spruzzi',flora:['palma','scoglio','alga','palma'],splash:['#bff4ff','#3ca8d5']},
+  pit:'acqua',fall:'CADUTO IN MARE',decor:'onde',ambient:'spruzzi',flora:['palma','scoglio','alga','palma'],splash:['#bff4ff','#3ca8d5']},
  deserto:{id:'deserto',name:'DESERTO',brief:'La colonia è sepolta tra le dune di un deserto rovente: evita le sabbie mobili.',banner:'COLONIA NEL DESERTO · LIBERA GLI OSTAGGI',
   sky:['#1a0f05','#6a3f12','#e7a845'],far:'#7a4e1c',near:'#946026',rim:'#ffd27a',top:'#e6bb63',body:['#9a6a2c','#2a1808'],edge:'#ffe09a',haze:'#ffcf4a',
-  pit:'sabbia',fall:'INGHIOTTITO DALLE SABBIE MOBILI',fallDamage:25,decor:'dune',ambient:'sabbia',flora:['cactus','roccia','teschio','cactus'],splash:['#f3d08a','#b07a34']},
+  pit:'sabbia',fall:'INGHIOTTITO DALLE SABBIE MOBILI',decor:'dune',ambient:'sabbia',flora:['cactus','roccia','teschio','cactus'],splash:['#f3d08a','#b07a34']},
  foresta:{id:'foresta',name:'FORESTA',brief:'La colonia è nascosta in una fitta foresta aliena: i burroni finiscono in una palude.',banner:'COLONIA NELLA FORESTA · LIBERA GLI OSTAGGI',
   sky:['#020a06','#0b2a17','#3f7a3a'],far:'#0d2a18',near:'#0f3520',rim:'#9ded6c',top:'#5fae3c',body:['#2b3a1c','#0a1208'],edge:'#b8ff8a',haze:'#7aab54',
-  pit:'palude',fall:'CADUTO NELLA PALUDE',fallDamage:25,decor:'alberi',ambient:'foglie',flora:['albero','cespuglio','fungo','albero'],splash:['#9ded6c','#2f5a24']},
+  pit:'palude',fall:'CADUTO NELLA PALUDE',decor:'alberi',ambient:'foglie',flora:['albero','cespuglio','fungo','albero'],splash:['#9ded6c','#2f5a24']},
  lava:{id:'lava',name:'LAVA',brief:'La colonia resiste su rocce vulcaniche circondate dalla lava: una caduta brucia più del solito.',banner:'COLONIA TRA LA LAVA · LIBERA GLI OSTAGGI',
   sky:['#0d0202','#3a0a06','#b8361a'],far:'#2a0a08',near:'#200807',rim:'#ff7a3a',top:'#4a302a',body:['#2a1a18','#0c0606'],edge:'#ff8a3d',haze:'#ff4a3a',
-  pit:'lava',fall:'CADUTO NELLA LAVA',fallDamage:35,decor:'vulcani',ambient:'braci',flora:['roccia_lava','fumarola','cristallo_fuoco','roccia_lava'],splash:['#ffd27a','#ff5a1f']},
+  pit:'lava',fall:'CADUTO NELLA LAVA',decor:'vulcani',ambient:'braci',flora:['roccia_lava','fumarola','cristallo_fuoco','roccia_lava'],splash:['#ffd27a','#ff5a1f']},
  tempesta:{id:'tempesta',name:'TEMPESTA',brief:'La colonia galleggia tra le nubi di un gigante gassoso in tempesta: sotto le piattaforme c’è il vuoto.',banner:'COLONIA TRA LE NUBI · LIBERA GLI OSTAGGI',
   sky:['#06041a','#1e1446','#5a46a8'],far:'#1a1240',near:'#221852',rim:'#b9a6ff',top:'#6c5bc0',body:['#24204a','#0a0818'],edge:'#c8b8ff',haze:'#9a83ff',
-  pit:'nubi',fall:'PRECIPITATO TRA LE NUBI',fallDamage:25,decor:'nubi',ambient:'pioggia',flora:['cristallo','antenna','cristallo'],splash:['#e2d8ff','#7763c9']}
+  pit:'nubi',fall:'PRECIPITATO TRA LE NUBI',decor:'nubi',ambient:'pioggia',flora:['cristallo','antenna','cristallo'],splash:['#e2d8ff','#7763c9']}
 };
 // Tema dal campo theme del pianeta, altrimenti dal colore (blu, rosso, verde, giallo, viola).
 function pfTheme(p){
@@ -363,7 +363,7 @@ function pfUpdatePilot(dt){
  if(P.x<minX){P.x=minX;P.vx=Math.max(0,P.vx)}
  const maxX=pf.cam.lockX+Math.min(VW,1500)-16;if(pf.cam.lock&&P.x>maxX){P.x=maxX;P.vx=Math.min(0,P.vx)}
  if(P.ground){P.run+=Math.abs(P.vx)*dt*.05;if(!P.onPlat&&pfGroundAt(P.x-12)!==null&&pfGroundAt(P.x+12)!==null)P.lastGround=P.x}
- if(P.y>PF_VH+140){pfFell();return}
+ if(P.y>PF_VH+140||(P.y>PF_VH-58&&pfGroundAt(P.x)===null)){pfFell();return}
  // Mira con il mouse, come la prua della nave in fase 1.
  const s=pfScale(),sh=pfShoulder(P),mx=pf.cam.x+mouse.x/s,my=mouse.y/s;
  if(control){P.aim=Math.atan2(my-sh.y,mx-sh.x);P.face=Math.cos(P.aim)>=0?1:-1}
@@ -525,17 +525,26 @@ function pfDamage(n,dir=1,piercing=false){
  if(P.hp<=0)pfLoseLife();
 }
 function pfFell(){
- const P=pf.pilot,th=pf.theme||pfTheme(pf.p);P.hp-=th.fallDamage;pf.flash=.4;sfx('hit');pfThemeSplash(P.x);
- if(P.hp<=0){pfLoseLife();return}
- const g=pfGroundAt(P.lastGround)??PF_FLOOR;P.x=P.lastGround;P.y=g;P.vx=0;P.vy=0;P.inv=1.2;
- pfStatus(th.fall+' · SALUTE −'+th.fallDamage,1800);
+ const P=pf.pilot;
+ if(!P.visible||pf.phase==='sconfitta'||pf.phase==='vittoria')return;
+ const y=Math.min(P.y-25,PF_VH-75);
+ pfThemeSplash(P.x);
+ pfBurst(P.x,y,'#ff723a',38,1.55);
+ pfBurst(P.x,y,'#fff1c9',20,1.25);
+ pfBurst(P.x,y,'#51e6ff',16,1);
+ if(typeof gFlash==='function')gFlash(P.x,y,240,'#ffb05a',.5);
+ pf.cam.shake=Math.max(pf.cam.shake,.8);
+ sfx('boom',1.6);
+ pfStatus((pf.theme||pfTheme(pf.p)).fall,1800);
+ pfLoseLife(true);
 }
-function pfLoseLife(){
- const P=pf.pilot;P.hp=0;pf.lives--;pfBurst(P.x,P.y-25,'#ff7b4f',24,1.2);pfBurst(P.x,P.y-25,'#51e6ff',12,.8);sfx('boom',1);
+function pfLoseLife(animated=false){
+ const P=pf.pilot;P.hp=0;pf.lives--;
+ if(!animated){pfBurst(P.x,P.y-25,'#ff7b4f',24,1.2);pfBurst(P.x,P.y-25,'#51e6ff',12,.8);sfx('boom',1)}
  if(pf.lives<=0){pf.phase='sconfitta';pf.endT=0;P.visible=false;pfStatus('PILOTA CADUTO',3000);return}
  let x=pf.checkpoint;if(pfGroundAt(x)===null){const next=pf.solids.find(s=>s.x>x);if(next)x=next.x+60}
  Object.assign(P,{x,y:(pfGroundAt(x)??PF_FLOOR)-2,vx:0,vy:0,hp:100,shield:100,inv:2.2,ground:false,lastGround:x});
- if(!pf.cam.lock)pf.cam.x=Math.min(pf.cam.x,x-pfViewW()*.3);
+ if(!pf.cam.lock)pf.cam.x=Math.max(0,x-pfViewW()*.38);
  pf.shots=pf.shots.filter(b=>b.friendly);
  pfStatus('PILOTA RECUPERATO · VITE RIMASTE '+pf.lives,2400);
 }

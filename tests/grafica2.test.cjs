@@ -18,6 +18,7 @@ for(let i=0;i<5;i++){
  run(`selected=${i};startPlatform();pf.phase='missione';pf.pilot.visible=true;draw()`);
  assert.equal(run('gfx.ok'),true,'Grafica avanzata attiva sul pianeta '+i);
  assert.equal(run('gfx.layers.length'),4,'Quattro strati di sfondo');
+ assert.equal(run('gfx.orbit.tint'),run('G_ORBIT[pf.theme.id].tint'),'Ogni bioma ha il proprio cielo');
  assert(run('gfx.solids.size')>=1,'Terreno con texture generato');
  run('pf.cam.x=pf.arenaX-500;pf.pilot.x=pf.arenaX+170;pf.pilot.y=600;pf.lives=99');for(let k=0;k<60;k++)run('update(1/30);pf.pilot.hp=100;draw()');
  assert(run('pf.boss!==null'),'Il robot viene disegnato nell’arena');

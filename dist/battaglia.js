@@ -75,7 +75,8 @@ pfUpdateLanding=function(dt){
 function battLandingStep(P,dt){
  P.jetOn=true;P.ground=false;P.inv=Math.max(0,P.inv-dt);P.fire=Math.max(0,P.fire-dt);
  const g=pfGroundAt(P.x)??PF_FLOOR,near=g-P.y<55,target=near?90:BATT.landSpeed;
- P.vy+=(target-P.vy)*Math.min(1,dt*4);P.vx+=((near?0:45)-P.vx)*Math.min(1,dt*2);
+ const drift=pf.phase==='atterraggio'&&!near?45:0;
+ P.vy+=(target-P.vy)*Math.min(1,dt*4);P.vx+=(drift-P.vx)*Math.min(1,dt*2);
  const prevY=P.y;P.x+=P.vx*dt;P.y+=P.vy*dt;P.face=1;P.aim=.25;
  if(Math.random()<dt*45)pf.fx.push({x:P.x-8+(Math.random()-.5)*4,y:P.y-22,vx:(Math.random()-.5)*40,vy:260+Math.random()*120,life:.3,max:.3,color:Math.random()<.5?'#ffb05a':'#fff1c9',r:2+Math.random()*2.5});
  if(g-P.y<60&&Math.random()<dt*30)pfBurst(P.x+(Math.random()-.5)*30,g-2,'#c7d6e2',1,.9,true,{vy:-40});
@@ -88,14 +89,14 @@ function battLandingStep(P,dt){
 }
 pfUpdatePilot=function(dt){
  const P=pf.pilot;
- if(P.landing&&(pf.phase==='atterraggio'||pf.drop)){battLandingStep(P,dt);return}
+ if(P.landing&&P.hp>0){battLandingStep(P,dt);return}
  P.landing=false;
  bt.pfUpdatePilot(dt);
 };
 // Pilota di riserva: anche lui scende col jetpack dalla navetta.
 if(bt.terraUpdateDrop)terraUpdateDrop=function(dt){
  bt.terraUpdateDrop(dt);
- const D=pf.drop;if(D&&D.released&&!D.jet){D.jet=true;Object.assign(pf.pilot,{landing:true,jetOn:true,vx:30,vy:40})}
+ const D=pf.drop;if(D&&D.released&&!D.jet){D.jet=true;Object.assign(pf.pilot,{landing:true,jetOn:true,vx:0,vy:40})}
 };
 // Polvere sollevata dai motori della nave sospesa.
 pfDrawShipOnPad=function(now){
