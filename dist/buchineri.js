@@ -9,7 +9,7 @@
 // Va caricato dopo spazio.js e i18n.js (index.html: dopo speciale.js).
 
 const BH_CFG={
- chance:d=>Math.min(.95,.35+.13*d),      // probabilità che in una missione compaiano buchi neri (1: 48%, 5: 95%)
+ chance:d=>Math.min(.95,.45+.13*d),      // probabilità che in una missione compaiano buchi neri (1: 58%, 5: 95%)
  first:d=>[12+(5-d)*3,24+(5-d)*5],       // secondi prima del primo
  next:d=>[70/(.6+.25*d),110/(.6+.25*d)], // secondi tra uno e il successivo
  life:[34,46],grow:1.6,fade:2.6,         // durata, comparsa, evaporazione (secondi)
