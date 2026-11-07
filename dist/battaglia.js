@@ -150,7 +150,7 @@ function battUpdateCover(e,dt){
    break;
  }
  e.crouch=e.up<.55;e.h=24+40*e.up;
- if(P.visible&&P.hp>0&&pfOverlap(pfRect(P),pfRect(e)))pfDamage(14,Math.sign(P.x-e.x)||1);
+ if(pfOverlap(pfRect(P),pfRect(e)))pfContact(e);
 }
 pfUpdateEnemies=function(dt){
  const covers=pf.enemies.filter(e=>e.cover);

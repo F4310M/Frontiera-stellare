@@ -56,8 +56,8 @@ console.log('PASS: burroni');
 // Combattimento con mira del mouse.
 run('pf.enemies=[];pf.shots=[];pf.pilot.hp=100;pf.pilot.x=pf.cam.x+300;pf.pilot.y=pfGroundAt(pf.pilot.x);pf.pilot.vy=0;pfSpawnEnemy("soldato",pf.pilot.x+250);pf.enemies[0].fire=99;pf.kills=0');
 step(.3);
-run('const e=pf.enemies[0],s=pfScale();mouse.x=(e.x-pf.cam.x)*s;mouse.y=(e.y-30)*s;mouse.down=true');
-step(1.2);run('mouse.down=false');
+run('const e=pf.enemies[0];for(let i=0;i<e.hp;i++)pfFireAt(e.x,e.y-30);mouse.down=true');
+step(.4);run('mouse.down=false');
 assert.equal(run('pf.enemies.length'),0,'Il ribelle viene abbattuto');assert.equal(run('pf.kills'),1);
 console.log('PASS: mira con il mouse e fuoco');
 

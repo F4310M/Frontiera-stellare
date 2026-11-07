@@ -101,18 +101,42 @@ PF_BOSS.omega={id:'omega',name:'IMPERATORE OMEGA',sub:'SIGNORE DEL FRONTE OMBRA'
 
 // IMPERATORE OMEGA: armatura nera e oro, ali di energia, aureola, lancia al plasma, scudo.
 function bOmega(c,B,now){
- const walk=B.legT,black='#1c1e28',gold='#d8a840',crim='#ff2a5a',jump=B.state==='onda'&&B.t<.5?B.t*16:0,rage=B.rage;
+ const walk=B.legT,black='#272b43',gold='#e4b951',crim='#ff2a5a',jump=B.state==='onda'&&B.t<.5?B.t*16:0,rage=B.rage;
  c.save();c.translate(0,jump);
+ // Alette del propulsore a disco, aperte durante la raffica e in modalità furia.
+ const spread=(rage?.32:.09)+Math.sin(now*2)*.07+bRecoil(B)*.15;
+ for(const [x,side] of [[-48,-1],[36,1]]){
+  c.save();c.translate(x,-207);c.scale(side,1);c.rotate(-spread);
+  bArmor(c,[[0,-14],[40,-48],[96,-34],[79,3],[36,37],[3,20]],
+   [[14,-11],[45,-37],[82,-29],[71,-2],[37,25],[15,14]],'#232742','#5c6089','#e2d7a8');
+  bPlate(c,[[48,-30],[81,-27],[70,-6],[51,4],[35,-3]],bMetal(c,45,-30,74,7,'#9c2849'),'#431731','#ff9b9b');
+  bVents(c,22,1,3,19,crim,rage?.92:.55);
+  c.restore();
+ }
  // ali di energia dietro le spalle
  c.save();c.globalCompositeOperation='lighter';
  for(let i=0;i<4;i++){const a=-2.2-i*.32+Math.sin(now*2+i)*.06,l=150-i*18,ox=-18,oy=-212;c.save();c.translate(ox,oy);c.rotate(a);const g=c.createLinearGradient(0,0,l,0);g.addColorStop(0,rage?'rgba(255,60,90,.75)':'rgba(255,60,110,.55)');g.addColorStop(1,'rgba(255,60,110,0)');c.fillStyle=g;c.beginPath();c.moveTo(0,-5);c.quadraticCurveTo(l*.5,-16,l,0);c.quadraticCurveTo(l*.5,6,0,5);c.closePath();c.fill();c.restore()}
  c.restore();
- // aureola
+ // Aureola a doppio anello con segmenti che ruotano in senso opposto.
  c.save();c.translate(36,-282);c.rotate(now*.8);c.strokeStyle='rgba(255,210,120,.85)';c.lineWidth=3;c.shadowBlur=18;c.shadowColor='#ffcf6a';c.beginPath();c.arc(0,0,30,0,6.28);c.stroke();c.lineWidth=2;for(let i=0;i<12;i++){c.rotate(Math.PI/6);c.beginPath();c.moveTo(34,0);c.lineTo(42,0);c.stroke()}c.restore();
+ c.save();c.translate(36,-282);c.rotate(-now*.55);
+ for(let i=0;i<4;i++){
+  const a=i*Math.PI*.5;
+  c.beginPath();c.arc(0,0,24,a,a+1.15);
+  c.lineWidth=2;c.strokeStyle=rage?'#ff9aa9':'#ffe5a8';c.stroke();
+ }
+ c.restore();
  // mantello
  const wv=Math.sin(now*3)*8;c.fillStyle=bGrad(c,0,-220,0,-50,['#5a0a20','#2a0410']);c.beginPath();c.moveTo(-40,-214);c.lineTo(10,-220);c.quadraticCurveTo(-20+wv,-130,-30+wv,-50);c.lineTo(-90+wv*1.4,-46);c.quadraticCurveTo(-70,-140,-40,-214);c.fill();c.strokeStyle='rgba(255,90,120,.5)';c.lineWidth=1.5;c.stroke();
  // scudo (braccio posteriore)
- c.save();c.translate(-46,-150);c.rotate(.12+Math.sin(walk)*.05);bPlate(c,[[-22,-40],[22,-44],[26,30],[0,56],[-26,30]],bMetal(c,-22,-44,26,56,black,.05),gold,'rgba(255,230,170,.5)');c.fillStyle=crim;c.beginPath();c.moveTo(0,-20);c.lineTo(10,4);c.lineTo(0,28);c.lineTo(-10,4);c.closePath();c.fill();c.restore();
+ c.save();c.translate(-46,-150);c.rotate(.12+Math.sin(walk)*.05);
+ bPlate(c,[[-22,-40],[22,-44],[26,30],[0,56],[-26,30]],bMetal(c,-22,-44,26,56,black,.05),gold,'rgba(255,230,170,.5)');
+ bPlate(c,[[-15,-32],[15,-35],[18,25],[0,45],[-18,25]],bMetal(c,-15,-35,18,45,'#353143'),gold);
+ bPlate(c,[[0,-23],[12,4],[0,29],[-12,4]],bGrad(c,0,-23,0,29,['#ffe0a0',crim,'#551531']),gold);
+ bTrace(c,[[-13,-15],[-7,-6],[-13,4],[-9,17]],'#e9b456',1.2);
+ bTrace(c,[[13,-15],[7,-6],[13,4],[9,17]],'#e9b456',1.2);
+ bRivets(c,[[-15,-32],[15,-35],[18,25],[-18,25],[0,43]]);
+ c.restore();
  // gambe digitigrade
  for(const side of [-1,1]){const k=side<0?-.4:0,sw=Math.sin(walk+(side<0?Math.PI:0))*12,hx=side*20,kx=hx+20+sw*.4,ky=-64,ax=hx-8+sw,ay=-22;
   bPlate(c,[[hx-12,-118],[hx+14,-114],[kx+10,ky-4],[kx-8,ky+6]],bMetal(c,hx,-118,kx,ky,black,k),gShade(gold,k-.1),'rgba(255,230,170,.35)');
@@ -126,22 +150,41 @@ function bOmega(c,B,now){
  bPlate(c,[[-34,-214],[46,-220],[52,-196],[-42,-188]],bMetal(c,-34,-220,52,-188,black,.12),'rgba(0,0,0,.5)','rgba(255,240,200,.4)');
  c.strokeStyle=gold;c.lineWidth=2.4;c.beginPath();c.moveTo(-40,-180);c.lineTo(4,-128);c.lineTo(50,-192);c.stroke();
  c.lineWidth=1.2;for(let i=0;i<3;i++){c.beginPath();c.moveTo(-30+i*6,-170+i*14);c.lineTo(40-i*6,-182+i*14);c.stroke()}
+ for(const side of [-1,1]){
+  const x=side*27;
+  bTrace(c,[[x,-213],[x+side*9,-203],[x+side*7,-192],[x,-187]],'#ffd99a',1.6);
+  bGlow(c,x,-187,2,rage?'#fff0e2':'#ff6383',7);
+ }
  // nucleo cremisi a diamante
  const pulse=.6+.4*Math.sin(now*(B.state==='stordito'?16:5)),s=14+pulse*4+(B.state==='stordito'?5:0),cx=6,cy=-172;
  c.save();c.shadowBlur=26;c.shadowColor=crim;const cg=c.createRadialGradient(cx,cy,1,cx,cy,s);cg.addColorStop(0,'#ffffff');cg.addColorStop(.35,'#ffb0c4');cg.addColorStop(1,'#8a0a28');c.fillStyle=cg;c.beginPath();c.moveTo(cx,cy-s);c.lineTo(cx+s*.75,cy);c.lineTo(cx,cy+s);c.lineTo(cx-s*.75,cy);c.closePath();c.fill();c.restore();
  c.strokeStyle=gold;c.lineWidth=2;c.beginPath();c.moveTo(cx,cy-s-5);c.lineTo(cx+s*.75+5,cy);c.lineTo(cx,cy+s+5);c.lineTo(cx-s*.75-5,cy);c.closePath();c.stroke();
  // spallacci con punte
- for(const [x,k] of [[-40,-.3],[50,0]]){bEllipse(c,x,-216,24,16,bMetal(c,x-24,-232,x+24,-200,black,k),gShade(gold,k));c.fillStyle=gShade(gold,k);for(let i=0;i<3;i++){const px=x-14+i*14;c.beginPath();c.moveTo(px-4,-228);c.lineTo(px,-246-i%2*6);c.lineTo(px+4,-228);c.fill()}}
+ for(const [x,k] of [[-40,-.3],[50,0]]){
+  bArmor(c,[[x-25,-219],[x-13,-236],[x+15,-239],[x+34,-222],[x+27,-200],[x-23,-197]],
+   [[x-19,-218],[x-9,-231],[x+12,-232],[x+26,-220],[x+20,-207],[x-15,-206]],
+   black,'#798aa9','#fae9bc',k);
+  bTrace(c,[[x-17,-208],[x-2,-222],[x+21,-214]],gold,2.3);
+ }
  // pod missilistico sulla schiena
  bPod(c,-50,-262,3,B.state==='missili',black);
  // elmo con corona
  bPlate(c,[[16,-262],[58,-258],[64,-236],[56,-226],[20,-226]],bMetal(c,16,-262,64,-226,black,.08),gold,'rgba(255,240,200,.45)');
- c.fillStyle=gold;for(const [x,h] of [[22,22],[36,30],[50,20]]){c.beginPath();c.moveTo(x-5,-260);c.lineTo(x,-260-h);c.lineTo(x+5,-260);c.fill()}
+ // Corna ricurve, casco a piastre e maschera triangolare.
+ for(const side of [-1,1]){
+  c.save();c.translate(38,-254);c.scale(side,1);
+  c.beginPath();c.moveTo(13,6);c.quadraticCurveTo(32,-2,40,-39);
+  c.quadraticCurveTo(26,-27,19,-22);c.quadraticCurveTo(24,-14,9,-8);c.closePath();
+  c.fillStyle=bMetal(c,16,-34,31,2,gold);c.fill();
+  c.strokeStyle='#ffe2a0';c.lineWidth=1.5;c.stroke();c.restore();
+ }
  bGlow(c,36,-286,3,'#ffe08a',10);
  c.fillStyle='#05050a';c.fillRect(30,-250,32,8);
  c.save();c.shadowBlur=16;c.shadowColor=crim;c.fillStyle=B.state==='carica'&&B.t<.8&&Math.floor(now*16)%2?'#ffffff':(rage?'#ffd0dc':crim);c.fillRect(32,-248,28,3.5);c.restore();
+ bPlate(c,[[32,-240],[43,-243],[58,-240],[51,-227],[37,-228]],bMetal(c,34,-244,57,-225,'#8a9ab1'),'#1d2842','#f3ead6');
+ bTrace(c,[[42,-239],[44,-232],[51,-231]],'#323952',1.4);
  // lancia al plasma (segue la mira)
- c.save();c.translate(44,-178);c.rotate(bArmAngle(B));
+ c.save();c.translate(44,-178);c.rotate(bArmAngle(B));c.translate(-10*bRecoil(B),0);
  bEllipse(c,0,0,17,17,bMetal(c,-17,-17,17,17,black,.1),gold);
  bPlate(c,[[8,-9],[52,-8],[60,-12],[78,-4],[78,4],[60,12],[52,8],[8,9]],bMetal(c,8,-12,8,12,black,.12),gold,'rgba(255,240,200,.45)');
  c.strokeStyle=crim;c.lineWidth=2;for(let i=0;i<4;i++){c.beginPath();c.moveTo(20+i*8,-8);c.lineTo(24+i*8,8);c.stroke()}
@@ -149,7 +192,7 @@ function bOmega(c,B,now){
  c.save();c.globalCompositeOperation='lighter';c.fillStyle=`rgba(255,80,120,${.4+h*.5})`;c.shadowBlur=14+h*20;c.shadowColor=crim;c.beginPath();c.moveTo(78,-5);c.lineTo(96+h*10,0);c.lineTo(78,5);c.closePath();c.fill();c.restore();
  c.restore();
  // braci che si staccano dalle ali
- if(Math.random()<.4)pf.fx.push({x:B.x+(-30+Math.random()*-80)*B.face,y:B.y-200-Math.random()*60,vx:(Math.random()-.5)*30,vy:-20-Math.random()*40,life:.9,max:.9,color:Math.random()<.5?'#ff5a7a':'#ffd08a',r:1.5+Math.random()*1.5});
+ if(pf?.boss===B&&Math.random()<.4)pf.fx.push({x:B.x+(-30+Math.random()*-80)*B.face,y:B.y-200-Math.random()*60,vx:(Math.random()-.5)*30,vy:-20-Math.random()*40,life:.9,max:.9,color:Math.random()<.5?'#ff5a7a':'#ffd08a',r:1.5+Math.random()*1.5});
  c.restore();
 }
 if(typeof BOSS_DRAW!=='undefined')BOSS_DRAW.omega=bOmega;

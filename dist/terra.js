@@ -33,7 +33,7 @@ function terraUpdateJet(e,dt){
  const seen=pfOnScreen(e.x)&&P.visible&&P.hp>0&&pf.phase!=='vittoria';
  if(seen){e.fire-=dt;if(e.fire<=0){pfEnemyShot(sh.x+Math.cos(e.aim)*26,sh.y+Math.sin(e.aim)*26,e.aim,360+d*20,12);e.fire=1.9-d*.1+pf.rnd()*.7}}
  if(pf.rnd()<dt*14)pfBurst(e.x-e.face*11,e.y-30,'#ff9a4a',1,.35,false,{vy:160});
- if(P.visible&&P.hp>0&&pfOverlap(pfRect(P),pfRect(e)))pfDamage(14,Math.sign(P.x-e.x)||1);
+ if(pfOverlap(pfRect(P),pfRect(e)))pfContact(e);
 }
 
 // ---- 2) rinforzi casuali durante lo scontro col boss
@@ -119,7 +119,7 @@ function terraUpdateDrop(dt){
  if(!D.released&&D.t>=DROP.release){
   D.released=true;const s=terraDropPose(D);
   Object.assign(P,{visible:true,x:s.x+40,y:s.y+36,vx:0,vy:60,ground:false,onPlat:false,
-   hp:100,shield:100,shieldDelay:0,barrier:false,inv:2.4,fire:0,jetOn:false,
+   hp:100,shield:100,shieldDelay:0,barrier:false,inv:2.4,fire:0,contactCd:0,jetOn:false,
    jetHeat:0,jetLock:false,jetMin:0,jetGlide:false,landing:false,crouch:false,
    jumpBuf:0,coyote:0,dropT:0,sotHold:0});
   if(typeof spcResetGround==='function')spcResetGround();

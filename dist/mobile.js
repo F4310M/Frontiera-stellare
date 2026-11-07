@@ -44,6 +44,10 @@ function touchPress(k){
  if(paused)return;
  if(k==='missile'&&state==='play'&&typeof launchMissile==='function')launchMissile();
  if(k==='grenade'&&state==='platform'&&typeof pfThrowGrenade==='function')pfThrowGrenade();
+ if(k==='fire'&&state==='platform'&&pf?.pilot){
+  const P=pf.pilot,target=touchGroundTarget();
+  pfFireAt(target?.x??P.x+P.face*300,target?.y??P.y-34);
+ }
 }
 function touchKey(k,on){if(on){keys[k]=true;touch.mine.add(k)}else if(touch.mine.has(k)){keys[k]=false;touch.mine.delete(k)}}
 function touchMouse(k,on){if(on){mouse[k]=true;touch.mouseMine[k]=true}else if(touch.mouseMine[k]){mouse[k]=false;touch.mouseMine[k]=false}}
@@ -74,7 +78,7 @@ function touchApply(){
  }else if(typeof pf!=='undefined'&&pf&&pf.pilot){
   touchKey('ArrowLeft',active&&px<-T);touchKey('ArrowRight',active&&px>T);touchKey('ArrowDown',active&&py>.6);
   touchKey('Space',!!touch.btn.jump||active&&py<-.6);
-  touchMouse('down',!!touch.btn.fire);touchMouse('right',!!touch.btn.shield);
+  touchMouse('down',false);touchMouse('right',!!touch.btn.shield);
   const P=pf.pilot,s=pfScale(),t=touchGroundTarget(),aim=t||{x:P.x+P.face*300,y:P.y-34};
   mouse.x=(aim.x-pf.cam.x)*s;mouse.y=aim.y*s;
  }

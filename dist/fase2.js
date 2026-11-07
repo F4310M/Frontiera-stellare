@@ -371,7 +371,7 @@ function pfUpdatePilot(dt){
  if(P.barrier){P.shield=Math.max(0,P.shield-dt*8/pfShieldEff());P.shieldDelay=1.2}
  else{P.shieldDelay=Math.max(0,P.shieldDelay-dt);if(P.shieldDelay<=0)P.shield=Math.min(100,P.shield+dt*(phaseTwoComplete?18:13))}
  P.fire=Math.max(0,P.fire-dt);P.inv=Math.max(0,P.inv-dt);
- if(control&&mouse.down&&P.fire<=0)pfShoot();
+ P.contactCd=Math.max(0,(P.contactCd||0)-dt);
 }
 function pfMoveBody(b,dt,drop=false){
  const hw=b.w/2,prevX=b.x;
@@ -459,11 +459,19 @@ function pfUpdateEnemies(dt){
    if(seen&&dist<700&&e.ground){e.fire-=dt;if(e.fire<=0){pfEnemyShot(sh.x+Math.cos(a)*26,sh.y+Math.sin(a)*26,a,390+d*25,14);e.fire=1.7-d*.1+pf.rnd()*.7}}
    if(e.y>PF_VH+120)e.hp=0;
   }
-  if(P.visible&&P.hp>0&&pfOverlap(pr,pfRect(e)))pfDamage(e.type==='drone'?12:14,Math.sign(P.x-e.x)||1);
+  if(pfOverlap(pr,pfRect(e)))pfContact(e);
  }
  pf.enemies=pf.enemies.filter(e=>e.hp>0&&e.x>pf.cam.x-500);
 }
 function pfEnemyShot(x,y,a,speed,dmg){pf.shots.push({x,y,px:x,py:y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:3,friendly:false,r:4,dmg});pfBurst(x,y,'#ff5268',3,.5);tone(620,.09,'square',.01,240)}
+function pfFireAt(x,y){
+ if(state!=='platform'||paused||!pf||!['missione','boss'].includes(pf.phase))return;
+ const P=pf.pilot;
+ if(!P.visible||P.hp<=0||P.landing)return;
+ const sh=pfShoulder(P);
+ P.aim=Math.atan2(y-sh.y,x-sh.x);P.face=Math.cos(P.aim)>=0?1:-1;
+ pfShoot();
+}
 function pfShoot(){
  const P=pf.pilot;P.fire=.14;const lv=typeof upg==='function'?upg('laser'):0,sh=pfShoulder(P),c=Math.cos(P.aim),s=Math.sin(P.aim),x=sh.x+c*30,y=sh.y+s*30;
  const offs=(typeof upg==='function'&&upg('twin')>0)?[-5,5]:[0];
@@ -515,6 +523,12 @@ function pfHitEnemy(e,n){
   pf.kills++;pfBurst(e.x,e.type==='drone'?e.y:e.y-24,'#ff7b4f',e.type==='drone'?22:16,1.1);pfBurst(e.x,e.type==='drone'?e.y:e.y-24,'#ffd29a',8,.7);sfx('boom',e.type==='drone'?.9:.6);
   if(pf.rnd()<.13)pfDrop(e.x,e.type==='drone'?e.y:e.y-30,pf.pilot.hp<60?'salute':pf.rnd()<.5?'granate':'scudo');
  }else sfx('hit');
+}
+function pfContact(e){
+ const P=pf.pilot;
+ if(!P.visible||P.hp<=0||P.inv>0||P.contactCd>0||e.hp<=0||pf.phase==='vittoria')return;
+ P.contactCd=.45;
+ pfDamage(8,Math.sign(P.x-e.x)||1);
 }
 function pfDamage(n,dir=1,piercing=false){
  const P=pf.pilot;if(P.hp<=0||pf.phase==='vittoria')return;
@@ -972,7 +986,11 @@ function pfDrawBanner(){
 
 // ---------------------------------------------------------------- input e pulsanti
 addEventListener('keydown',e=>{if(state!=='platform'||paused||e.repeat)return;if(e.code==='KeyE'||e.code==='KeyG')pfThrowGrenade()});
-addEventListener('mousedown',e=>{if(state!=='platform')return;if(e.button===1){e.preventDefault();pfThrowGrenade()}});
+addEventListener('mousedown',e=>{
+ if(state!=='platform')return;
+ if(e.button===0&&e.target===canvas){const s=pfScale();pfFireAt(pf.cam.x+e.clientX/s,e.clientY/s)}
+ if(e.button===1){e.preventDefault();pfThrowGrenade()}
+});
 addEventListener('auxclick',e=>{if(e.button===1&&state==='platform')e.preventDefault()});
 // Un solo pannello: dal riepilogo della missione si scende subito in superficie.
 $('landBtn').onclick=()=>{enterGameFullscreen();startPlatform()};

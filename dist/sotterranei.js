@@ -475,6 +475,7 @@ function sotDrawUnder(){
  for(const e of pf.enemies)if(pfOnScreen(e.x,60))(fancy?gEnemy:pfDrawEnemy)(e,now);
  if(P.visible){ctx.save();if(P.inv>0&&Math.floor(now*18)%2)ctx.globalAlpha=.4;(fancy?gTrooper:pfDrawTrooper)(P,PF_PILOT,now);ctx.restore();pfDrawJetpack(P,now);if(P.barrier)pfDrawBarrier(P,now)}
  for(const g of pf.grenades)pfDrawGrenade(g);
+ for(const m of pf.missiles)pfDrawBossMissile(m);
  sotDrawCeiling(cx,VW,G,now);
  for(const L of S.lamps)if(pfOnScreen(L.x,40))sotDrawLamp(L,now);
  if(fancy){gCollectLights(now);sotApplyLighting(VW,now)}

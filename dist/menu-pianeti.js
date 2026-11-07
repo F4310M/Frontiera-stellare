@@ -103,8 +103,8 @@ function mpBossImage(p){
     bDrawBody(c,B,1.3);
     // luce dall'alto come nel gioco, solo dentro la sagoma
     c.save();c.globalCompositeOperation='source-atop';
-    const lg=c.createLinearGradient(0,TOP+60,0,BOT);lg.addColorStop(0,'rgba(255,240,220,.16)');lg.addColorStop(.5,'rgba(0,0,0,0)');lg.addColorStop(1,'rgba(0,0,0,.28)');
-    c.fillStyle=lg;c.fillRect(L,TOP,R-L,BOT-TOP);c.restore();
+    if(typeof bFinishSurface==='function')bFinishSurface(c,key,L,TOP,R,BOT);
+    c.restore();
     c.setTransform(1,0,0,1,0,0);
     // ritaglio sulla sagoma
     const w=o.c.width,h=o.c.height,d=c.getImageData(0,0,w,h).data;let x0=w,y0=h,x1=-1,y1=-1;
