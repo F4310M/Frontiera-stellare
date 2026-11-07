@@ -240,9 +240,9 @@ function profHtml(){
  const I=n=>typeof ico==='function'?ico(n):'';
  return{
  accesso:'<div class="brief-card prof-card prof-access"><p class="eyebrow">REGISTRO DEI PILOTI</p><h2>PROFILO DEL PILOTA</h2>'+
-  '<button id="profImportSaved" class="launch-btn"><span>IMPORTA UN SALVATAGGIO</span><b>'+I('upload')+'</b></button>'+
-  '<p class="prof-hint">Apri il tuo file .sfsave con la password del salvataggio.</p>'+
-  '<button id="profNewPilot" class="prof-new-choice" type="button"><span>NUOVO PILOTA</span><b>'+I('arrow-right')+'</b></button></div>',
+  '<button id="profImportSaved" class="prof-choice prof-choice-main" type="button"><b class="prof-choice-ico">'+I('upload')+'</b><span class="prof-choice-txt"><strong>CARICA PROFILO</strong><small>Hai già un pilota? Apri il tuo file .sfsave con la password del salvataggio.</small></span></button>'+
+  '<p class="prof-or"><span>OPPURE</span></p>'+
+  '<button id="profNewPilot" class="prof-choice" type="button"><b class="prof-choice-ico">'+I('user')+'</b><span class="prof-choice-txt"><strong>NUOVO PILOTA</strong><small>Crea un pilota nuovo e inizia la campagna da zero.</small></span><em>'+I('arrow-right')+'</em></button></div>',
  nuovo:'<div class="brief-card prof-card"><div class="settings-head"><div><p class="eyebrow">REGISTRO DEI PILOTI</p><h2>NUOVO PILOTA</h2></div><button id="profNewX" class="close-btn hidden" aria-label="Chiudi">'+I('close')+'</button></div>'+
   '<div class="prof-cols"><div class="prof-left"><button id="profPhotoBtn" class="prof-photo" type="button" aria-label="Scegli la foto del pilota"><img id="profPhotoImg" alt="" class="hidden"><span>'+I('camera')+'<br>SCEGLI LA FOTO</span></button>'+
   '<input id="profPhotoFile" type="file" accept="image/*" class="hidden"><p class="prof-hint">La foto viene rimpicciolita e compare in classifica accanto al tuo nome.</p></div>'+
