@@ -33,12 +33,11 @@
         <div class="planet-preview"><div id="previewPlanet" class="preview-orb"></div><span id="planetCode">HX–01</span></div>
         <h2 id="planetName">LYRA</h2>
         <p id="planetDesc">Un mondo oceanico ai confini della nebulosa.</p>
-        <dl>
-          <div><dt>DISTANZA</dt><dd id="planetDistance">126.000 km</dd></div>
-          <div><dt>MINACCIA</dt><dd id="planetThreat">BASSA</dd></div>
-          <div><dt>RICOMPENSA</dt><dd id="planetReward">600 CR</dd></div>
+        <dl class="mission-stats">
+          <div class="mission-threat"><dt>MINACCIA</dt><dd id="planetThreat">BASSA</dd><dd class="mission-threat-meter"><div class="threat-bars" id="threatBars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></dd></div>
+          <div class="mission-reward"><dt>RICOMPENSA</dt><dd id="planetReward">600 CR</dd></div>
+          <div class="mission-distance"><dt>DISTANZA</dt><dd id="planetDistance">126.000 km</dd></div>
         </dl>
-        <div class="threat-bars" id="threatBars"><i></i><i></i><i></i><i></i><i></i></div>
         <button id="launchBtn" class="launch-btn"><span>INIZIA LA MISSIONE</span><b><i data-ico="arrow-right"></i></b></button>
         <p class="keyhint">FRECCE / WASD per muoverti · MOUSE per puntare la prua</p>
         <button id="phase2Btn" class="text-btn phase2-btn hidden"><span>FASE 2 · ATTERRA SUL PIANETA SELEZIONATO</span> <i data-ico="land"></i></button>
@@ -99,9 +98,12 @@
     <div class="hud-bottom unified">
       <div class="status" id="statusText">SISTEMI NOMINALI</div>
       <div class="unibar" role="group" aria-label="Sistemi della nave">
+        <span id="shieldOrb" class="shield-orb" aria-hidden="true"><i></i></span>
+        <div class="unibar-bars">
         <div class="seg seg-health"><div class="seg-head"><span>SALUTE</span><b id="healthText">100%</b></div><div class="seg-track"><i id="healthBar"></i></div></div>
         <div class="seg seg-boost"><div class="seg-head"><span>POST-BRUCIATORE · SHIFT DX</span><b id="boostText">100% · PRONTO</b></div><div class="seg-track"><i id="boostBar"></i></div></div>
         <div class="seg seg-shield"><div class="seg-head"><span>BARRIERA · MOUSE DX</span><b id="shieldText">100%</b></div><div class="seg-track"><i id="shieldBar"></i></div></div>
+        </div>
       </div>
     </div>
     <div class="controls-tip">FRECCE / WASD muovi · MOUSE punta la prua · SHIFT DX post-bruciatore · MOUSE DX barriera · clic / SPAZIO spara · ROTELLA missile · F frena · P pausa</div>

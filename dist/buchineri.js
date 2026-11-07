@@ -16,7 +16,7 @@ const BH_CFG={
  core:58,coreMax:100,reach:1900,         // raggio dell'orizzonte e della zona d'influenza
  drift:[30,320],                         // senza post-bruciatore: velocità minima verso il centro (bordo → centro)
  pull:[110,780],pullBoost:[60,500],swirl:.42,
- fallSpeed:[40,620],planetGap:700
+ fallSpeed:[40,620],planetGap:700,swallow:.95
 };
 const BH={hole:null,timer:0,on:false,inside:false,was:false,warned:false,hum:0,hint:0,eaten:0,motes:[],gfx:null};
 const bhFall=new WeakMap();
@@ -87,13 +87,13 @@ function bhPullD(h,o,dt,rr=0){
 }
 function bhEat(h,x,y,color,n=6){burst(x,y,color,n,.6);h.flash=Math.min(1,h.flash+.5);BH.eaten++}
 function bhPullPlayer(h,dt){
- const dx=h.x-player.x,dy=h.y-player.y,d=Math.hypot(dx,dy)||1;
+ const dx=h.x-player.x,dy=h.y-player.y,d=Math.hypot(dx,dy);
  if(d>h.reach){
   if(BH.inside&&BH.was&&h.k>.5)status('SFUGGITO AL BUCO NERO',1800);
   BH.inside=false;return;
  }
  BH.inside=true;BH.was=true;
- const ux=dx/d,uy=dy/d,boost=player.boostState==='active',q=1-d/h.reach;
+ const ux=d?dx/d:Math.cos(player.angle),uy=d?dy/d:Math.sin(player.angle),boost=player.boostState==='active',q=1-d/h.reach;
  if(!BH.warned){BH.warned=true;status('ANOMALIA GRAVITAZIONALE · USA IL POST-BRUCIATORE',3600);tone(70,.9,'sawtooth',.03,40)}
  const a=bhAccel(h,d,boost?BH_CFG.pullBoost:BH_CFG.pull);
  player.vx+=(ux-uy*BH_CFG.swirl*.5)*a*dt;player.vy+=(uy+ux*BH_CFG.swirl*.5)*a*dt;
@@ -107,13 +107,29 @@ function bhPullPlayer(h,dt){
  // il ruggito del buco nero cresce avvicinandosi
  BH.hum-=dt;if(BH.hum<=0){BH.hum=1.15;tone(44+q*34,1.3,'sine',.018+.05*q*h.k,30)}
  if(d<h.core*h.grow*.85){
-  status('INGHIOTTITO DAL BUCO NERO',2600);
-  bhEat(h,player.x,player.y,'#ffd9a0',14);
-  damage(1000,true);
-  if(state==='play'){// modalità dio: la nave viene risputata fuori
+  if((typeof godMode!=='undefined'&&godMode)||(typeof spc!=='undefined'&&spc.spin)){
+   // Le modalità invulnerabili vengono risputate fuori dall'orizzonte.
+   status('INGHIOTTITO DAL BUCO NERO',2600);
    player.x=h.x-ux*h.reach*.6;player.y=h.y-uy*h.reach*.6;player.vx=-ux*420;player.vy=-uy*420;
+   return;
   }
+  beginPlayerDeath('INGHIOTTITO DAL BUCO NERO');
+  player.swallowed={x:player.x,y:player.y,cx:h.x,cy:h.y,angle:player.angle,t:0};
+  player.vx=player.vy=0;
+  sfx('shipExplode');
+  updateHud(Math.hypot(world.x-player.x,world.y-player.y));
  }
+}
+function bhUpdateSwallowed(dt){
+ const S=player.swallowed;
+ S.t+=dt;
+ const t=Math.min(1,S.t/BH_CFG.swallow),k=(1-t)**1.65,a=t*2.5;
+ const dx=S.x-S.cx,dy=S.y-S.cy;
+ player.x=S.cx+(dx*Math.cos(a)-dy*Math.sin(a))*k;
+ player.y=S.cy+(dx*Math.sin(a)+dy*Math.cos(a))*k;
+ player.angle=S.angle+a;
+ if(BH.hole)BH.hole.spin+=dt*.55;
+ if(t>=1)finish(false);
 }
 function bhUpdate(dt){
  if(state!=='play'||paused||!player)return;
@@ -255,11 +271,25 @@ function bhDrawEdge(){
 }
 
 // ---------------------------------------------------------------- aggancio a game.js
-const bhOrig={startGame,updateMissile,drawSupplies,drawMissile};
+const bhOrig={startGame,updateMissile,drawSupplies,drawMissile,updateDying,drawPlayer};
 startGame=function(...a){const r=bhOrig.startGame.apply(this,a);try{bhReset()}catch(e){console.error(e)}return r};
 updateMissile=function(dt){bhOrig.updateMissile(dt);try{bhUpdate(dt)}catch(e){console.error(e)}};
 drawSupplies=function(){try{bhDraw()}catch(e){console.error(e)}return bhOrig.drawSupplies()};
 drawMissile=function(){bhOrig.drawMissile();try{bhDrawEdge()}catch(e){console.error(e)}};
+updateDying=function(dt){
+ if(player.swallowed)return bhUpdateSwallowed(dt);
+ return bhOrig.updateDying(dt);
+};
+drawPlayer=function(){
+ const S=player.swallowed;
+ if(!S)return bhOrig.drawPlayer();
+ const scale=Math.max(0,1-S.t/BH_CFG.swallow)**1.4;
+ if(scale===0)return;
+ ctx.save();
+ ctx.translate(player.x,player.y);ctx.scale(scale,scale);ctx.globalAlpha=Math.min(1,scale*2.5);
+ drawShip({...player,x:0,y:0,boostState:'ready'});
+ ctx.restore();
+};
 
 if(typeof I18N_ROWS!=='undefined'){
  const rows=[

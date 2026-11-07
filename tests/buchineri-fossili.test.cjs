@@ -62,8 +62,17 @@ assert(val('M.life<=0'),'il meteorite viene inghiottito');
 console.log('PASS: inghiotte navi nemiche, rocce e meteoriti');
 
 // 6) chi arriva al centro viene inghiottito; in modalità dio viene risputato fuori
-run(quiet+hole(300)+'player.health=100');step(6);
-assert.notEqual(val('state'),'play','la nave inghiottita esplode');
+run(quiet+hole(40)+'player.health=100;globalThis.oldSfx=sfx;globalThis.sounds=[];sfx=name=>sounds.push(name)');step(.1);
+assert(val("state==='dying'&&player.swallowed.t>0&&shipDebris.length===0&&deathFlash===0"),'inizia il risucchio senza esplosione visiva');
+const beforeSwallow=hd();
+step(.4);run('draw();const oldScale=ctx.scale;ctx.scale=(x,y)=>globalThis.swallowScale=x;drawPlayer();ctx.scale=oldScale');
+assert(hd()<beforeSwallow,'la nave si avvicina al centro durante la contrazione');
+assert(val('swallowScale>0&&swallowScale<.6'),'la nave viene disegnata in scala ridotta');
+assert.equal(val("sounds.filter(s=>s==='shipExplode').length"),1,'il suono di esplosione parte una volta');
+assert.equal(val("sounds.filter(s=>s==='boom').length"),0,'nessuna esplosione secondaria');
+step(1);
+assert.notEqual(val('state'),'dying','il risucchio si conclude con la sconfitta');
+run('sfx=oldSfx');
 run('godMode=true;'+quiet+hole(300));step(6);
 assert.equal(val('state'),'play','modalità dio: la nave resta in gioco');
 run('godMode=false');

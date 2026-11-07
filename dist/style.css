@@ -363,26 +363,96 @@ body.touch,body.touch #game{touch-action:none;overscroll-behavior:none}
  #mapScreen .mission-copy h1{font-size:26px}
  #mapScreen .mission-copy h1 br{display:inline}
 }
-/* Barra unica in basso: salute · post-bruciatore · barriera */
-.hud-bottom.unified{left:50%;right:auto;transform:translateX(-50%);width:min(780px,calc(100vw - 32px));flex-direction:column;align-items:center;justify-content:flex-end;gap:6px}
+/* HUD di volo: nucleo della barriera e tre indicatori segmentati. */
+.hud-bottom.unified{
+ left:50%;right:auto;bottom:26px;transform:translateX(-50%);width:min(660px,calc(100vw - 32px));
+ flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;
+}
 .hud-bottom.unified .status{display:block;padding:4px 14px;font-size:8px;border-radius:4px}
-.unibar{width:100%;display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid rgba(81,230,255,.22);border-radius:8px;background:rgba(3,11,20,.72);overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.35)}
-.unibar .seg{min-width:0;padding:7px 12px 9px;--c:var(--orange)}
-.unibar .seg+.seg{border-left:1px solid rgba(255,255,255,.1)}
-.unibar .seg-health{--c:#6dff9e}.unibar .seg-boost{--c:var(--orange)}.unibar .seg-shield{--c:var(--cyan)}
-.seg-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.seg-head span{font:8px 'Chakra Petch';letter-spacing:1.5px;color:var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.seg-head b{font:500 9px 'Chakra Petch';color:var(--muted);white-space:nowrap;flex-shrink:0}
-.seg-track{height:6px;margin-top:5px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}
-.seg-track i{display:block;height:100%;width:100%;border-radius:3px;background:var(--c);box-shadow:0 0 8px var(--c);transition:width .08s linear}
-@media(max-width:850px){.hud-bottom.unified .status{display:none}.unibar .seg{padding:5px 8px 7px}.seg-head span{font-size:7px;letter-spacing:1px}.seg-head b{font-size:8px}}
-body.touch .hud-bottom.unified{left:50%;right:auto;bottom:6px;transform:translateX(-50%);width:min(560px,calc(100vw - 460px));min-width:240px;flex-direction:column;gap:3px}
+#hud .controls-tip{bottom:6px}
+.unibar{
+ --orb-size:94px;
+ display:grid;grid-template-columns:var(--orb-size) minmax(0,1fr);align-items:center;
+ width:100%;isolation:isolate;
+}
+.unibar-bars{
+ display:grid;gap:4px;padding:7px 17px 7px 24px;margin-left:-18px;
+ border:1px solid #4f99ac;background:linear-gradient(110deg,#061624f2,#102f45f7 69%,#0a2034f7);
+ clip-path:polygon(0 0,97% 0,100% 12%,97% 100%,0 100%);
+}
+.unibar .seg{
+ --c:#6dffab;--deep:#06784f;
+ min-width:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);align-items:center;gap:8px;
+}
+.unibar .seg-boost{--c:#ffbc54;--deep:#bb530c}
+.unibar .seg-shield{--c:#69efff;--deep:#1261c8}
+.seg-head{display:flex;justify-content:space-between;align-items:baseline;gap:5px;min-width:0}
+.seg-head span{
+ font:700 9px "Chakra Petch","Segoe UI",sans-serif;letter-spacing:.075em;color:var(--c);
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+}
+.seg-head b{
+ font:700 10px "Chakra Petch","Segoe UI",sans-serif;color:#e5f6ff;
+ white-space:nowrap;flex-shrink:0;font-variant-numeric:tabular-nums;
+}
+.seg-track{
+ height:15px;padding:2px 5px 2px 3px;overflow:hidden;border:1px solid var(--c);
+ background:repeating-linear-gradient(127deg,#0b1b2b 0 10px,#203b4f 10px 12px);
+ clip-path:polygon(8px 0,100% 0,calc(100% - 7px) 100%,0 100%);
+ box-shadow:inset 0 0 7px #000b;
+}
+.seg-track i{
+ display:block;height:100%;width:100%;
+ background:linear-gradient(180deg,#f1ffff 0%,var(--c) 24%,var(--deep) 64%,var(--c) 100%);
+ mask-image:repeating-linear-gradient(127deg,#000 0 10px,transparent 10px 12px);
+ transition:width .08s linear;
+}
+.shield-orb{
+ --shield-level:100%;--core-opacity:1;
+ position:relative;z-index:1;aspect-ratio:1;width:100%;border-radius:50%;
+ background:radial-gradient(circle,#07192a 0 44%,transparent 64%);
+ filter:drop-shadow(0 0 7px #5deeff77);
+}
+.shield-orb::before,.shield-orb::after{
+ content:"";position:absolute;inset:0;border-radius:50%;
+ mask:radial-gradient(farthest-side,transparent 71%,#000 73% 96%,transparent 98%);
+}
+.shield-orb::before{
+ background:repeating-conic-gradient(from -18deg,#7af2ff 0 12deg,#2389ad 15deg 30deg,transparent 31deg 47deg);
+ transform:rotate(-21deg);opacity:.78;
+}
+.shield-orb::after{
+ inset:13%;background:conic-gradient(#d6ffff,#56e6ff var(--shield-level),#16384e var(--shield-level) 100%);
+}
+.shield-orb i{
+ position:absolute;inset:25%;border-radius:50%;border:1px solid #ffcd71;
+ background:radial-gradient(ellipse at 36% 30%,#fffef1 0 7%,#fff5ad 18%,#ffb529 34%,#e85b13 51%,#5b1d24 72%,#101b27 83%);
+ box-shadow:inset -3px -5px 9px #071625cc,0 0 14px #ff9c416e;
+ opacity:var(--core-opacity);
+}
+.shield-orb.is-active{filter:drop-shadow(0 0 11px #7cf8ffba)}
+.shield-orb.is-active::before{animation:shield-dial 6s linear infinite}
+@keyframes shield-dial{to{transform:rotate(339deg)}}
+@media(max-width:850px){
+ .hud-bottom.unified .status{display:none}
+ .unibar{--orb-size:72px}
+ .seg-head span{font-size:8px}.seg-head b{font-size:9px}
+}
+body.touch .hud-bottom.unified{
+ left:50%;right:auto;bottom:6px;transform:translateX(-50%);width:min(540px,max(240px,calc(100vw - 435px)));
+ flex-direction:column;gap:3px;
+}
 body.touch .hud-bottom.unified .status{display:none}
-body.touch .unibar{border-radius:6px;background:rgba(3,11,20,.5)}
-body.touch .unibar .seg{padding:3px 6px 5px}
-body.touch .seg-head span{font-size:6.5px;opacity:.85}body.touch .seg-head b{font-size:7px}
-body.touch .seg-track{height:4px;margin-top:3px}
-@media(max-height:430px){body.touch .hud-bottom.unified{width:min(520px,calc(100vw - 400px))}}
+body.touch .unibar{--orb-size:58px}
+body.touch .unibar-bars{padding:5px 11px 5px 18px;margin-left:-13px;gap:3px}
+body.touch .unibar .seg{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:4px}
+body.touch .seg-head span,body.touch .seg-head b{font-size:7px}
+body.touch .seg-track{height:11px;padding:1px 3px 1px 2px}
+@media(prefers-reduced-motion:reduce){
+ .shield-orb.is-active::before{animation:none}
+ .seg-track i{transition:none}
+}
+
 /* Cursori del volume nelle impostazioni */
 .vol-row{display:flex;align-items:center;gap:10px;margin-top:10px;max-width:320px}
 .vol-row span{font:600 9px 'Chakra Petch',sans-serif;letter-spacing:2px;color:var(--muted)}

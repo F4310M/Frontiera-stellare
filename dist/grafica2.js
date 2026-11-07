@@ -164,6 +164,7 @@ function gMakeLayers(){
    g.strokeStyle=rim;g.globalAlpha=(.18+k*.08)*(id==='lava'?.45:1);g.lineWidth=1.2;g.beginPath();prof.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.stroke();g.globalAlpha=1;
   }
   gLayerDetails(g,id,k,sp,prof,col,dark,rnd,rim);
+  if(k===1)gDistantLandmarks(g,prof,sp,th,col,dark,seed);
   // nebbia: più lontano = più chiaro
   const fog=g.createLinearGradient(0,sp.base-sp.amp*.4,0,PF_VH);fog.addColorStop(0,gRgb(sky,0));fog.addColorStop(1,gRgb(sky,.22*(1-k/4)));g.fillStyle=fog;g.globalCompositeOperation='source-atop';g.fillRect(0,0,G_TL,PF_VH);g.globalCompositeOperation='source-over';
   return gCropLayer(cv,sp.par,top,RB);
@@ -177,6 +178,40 @@ function gCropLayer(cv,par,top,RB){
  return{c:out.c,par,top:top+first/RB,h:(h-first)/RB};
 }
 function gProfAt(prof,x){const i=Math.max(0,Math.min(prof.length-1,Math.round(x/8)));return prof[i][1]}
+function gDistantLandmarks(g,prof,sp,theme,col,dark,seed){
+ const id=theme.id,rnd=pfRng(seed+913),tint=gMix(col,gHex(theme.rim),.29);
+ for(let i=0;i<4;i++){
+  const x=220+i*480+rnd()*100,y=id==='tempesta'?sp.base-15:gProfAt(prof,x)+4;
+  g.save();g.translate(x,y);
+  g.fillStyle=gRgb(dark);g.strokeStyle=gRgb(tint,.7);g.lineWidth=2;
+  g.beginPath();
+  if(id==='mare'){
+   // Piloni e gru della colonia costiera.
+   g.moveTo(-56,10);g.lineTo(-53,-38);g.lineTo(-18,-38);g.lineTo(-16,10);
+   g.moveTo(4,10);g.lineTo(4,-59);g.lineTo(13,-59);g.lineTo(21,10);
+   g.moveTo(8,-54);g.lineTo(65,-56);g.lineTo(61,-49);g.lineTo(8,-48);g.closePath();
+  }else if(id==='deserto'){
+   // Ruderi smussati che spuntano dalle dune.
+   g.moveTo(-55,5);g.lineTo(-45,-40);g.lineTo(-29,-49);g.lineTo(-16,-41);g.lineTo(-11,4);
+   g.moveTo(7,4);g.lineTo(20,-69);g.lineTo(39,-65);g.lineTo(43,-35);g.lineTo(63,-26);g.lineTo(67,7);g.closePath();
+  }else if(id==='foresta'){
+   // Passerelle e torri sopra la vegetazione.
+   g.moveTo(-43,8);g.lineTo(-39,-58);g.lineTo(-22,-62);g.lineTo(-15,8);
+   g.moveTo(21,8);g.lineTo(20,-43);g.lineTo(41,-48);g.lineTo(48,8);
+   g.moveTo(-39,-33);g.lineTo(44,-31);g.lineTo(44,-24);g.lineTo(-39,-26);g.closePath();
+  }else if(id==='lava'){
+   // Condotti e camini di una raffineria.
+   g.moveTo(-60,8);g.lineTo(-56,-34);g.lineTo(-28,-34);g.lineTo(-25,-57);g.lineTo(-13,-57);g.lineTo(-10,-23);g.lineTo(9,-23);g.lineTo(12,-68);g.lineTo(22,-68);g.lineTo(27,-31);g.lineTo(52,-29);g.lineTo(55,8);g.closePath();
+  }else{
+   // Ripetitori sospesi fra le isole rocciose.
+   g.moveTo(-52,-14);g.lineTo(-30,-28);g.lineTo(-8,-30);g.lineTo(-4,-78);g.lineTo(5,-78);g.lineTo(9,-30);g.lineTo(29,-31);g.lineTo(52,-16);g.lineTo(27,4);g.lineTo(-22,7);g.closePath();
+  }
+  g.fill();g.stroke();
+  g.fillStyle=gRgb(tint,.82);
+  for(let j=0;j<7;j++){const px=-25+j*8;if(rnd()>.25)g.fillRect(px,-21,2.8,2)}
+  g.restore();
+ }
+}
 function gLayerDetails(g,id,k,sp,prof,col,dark,rnd,rim){
  const lighter=gMix(col,[255,255,255],.12);
  if(id==='foresta'&&k>0){
@@ -259,6 +294,7 @@ function gSolidCache(sd){
  const shape=()=>{g.beginPath();g.moveTo(x0,y);for(let x=x0+6;x<x1;x+=6)g.lineTo(x,y+(gHash(Math.floor(x))-.5)*1.2);g.lineTo(x1,y);for(const p of right)g.lineTo(p[0],p[1]);for(let i=left.length-1;i>=0;i--)g.lineTo(left[i][0],left[i][1]);g.closePath()};
  g.save();shape();g.clip();
  g.fillStyle=gPattern(g);g.fillRect(x0-pad,y-topPad,w,h);
+ gRockRelief(g,sd,m,id,rnd,bottom);
  // massi incastonati nella roccia
  for(let i=0;i<sd.w/55;i++){const bx=x0+rnd()*sd.w,by=y+30+rnd()*150,br=6+rnd()*16,c=gMix(m.mid,m.light,.3+rnd()*.4),gr=g.createRadialGradient(bx-br*.35,by-br*.4,1,bx,by,br*1.1);gr.addColorStop(0,gRgb(gMix(c,[255,255,255],.18)));gr.addColorStop(.7,gRgb(c));gr.addColorStop(1,gRgb(gMix(c,[0,0,0],.5)));g.fillStyle=gr;g.beginPath();for(let j=0;j<7;j++){const a=j/7*6.28,rr=br*(.75+gHash(i*7+j+Math.floor(bx))*.35);g.lineTo(bx+Math.cos(a)*rr,by+Math.sin(a)*rr*.75)}g.closePath();g.fill();g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=1;g.stroke()}
  // dettagli del tema dentro la roccia
@@ -281,6 +317,28 @@ function gSolidCache(sd){
  g.strokeStyle=m.rim;g.globalAlpha=.35;g.lineWidth=1.2;g.beginPath();left.slice(0,8).forEach((p,i)=>i?g.lineTo(p[0]+1,p[1]):g.moveTo(p[0]+1,p[1]));g.stroke();g.beginPath();right.slice(0,8).forEach((p,i)=>i?g.lineTo(p[0]-1,p[1]):g.moveTo(p[0]-1,p[1]));g.stroke();g.restore();
  gSurface(g,sd,m,id,rnd);
  const out={c:cv.c,x:sd.x-pad,y:sd.y-topPad,w,h};gfx.solids.set(sd,out);return out;
+}
+function gRockRelief(g,sd,m,id,rnd,bottom){
+ const {x,y,w}=sd,veins=id==='lava'||id==='tempesta',bands=id==='deserto'?10:19;
+ g.save();g.lineJoin='round';
+ // Strati con una faccia in ombra e un bordo che prende luce.
+ for(let depth=13;depth<bottom-y;depth+=bands+rnd()*7){
+  const slope=(rnd()-.5)*(id==='deserto'?.032:.07),points=[];
+  for(let dx=0;dx<w;dx+=25)points.push([x+dx,y+depth+dx*slope+(rnd()-.5)*7]);
+  points.push([x+w,y+depth+w*slope]);
+  for(const [dy,width,color] of [[1,5,'rgba(4,8,14,.29)'],[0,1.15,gRgb(m.light,.54)]]){
+   g.strokeStyle=color;g.lineWidth=width;g.beginPath();
+   points.forEach(([xx,yy],i)=>i?g.lineTo(xx,yy+dy):g.moveTo(xx,yy+dy));g.stroke();
+  }
+ }
+ // Scaglie, inclusioni minerali e riflessi sul piano della roccia.
+ for(let i=0;i<w/16;i++){
+  const xx=x+rnd()*w,yy=y+12+rnd()*Math.min(142,bottom-y),s=2+rnd()*8;
+  g.fillStyle=gRgb(m.dark,.66);g.beginPath();g.moveTo(xx-s,yy);g.lineTo(xx,yy-s*.45);g.lineTo(xx+s,yy);g.lineTo(xx+s*.26,yy+s*.58);g.closePath();g.fill();
+  g.strokeStyle=gRgb(veins&&i%5===0?gHex(m.rim):m.speck,veins?.47:.33);
+  g.lineWidth=1;g.beginPath();g.moveTo(xx-s,yy);g.lineTo(xx,yy-s*.45);g.lineTo(xx+s,yy);g.stroke();
+ }
+ g.restore();
 }
 function gCrystal(g,x,y,s,a,col){g.save();g.translate(x,y);g.rotate(a);g.shadowBlur=s;g.shadowColor=col[0];for(const [dx,h,r] of [[-s*.5,s*1.6,-.35],[0,s*2.4,0],[s*.55,s*1.4,.4]]){g.save();g.translate(dx,0);g.rotate(r);const gr=g.createLinearGradient(-s*.3,-h,s*.3,0);gr.addColorStop(0,col[0]);gr.addColorStop(1,col[1]);g.fillStyle=gr;g.beginPath();g.moveTo(0,-h);g.lineTo(s*.32,-h*.72);g.lineTo(s*.28,0);g.lineTo(-s*.28,0);g.lineTo(-s*.32,-h*.72);g.closePath();g.fill();g.fillStyle='rgba(255,255,255,.35)';g.beginPath();g.moveTo(0,-h);g.lineTo(s*.1,-h*.7);g.lineTo(0,-h*.2);g.closePath();g.fill();g.restore()}g.restore()}
 // Superficie calpestabile: erba, sabbia, alghe, crosta lavica, muschio viola.
@@ -310,6 +368,16 @@ function gSurface(g,sd,m,id,rnd){
  }else{
   g.save();g.lineCap='round';for(let x=x0+2;x<x1-2;x+=3){const h=2+gHash(Math.floor(x*11))*5;g.strokeStyle=gRgb(gMix(m.lip,m.top2,gHash(Math.floor(x*4))));g.lineWidth=1.5;g.beginPath();g.moveTo(x,y+2);g.lineTo(x+1,y-h);g.stroke()}g.restore();
   for(let x=x0+30;x<x1-30;x+=60+rnd()*90)if(rnd()<.6)gCrystal(g,x,y+1,5+rnd()*5,(rnd()-.5)*.5,['#efe8ff','#7a62d8']);
+ }
+ if(id==='foresta'||id==='mare')for(let x=x0+25;x<x1-25;x+=70+rnd()*85){
+  const height=9+rnd()*11,lean=(rnd()-.5)*9;
+  g.strokeStyle=gRgb(m.lip);g.lineWidth=1.5;g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x,y-height*.58,x+lean,y-height);g.stroke();
+  for(const side of [-1,1]){
+   g.fillStyle=gRgb(gMix(m.top,m.top2,.38));g.beginPath();
+   g.moveTo(x+lean*.5,y-height*.48);g.quadraticCurveTo(x+side*10,y-height*.92,x+side*13,y-height*.68);
+   g.quadraticCurveTo(x+side*7,y-height*.43,x+lean*.5,y-height*.48);g.fill();
+  }
+  g.fillStyle=id==='foresta'?'#d9b5ff':'#d8faf7';g.beginPath();g.arc(x+lean,y-height,1.9,0,6.28);g.fill();
  }
 }
 function gDrawSolid(sd,now){
@@ -347,6 +415,13 @@ function gPlatCache(pl){
  let gr=g.createLinearGradient(0,0,0,16);gr.addColorStop(0,'#6d8399');gr.addColorStop(.18,'#33475a');gr.addColorStop(1,'#141e29');
  g.fillStyle=gr;g.beginPath();g.moveTo(0,0);g.lineTo(W2,0);g.lineTo(W2-6,14);g.lineTo(6,14);g.closePath();g.fill();
  g.fillStyle='#a8c2d6';g.fillRect(2,0,W2-4,1.5);
+ // Pannelli incassati, griglie e indicatori di bordo.
+ for(let x=31;x+24<W2-29;x+=39){
+  g.fillStyle='#101a26';g.fillRect(x,4,27,7);
+  g.fillStyle='#546b7d';g.fillRect(x+1,4,25,1);
+  g.fillStyle='#314659';for(let j=0;j<5;j++)g.fillRect(x+3+j*4,6,2,3);
+  g.fillStyle='#b6e0ee';g.fillRect(x+23,7,2,1.5);
+ }
  g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=1;for(let x=24;x<W2-10;x+=24){g.beginPath();g.moveTo(x,2);g.lineTo(x,13);g.stroke()}
  g.fillStyle='rgba(200,230,255,.35)';for(let x=8;x<W2-4;x+=12){g.beginPath();g.arc(x,8,.9,0,6.28);g.fill()}
  for(const sx of [6,W2-26]){g.save();g.beginPath();g.rect(sx,3,20,9);g.clip();g.fillStyle='#1a1408';g.fillRect(sx,3,20,9);g.fillStyle='#ffb348';for(let i=-2;i<6;i++){g.beginPath();g.moveTo(sx+i*6,12);g.lineTo(sx+i*6+4,3);g.lineTo(sx+i*6+7,3);g.lineTo(sx+i*6+3,12);g.fill()}g.restore()}
@@ -437,6 +512,13 @@ function gTrooper(o,pal,now){
  ctx.fillStyle=torso;ctx.beginPath();ctx.moveTo(-7,hip-6);ctx.lineTo(-8.5,hip-15);ctx.lineTo(-5.5,hip-21);ctx.lineTo(5.5,hip-21);ctx.lineTo(8.5,hip-14);ctx.lineTo(6.5,hip-6);ctx.closePath();ctx.fill();edge(.9);
  ctx.strokeStyle='rgba(0,0,0,.35)';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(0,hip-20);ctx.lineTo(0,hip-7);ctx.moveTo(-7,hip-11);ctx.lineTo(7.5,hip-11);ctx.moveTo(-6.6,hip-8.4);ctx.lineTo(6.8,hip-8.4);ctx.stroke();
  ctx.fillStyle='rgba(255,255,255,.35)';ctx.beginPath();ctx.moveTo(-5,hip-20);ctx.lineTo(2,hip-20);ctx.lineTo(-6,hip-13);ctx.closePath();ctx.fill();
+ // Nervature della piastra, fissaggi e marcature del reparto.
+ ctx.strokeStyle=gShade(armor2,-.48);ctx.lineWidth=.75;ctx.beginPath();
+ ctx.moveTo(-4.7,hip-17);ctx.lineTo(-3.1,hip-13.7);ctx.lineTo(-1,hip-12.5);
+ ctx.moveTo(6,hip-16);ctx.lineTo(5,hip-12.9);ctx.lineTo(2.5,hip-11.7);ctx.stroke();
+ ctx.fillStyle=gShade(armor,.4);ctx.fillRect(-5.6,hip-15.3,1.2,.9);ctx.fillRect(5.6,hip-15.3,1.2,.9);
+ ctx.fillStyle=rebel?'#ffb06c':'#9cd9ef';
+ for(let i=0;i<(sniper?3:2);i++)ctx.fillRect(-5+i*1.3,hip-10,1,.7);
  ctx.fillStyle=gShade(suit,-.25);ctx.beginPath();ctx.moveTo(-4.5,hip-21);ctx.lineTo(4.5,hip-21);ctx.lineTo(3.4,hip-23);ctx.lineTo(-3.4,hip-23);ctx.closePath();ctx.fill();edge(.6);
  ctx.fillStyle=gShade(suit,-.3);ctx.fillRect(-7.5,hip-4,15,3.5);ctx.strokeStyle=OUT;ctx.lineWidth=.6;ctx.strokeRect(-7.5,hip-4,15,3.5);ctx.fillStyle=glow;ctx.fillRect(-1.5,hip-3.6,3,2.6);
  ctx.fillStyle=gShade(armor2,-.15);ctx.fillRect(3,hip-3,4,5);ctx.fillRect(-6.5,hip-3,3.4,4.4);ctx.strokeRect(3,hip-3,4,5);ctx.strokeRect(-6.5,hip-3,3.4,4.4);

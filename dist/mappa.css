@@ -55,3 +55,61 @@
  #mapScreen .boss-row b{font-size:11px}
  #mapScreen .boss-row small{font-size:8px}
 }
+
+/* La scheda del pianeta è il punto focale della mappa. */
+#mapScreen .planet-panel .planet-preview{
+ --hero-size:clamp(156px,19vw,230px);
+ height:clamp(138px,24vh,224px);overflow:hidden;
+ border-color:color-mix(in srgb,var(--panel-accent,#8ce9ec) 26%,#11243b);
+ background:radial-gradient(ellipse at 50% 62%,color-mix(in srgb,var(--panel-accent,#8ce9ec) 26%,#081725),transparent 68%),#040b17;
+}
+#mapScreen .planet-panel .preview-orb{
+ width:var(--hero-size);height:var(--hero-size);
+ left:calc(50% - var(--hero-size) / 2);top:clamp(8px,2vh,20px);
+}
+#mapScreen .planet-panel h2{color:#f5fbff;margin-top:14px;font-weight:700}
+#mapScreen .planet-panel .mission-stats{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;
+ margin:12px 0 0;padding:0;border:0;background:none;
+}
+#mapScreen .mission-stats .mission-threat,#mapScreen .mission-stats .mission-reward{
+ display:block;padding:8px 10px;border:1px solid #82c8ed42;border-radius:8px;
+ background:linear-gradient(145deg,#142c40,#071624);
+}
+#mapScreen .mission-stats .mission-reward{background:linear-gradient(145deg,#312619,#141920);border-color:#ffd37e54}
+#mapScreen .mission-stats .mission-distance{
+ grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:4px;
+ padding:3px 8px;border:0;
+}
+#mapScreen .mission-stats .boss-row{grid-column:1/-1}
+#mapScreen .mission-stats dt{color:#b6d0e2}
+#mapScreen .mission-stats :is(#planetThreat,#planetReward){
+ margin:3px 0 0;font-size:clamp(14px,1.5vw,22px);line-height:1.15;
+ font-weight:700;letter-spacing:.025em;overflow-wrap:anywhere;
+}
+#mapScreen #planetReward{color:#ffe19e;font-variant-numeric:tabular-nums}
+#mapScreen .mission-stats .mission-threat-meter{margin:5px 0 0!important}
+#mapScreen .mission-stats #threatBars{display:flex;margin:0;padding:0;border:0;background:none}
+#mapScreen .mission-stats #threatBars i{height:3px}
+#mapScreen #launchBtn:not(:disabled){
+ min-height:48px;font-size:12px;color:#021824;
+ background:linear-gradient(110deg,#d4fff2,#74e6ff 58%,#58bfff);
+ box-shadow:0 0 20px #65ddff58;
+}
+#mapScreen #launchBtn:not(:disabled):hover{background:#c3f9ff;box-shadow:0 0 25px #75e6ff90}
+#mapScreen :is(#marketBtn,#settingsBtn){
+ background:#06121e65;border-color:#a7d5ee22;color:#9bb6c9;
+ box-shadow:none;
+}
+#mapScreen :is(#marketBtn,#settingsBtn):hover{background:#112e43;color:#eefaff;border-color:#a6dcf45f}
+@media(max-width:850px){
+ #mapScreen .planet-panel .planet-preview{--hero-size:116px;width:128px;height:106px}
+ #mapScreen .planet-panel .preview-orb{top:11px}
+}
+@media(max-height:520px) and (orientation:landscape){
+ #mapScreen .planet-panel .planet-preview{width:76px!important;height:76px!important;margin-right:10px}
+ #mapScreen .planet-panel .preview-orb{width:76px!important;height:76px!important}
+ #mapScreen .planet-panel .mission-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #mapScreen .mission-stats :is(#planetThreat,#planetReward){font-size:13px!important}
+ #mapScreen #launchBtn:not(:disabled){min-height:42px}
+}

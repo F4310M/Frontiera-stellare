@@ -49,7 +49,7 @@ function bPod(c,x,y,cols,open,metal){bPlate(c,[[x-4,y-4],[x+cols*12+6,y-6],[x+co
 function bTexture(kind='lava'){
  if(bTextures.has(kind))return bTextures.get(kind);
  const o=gCanvas(256,256);if(!o)return null;const cv=o.c,c=o.g;
- const palette={mare:['#23444a','#bcf9f3'],deserto:['#644026','#fff0c7'],tempesta:['#272249','#cbd8ff'],
+ const palette={mare:['#23444a','#bcf9f3'],deserto:['#152032','#a7c7e5'],tempesta:['#272249','#cbd8ff'],
   foresta:['#304624','#c4d392'],lava:['#25374e','#e8f5ff'],omega:['#19152a','#d7b972']};
  const [dark,light]=palette[kind]||palette.lava;
  c.fillStyle='#808080';c.fillRect(0,0,256,256);
@@ -61,7 +61,7 @@ function bTexture(kind='lava'){
  c.globalAlpha=1;
  for(let i=0;i<70;i++){const x=gHash(i*11)*256,y=gHash(i*11+1)*256,a=gHash(i*11+2)*6.28,l=8+gHash(i*11+3)*34;c.strokeStyle=`rgba(225,225,225,${.15+gHash(i*13)*.25})`;c.lineWidth=.7;c.beginPath();c.moveTo(x,y);c.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);c.stroke()}
  for(let i=0;i<26;i++){const x=gHash(i*17)*256,y=gHash(i*17+1)*256,r=10+gHash(i*17+2)*30,g=c.createRadialGradient(x,y,1,x,y,r);g.addColorStop(0,'rgba(30,24,20,.35)');g.addColorStop(1,'rgba(30,24,20,0)');c.fillStyle=g;c.fillRect(x-r,y-r,r*2,r*2)}
- if(kind==='mare'||kind==='tempesta'||kind==='omega'){
+ if(kind==='mare'||kind==='deserto'||kind==='tempesta'||kind==='omega'){
   c.globalAlpha=.24;c.strokeStyle=light;c.lineWidth=.7;
   for(let row=0;row<16;row++)for(let col=0;col<16;col++){
    const x=col*16+(row%2)*8,y=row*16;
@@ -123,50 +123,83 @@ function bLeviatano(c,B,now){
  c.restore();
 }
 
-// ---------------------------------------------------------------- SCORPIONE S-5 (deserto): coda a pungiglione laser
-function bScorpione(c,B,now){
- const walk=B.legT,sand='#8a6a48',dark='#3a2614',plate='#e8c48a';
- // 4 zampe per lato
- for(const far of [true,false])for(let i=0;i<4;i++){
-  const k=far?-.45:0,bx=-60+i*36,by=-52,sw=Math.sin(walk*1.4+i*1.6+(far?1.3:0))*9,kx=bx+(i-1.5)*18+sw,ky=-82,fx=bx+(i-1.5)*40+sw*1.5;
-  c.lineCap='round';c.strokeStyle=gShade(dark,k);c.lineWidth=7;c.beginPath();c.moveTo(bx,by);c.lineTo(kx,ky);c.lineTo(fx,-2);c.stroke();
-  c.strokeStyle=gShade(plate,k-.1);c.lineWidth=3;c.beginPath();c.moveTo(bx,by);c.lineTo(kx,ky);c.stroke();
- }
- // corpo segmentato
- for(let i=0;i<5;i++){const x=-70+i*32,w=26-Math.abs(i-2)*2;bEllipse(c,x,-56,w+6,22-Math.abs(i-2.5)*1.5,bMetal(c,x,-80,x,-34,sand,i===4?.05:0),'#f0d8a8')}
- c.fillStyle='#2a1a0a';for(let i=0;i<4;i++)c.fillRect(-56+i*32,-66,4,20);
- // Placche di arenaria con giunti a vista.
- for(let i=0;i<4;i++){
-  const x=-77+i*32,y=-70-Math.sin(i)*5;
-  bPlate(c,[[x-9,y+5],[x,y],[x+12,y+4],[x+10,y+15],[x-7,y+17]],
-   bMetal(c,x,y,x+10,y+18,'#b18757'),'#795335','#ffe2a9');
-  bRivets(c,[[x-4,y+6],[x+8,y+7]]);
-  bTrace(c,[[x-4,y+12],[x+1,y+9],[x+6,y+11]],'#614026',1.2);
- }
- // chele anteriori
- for(const [y,k] of [[-40,-.35],[-52,0]]){c.save();c.translate(80,y);c.rotate(-.15+Math.sin(now*3+y)*.08);bPlate(c,[[0,-6],[30,-10],[34,6],[0,8]],bMetal(c,0,-10,0,8,sand,k),'#f0d8a8');c.fillStyle=gShade(plate,k);c.beginPath();c.moveTo(30,-12);c.lineTo(54,-16);c.lineTo(36,-2);c.closePath();c.fill();c.beginPath();c.moveTo(30,8);c.lineTo(52,12);c.lineTo(36,0);c.closePath();c.fill();c.restore()}
- // testa e occhi
- bEllipse(c,74,-62,20,15,bMetal(c,74,-77,74,-47,sand,.05),'#f0d8a8');for(let i=0;i<3;i++)bGlow(c,78+i*5,-68+i*1.5,2.2,'#ff3c4c',10);
- bPod(c,-70,-112,3,B.state==='missili',sand);
- // coda: segmenti ad arco che arrivano al pungiglione (perno a 30,-212)
- const tailSwing=Math.sin(now*2.7)*8,bend=bRecoil(B);
- const sx=30+tailSwing-11*bend,sy=-212+Math.sin(now*2.7+.8)*7,pts=[],P0=[-84,-64],P1=[-175+tailSwing,-250-12*bend],P2=[sx-10,sy+4];for(let i=0;i<=8;i++){const t=i/8,u=1-t;pts.push([u*u*P0[0]+2*u*t*P1[0]+t*t*P2[0],u*u*P0[1]+2*u*t*P1[1]+t*t*P2[1]])}
- c.save();
- c.lineCap='round';c.lineJoin='round';
- const spine=[...pts,[sx,sy]];
- bTrace(c,spine,'#2c1d15',14);
- bTrace(c,spine,'#8b6242',8);
- bTrace(c,spine,'#e5bb7a',2);
+// ---------------------------------------------------------------- SCORPIONE S-5: modello X-79 adattato dal simulatore.
+function bScorpionLink(c,a,b,width,shade){
+ const [x,y]=a,dx=b[0]-x,dy=b[1]-y,length=Math.hypot(dx,dy);
+ c.save();c.translate(x,y);c.rotate(Math.atan2(dy,dx));
+ bPlate(c,[[0,-width*.55],[length-6,-width*.42],[length,0],[length-5,width*.44],[0,width*.5]],
+  bMetal(c,0,-width*.55,0,width*.5,'#374151',shade),'#080d17','#98a9be');
+ bTrace(c,[[5,-width*.16],[length*.63,-width*.16],[length-6,0]],'#07111d',2.8);
  c.restore();
- for(let i=0;i<pts.length;i++){
-  const [x,y]=pts[i],r=16-i*1.1;
-  bEllipse(c,x,y,r+2,r,bMetal(c,x,y-r,x,y+r,sand,-.05*(i%2)),'#f0d8a8');
-  bPlate(c,[[x-r*.7,y-r*.22],[x,y-r*.72],[x+r*.64,y-r*.28],[x,y+r*.3]],'#5d4027','#9e784f');
-  bGlow(c,x,y-r*.12,1.6,B.state==='raffica'?'#ff593e':'#ffca83',6);
+}
+function bScorpione(c,B,now){
+ const armor='#111827',steel='#1f2937',cyan='#06b6d4',magenta='#ec4899';
+ const attacking=B.state==='raffica'||B.state==='carica',guard=B.state==='stordito',recoil=bRecoil(B);
+ const phase=now*(B.rage?3.3:1.8),lift=guard?7:Math.sin(phase)*2;
+ // Otto zampe a due segmenti, con attuatori sul lato in luce.
+ for(const far of [true,false])for(let i=0;i<4;i++){
+  const shade=far?-.35:0,wave=B.legT*1.35+i*1.65+(far?Math.PI:0);
+  const hip=[-62+i*33+(far?12:0),-52+lift];
+  const knee=[hip[0]+(i-1.5)*19+Math.sin(wave)*10,-82+(far?10:0)+lift];
+  const foot=[hip[0]+(i-1.5)*38+Math.sin(wave)*18,-2-(far?9:0)-(B.state==='passi'?Math.max(0,Math.cos(wave))*13:0)];
+  bScorpionLink(c,hip,knee,far?8:11,shade);
+  bScorpionLink(c,knee,foot,far?7:9,shade);
+  bEllipse(c,knee[0],knee[1],5,5,gShade('#556378',shade),'#090f1c');
+  if(!far)bGlow(c,knee[0],knee[1],1.8,cyan,6);
  }
- c.save();c.translate(sx,sy);c.rotate(bArmAngle(B));
- bPlate(c,[[-10,-10],[22,-7],[40,0],[22,7],[-10,10]],bMetal(c,-10,-10,-10,10,'#7a5a30',.1),'#ffe0a8','rgba(255,255,255,.4)');
- const h=B.state==='raffica'?Math.min(1,B.t/.45):.3+.2*Math.sin(now*5);bGlow(c,40,0,3+h*4,'#ff4a3a',10+h*14);
+ c.save();c.translate(0,lift);
+ // Addome a quattro moduli rettangolari e torace sfaccettato.
+ for(let i=0;i<4;i++){
+  const x=-99+i*27,y=-72-i*2,h=24+i*2;
+  bArmor(c,[[x,y+8],[x+9,y],[x+39,y],[x+48,y+11],[x+39,y+h],[x+5,y+h]],
+   [[x+8,y+9],[x+15,y+4],[x+35,y+4],[x+39,y+12],[x+11,y+18]],armor,steel,'#8196b1');
+  bTrace(c,[[x+11,y+19],[x+31,y+19],[x+36,y+14]],cyan,1.2);
+ }
+ // Chele gemelle con pistoni e due ganasce mobili.
+ for(const far of [true,false]){
+  const shade=far?-.36:0,sw=Math.sin(phase*2.1+(far?1.5:0));
+  c.save();c.translate(far?41:65,far?-67:-48);c.rotate(-.2+sw*.065-(guard?.24:0));
+  bEllipse(c,0,0,11,10,bMetal(c,-10,-10,10,10,'#374151',shade),'#718099');
+  bScorpionLink(c,[5,0],[40,1],14,shade);
+  bArmor(c,[[34,-11],[51,-12],[63,-5],[60,8],[44,13],[35,7]],
+   [[39,-6],[51,-8],[57,-3],[52,7],[42,8]],armor,steel,'#8d9cb4',shade);
+  const jaw=attacking?.22+sw*.15:guard?.04:.14+sw*.06;
+  for(const side of [-1,1]){
+   c.save();c.translate(56,side*5);c.scale(1,side);c.rotate(jaw);
+   bPlate(c,[[0,-3],[18,0],[29,5],[31,11],[23,8],[16,5],[0,6]],
+    bMetal(c,0,-3,20,10,'#374151',shade),'#0a101d','#b0c5db');c.restore();
+  }
+  bGlow(c,48,0,2,cyan,7);c.restore();
+ }
+ bArmor(c,[[12,-69],[30,-93],[76,-96],[100,-78],[98,-50],[83,-38],[29,-43]],
+  [[25,-69],[38,-85],[72,-88],[91,-75],[88,-57],[40,-52]],armor,steel,'#acbfd6');
+ bVents(c,39,-77,3,20,cyan,.62+.25*Math.sin(phase));
+ for(const [x,y] of [[78,-72],[92,-65]]){
+  bEllipse(c,x,y,6,5,'#06101b','#6e97b5');
+  bGlow(c,x,y,3.2,cyan,13);bGlow(c,x-1,y-1,1.2,'#d4fcff',0);
+ }
+ bPod(c,-60,-110,3,B.state==='missili',steel);
+ c.restore();
+ // Cinque segmenti poligonali con fulcri, più il raccordo all'addome.
+ const swing=Math.sin(phase)*9,tip=[30+(attacking?0:swing),-212+(attacking?0:Math.cos(phase)*5)];
+ const joints=[[-86,-62+lift],[-119,-90+lift],[-137-swing*.3,-132],[-122-swing,-182],
+  [-70-swing,-215-(attacking?12:0)],[-18,-220-(attacking?9:0)],tip];
+ for(let i=0;i<joints.length-1;i++){
+  const a=joints[i],b=joints[i+1];
+  bScorpionLink(c,a,b,22-i*1.8,0);
+  bEllipse(c,a[0],a[1],7-i*.4,6-i*.35,'#142236','#648099');
+  bGlow(c,a[0],a[1],1.7,cyan,6);
+ }
+ c.save();c.translate(...tip);c.rotate(bArmAngle(B));c.translate(-7*recoil,0);
+ bPlate(c,[[-11,-12],[10,-13],[23,-8],[23,8],[9,13],[-11,11]],
+  bMetal(c,0,-13,0,13,steel),'#071019','#a2b6cf');
+ bPlate(c,[[13,-9],[24,-7],[40,0],[24,7],[13,9],[19,0]],
+  bGrad(c,13,-9,36,7,['#7f205d',magenta,'#ffc1e6']),'#5c1d4c','#ffe0f2');
+ if(attacking||B.rage){
+  const spark=Math.sin(now*32)*5;
+  bTrace(c,[[24,-9],[29,-12+spark],[34,-5],[40,0]],'#a7faff',1.25);
+  bGlow(c,39,0,3.1+recoil*3,magenta,17);
+ }
  c.restore();
 }
 
