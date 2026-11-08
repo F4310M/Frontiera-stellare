@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="mappa.css">
   <link rel="stylesheet" href="profilo.css">
   <link rel="stylesheet" href="caricamento.css">
+  <link rel="stylesheet" href="rifiniture.css">
 </head>
 <body>
   <script src="caricamento.js"></script>
@@ -98,12 +99,9 @@
     <div class="hud-bottom unified">
       <div class="status" id="statusText">SISTEMI NOMINALI</div>
       <div class="unibar" role="group" aria-label="Sistemi della nave">
-        <span id="shieldOrb" class="shield-orb" aria-hidden="true"><i></i></span>
-        <div class="unibar-bars">
         <div class="seg seg-health"><div class="seg-head"><span>SALUTE</span><b id="healthText">100%</b></div><div class="seg-track"><i id="healthBar"></i></div></div>
         <div class="seg seg-boost"><div class="seg-head"><span>POST-BRUCIATORE · SHIFT DX</span><b id="boostText">100% · PRONTO</b></div><div class="seg-track"><i id="boostBar"></i></div></div>
         <div class="seg seg-shield"><div class="seg-head"><span>BARRIERA · MOUSE DX</span><b id="shieldText">100%</b></div><div class="seg-track"><i id="shieldBar"></i></div></div>
-        </div>
       </div>
     </div>
     <div class="controls-tip">FRECCE / WASD muovi · MOUSE punta la prua · SHIFT DX post-bruciatore · MOUSE DX barriera · clic / SPAZIO spara · ROTELLA missile · F frena · P pausa</div>
@@ -147,14 +145,51 @@
 
   <div id="ecoHud" class="eco-hud" aria-label="Crediti"><small>CREDITI</small><b id="ecoBalance">2.500 CR</b><em id="ecoSpent"></em><span id="ecoDelta" class="eco-delta"></span></div>
 
-  <section id="marketOverlay" class="overlay market-overlay hidden" aria-label="Mercato">
-    <div class="brief-card market-card">
-      <div class="settings-head"><div><p class="eyebrow">CANTIERE DELLA REPUBBLICA</p><h2>MERCATO</h2></div><button id="closeMarketX" class="close-btn" aria-label="Chiudi mercato"><i data-ico="close"></i></button></div>
-      <div class="market-balance"><span>SALDO DISPONIBILE</span><b id="marketBalance">2.500 CR</b></div>
+  <section id="marketScreen" class="market-screen hidden" aria-labelledby="marketTitle">
+    <header class="market-header">
+      <div class="market-content market-heading">
+        <div><p class="eyebrow">CANTIERE DELLA REPUBBLICA</p><h2 id="marketTitle">MERCATO</h2></div>
+        <div class="market-actions">
+          <div class="market-balance"><span>SALDO DISPONIBILE</span><b id="marketBalance">2.500 CR</b></div>
+          <button id="closeMarket" class="settings-btn" type="button" aria-label="Chiudi mercato"><i data-ico="close"></i> <span>CHIUDI IL MERCATO</span></button>
+        </div>
+      </div>
+    </header>
+    <div class="market-content market-catalog">
       <p class="market-prices">COSTI IN MISSIONE · colpo 1 CR · missile 25 CR · granata 20 CR · carburante 2 CR/unità. Taglia: 10 CR per nemico nello spazio, 15 CR per ribelle a terra.</p>
-      <div id="marketGrid" class="market-grid"></div>
-      <p id="marketMsg" class="market-msg"></p>
-      <button id="closeMarket" class="launch-btn"><span>CHIUDI IL MERCATO</span><b><i data-ico="check"></i></b></button>
+      <div id="marketPreview" class="market-preview hidden" tabindex="-1" role="region" aria-label="Anteprima acquisto"></div>
+      <p id="marketMsg" class="market-msg" role="status"></p>
+      <div class="market-rail-head">
+        <h3 id="marketCatalogTitle">POTENZIAMENTI</h3>
+        <div class="market-rail-controls">
+          <button id="marketPrev" type="button" class="settings-btn" aria-label="Gadget precedenti" aria-controls="marketGrid">‹</button>
+          <button id="marketNext" type="button" class="settings-btn" aria-label="Gadget successivi" aria-controls="marketGrid">›</button>
+        </div>
+      </div>
+      <div id="marketGrid" class="market-grid" tabindex="0" role="region" aria-labelledby="marketCatalogTitle"></div>
+      <section id="marketDemo" class="market-demo hidden" aria-labelledby="marketDemoTitle" tabindex="-1">
+        <video id="marketDemoVideo" controls muted playsinline preload="none" aria-label="Video dimostrativo"></video>
+        <div class="market-demo-copy">
+          <p class="eyebrow">ANTEPRIMA EFFETTO</p>
+          <h3 id="marketDemoTitle"></h3>
+          <p id="marketDemoText"></p>
+        </div>
+      </section>
+    </div>
+  </section>
+  <section id="missionReward" class="overlay mission-reward hidden" role="dialog" aria-modal="true" aria-labelledby="rewardTitle">
+    <div class="brief-card mission-reward-card">
+      <p class="eyebrow">RIEPILOGO MISSIONE</p>
+      <h2 id="rewardTitle">RISULTATI DELLA MISSIONE</h2>
+      <div class="reward-totals">
+        <div><span>PUNTI GUADAGNATI</span><strong id="rewardScore">0</strong></div>
+        <div><span>CREDITI GUADAGNATI</span><strong id="rewardCredits">0 CR</strong></div>
+      </div>
+      <div id="rewardMarket" class="reward-market hidden">
+        <p>ORA ACQUISTABILI NEL MERCATO</p><p id="rewardItems"></p>
+        <button id="rewardMarketBtn" class="text-btn" type="button">APRI IL MERCATO</button>
+      </div>
+      <button id="rewardClose" class="launch-btn" type="button"><span>CONTINUA</span><b><i data-ico="check"></i></b></button>
     </div>
   </section>
 
@@ -197,6 +232,8 @@
   <script src="spirale.js"></script>
   <script src="montaggio.js"></script>
   <script src="speciale.js"></script>
+  <script src="soldati.js"></script>
+  <script src="bombardamento.js"></script>
   <script src="buchineri.js"></script>
   <script src="fossili.js"></script>
   <script src="adatta.js"></script>
@@ -207,6 +244,13 @@
   <script src="comandi.js"></script>
   <script src="lanciamissili.js"></script>
   <script src="guida-orbita.js"></script>
+  <script src="megacolpo.js"></script>
+  <script src="rifiniture.js"></script>
+  <script src="vite.js"></script>
+  <script src="barriere.js"></script>
+  <script src="boss-robot.js"></script>
+  <script src="boss-immagini.js"></script>
+  <script src="coloni.js"></script>
   <script src="vetrina.js"></script>
 </body>
 </html>

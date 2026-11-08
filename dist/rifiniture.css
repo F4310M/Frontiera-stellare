@@ -1,0 +1,53 @@
+/* Rifiniture 2026-11-08: pulsanti colorati al posto delle scritte cliccabili e barra della conquista orbitale ben visibile. */
+
+/* ---- tutti i comandi .text-btn diventano pulsanti pieni, con un colore per tipo di azione */
+.text-btn{
+ --b1:#2c4f6c;--b2:#203d57;--bc:#5d8fb4;--bt:#e6f4ff;
+ display:flex;align-items:center;justify-content:center;gap:8px;
+ width:100%;min-height:42px;margin:12px 0 0;padding:9px 16px;
+ border:1px solid var(--bc);border-radius:6px;
+ background:linear-gradient(110deg,var(--b1),var(--b2));color:var(--bt);
+ font:700 10px 'Chakra Petch',sans-serif;letter-spacing:1.6px;text-align:center;
+ cursor:pointer;box-shadow:0 3px 14px #0006;
+ transition:filter .15s,transform .15s,box-shadow .15s;
+}
+.brief-card .text-btn,.text-btn{color:var(--bt)}
+.text-btn:hover,.brief-card .text-btn:hover{color:#fff;filter:brightness(1.22);transform:translateY(-1px);box-shadow:0 5px 18px #0008}
+.text-btn:active{transform:translateY(0)}
+.text-btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.text-btn .ico{width:15px;height:15px;margin:0}
+.text-btn.hidden{display:none}
+/* indietro / annulla: blu acciaio (colore base sopra) */
+/* uscita e azioni che cancellano: rosso */
+#abortBtn,#profPanelNew{--b1:#8d2431;--b2:#5e1621;--bc:#e0596a;--bt:#ffe9ec}
+/* salvataggio: verde */
+#profSavePause,#profImportLink{--b1:#1d7a4f;--b2:#125236;--bc:#4fd894;--bt:#eafff3}
+/* mercato e crediti: oro */
+#marketBtnResult{--b1:#a8741b;--b2:#704a0d;--bc:#ffc75a;--bt:#fff6df}
+/* classifica, password, fase 2: viola */
+#scoreSeeBoard,#profPwForgot,#phase2Btn{--b1:#5b3a9e;--b2:#3b2470;--bc:#a585ff;--bt:#f3edff}
+.prof-card .text-btn,.prof-pw .text-btn{margin:12px 0 0}
+body.touch .text-btn{min-height:38px;font-size:9px}
+
+/* ---- barra della conquista orbitale (atterraggio) */
+.capture-status{width:min(440px,88vw);padding:12px 16px 13px;border-width:1px}
+.capture-status span{font-size:11px;font-weight:700;letter-spacing:1.4px}
+.capture-status>div{height:12px;margin-top:9px;border-radius:7px;background:#ffffff14;border:1px solid #51e6ff55;box-shadow:inset 0 0 6px #000a}
+.capture-status i{
+ border-radius:6px;
+ background:repeating-linear-gradient(115deg,#d6fbff 0 8px,#51e6ff 8px 16px);
+ background-size:34px 100%;animation:capture-run .6s linear infinite;
+ box-shadow:0 0 12px #51e6ffaa;transition:width .1s linear;
+}
+@keyframes capture-run{to{background-position:34px 0}}
+.capture-status.capturing{border-color:#7dffb6;background:rgba(4,26,24,.88);animation:capture-glow 1s ease-in-out infinite}
+.capture-status.capturing span{color:#a9ffd0}
+.capture-status.capturing i{background:repeating-linear-gradient(115deg,#eafff2 0 8px,#5cf59c 8px 16px);background-size:34px 100%;box-shadow:0 0 14px #5cf59ccc}
+@keyframes capture-glow{0%,100%{box-shadow:0 0 10px #5cf59c55}50%{box-shadow:0 0 26px #5cf59cb0}}
+body.touch .capture-status{width:min(300px,52vw);padding:5px 9px;background:rgba(3,11,20,.7);border-color:var(--line)}
+body.touch .capture-status span{font-size:9px}
+body.touch .capture-status>div{height:7px;margin-top:4px}
+@media(prefers-reduced-motion:reduce){.capture-status i,.capture-status.capturing{animation:none}}
+/* la guida alla conquista scende sotto la barra più alta */
+body .orbit-guide{top:186px;width:min(440px,88vw)}
+html body.touch .orbit-guide{top:92px}

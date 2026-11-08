@@ -38,6 +38,22 @@ assert.equal(val('ecoBuy("salvo")'),true);assert.equal(val('ecoUpgrade("salvo")'
 run('eco.balance=100');assert.equal(val('ecoBuy("laser")'),false,'Crediti insufficienti');assert.equal(val('ecoUpgrade("laser")'),0);
 assert(JSON.parse(store.frontieraPotenziamenti).salvo===2,'Potenziamenti salvati');
 console.log('PASS: mercato');
+assert.equal(val('ecoNewlyAffordable({missionStart:1000,balance:2500}).map(it=>it.id).join(",")'),'speed,fuel,grenades');
+assert.equal(val('ecoNewlyAffordable({missionStart:2500,balance:2500}).length'),0);
+run(`
+ const originalTone=tone,originalFrame=requestAnimationFrame;
+ let nextFrame;
+ const pitches=[];
+ tone=freq=>pitches.push(freq);
+ requestAnimationFrame=cb=>{nextFrame=cb;return 1};
+ ecoShowReward({missionStart:1300,balance:2200,missionIncome:900},450);
+ nextFrame(300);nextFrame(850);nextFrame(1200);nextFrame(1700);
+ globalThis.rewardRises=pitches.length===3&&pitches.every((freq,i)=>!i||freq>pitches[i-1]);
+ tone=originalTone;requestAnimationFrame=originalFrame;
+`);
+assert.equal(val('$("rewardScore").textContent'), '450');
+assert.equal(val('$("rewardCredits").textContent'), '900 CR');
+assert(val('rewardRises'),'Il suono sale durante il conteggio');
 
 // Potenziamenti in gioco.
 run('eco.balance=5000;eco.upgrades={salvo:2,laser:2,speed:3,shield:2,grenades:2};startGame();enemies=[];missile=null;launchMissile()');

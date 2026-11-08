@@ -20,6 +20,7 @@ run('pf.pilot.inv=99;globalThis.nShots=0;const es=pfEnemyShot;pfEnemyShot=functi
 assert.equal(val('pf.enemies.length'),1);
 assert(val('pf.enemies[0].y<pf.pilot.y-80'),'Il soldato col jetpack resta in volo');
 assert(val('nShots')>0,'Il soldato col jetpack spara');
+assert(val('pf.fx.some(f=>f.jetSmoke)'),'Il jetpack lascia fumo persistente');
 run('gEnemy(pf.enemies[0],1)');
 // Alcuni soldati normali diventano col jetpack
 run('pf.enemies=[];for(let i=0;i<60;i++)pfSpawnEnemy("soldato",pf.pilot.x+200)');
@@ -50,6 +51,8 @@ console.log('PASS: pilota di riserva dalla navetta');
 
 // Barriera grande: si disegna senza errori
 run('pf.pilot.barrier=true;pfDrawBarrier(pf.pilot,1);pf.pilot.crouch=true;pfDrawBarrier(pf.pilot,1)');
+run('globalThis.shieldHp=pf.pilot.hp;pfDamage(12,-1)');
+assert(val('pf.pilot.hp===shieldHp&&pf.pilot.vx<0&&pf.pilot.shieldPush>0'),'La barriera protegge la salute e il colpo respinge il pilota');
 // Ultima vita: nessuna navetta
 run('pf.lives=1;pfLoseLife()');assert.equal(val('pf.phase'),'sconfitta');assert.equal(val('pf.drop'),null);
 console.log('PASS: barriera e ultima vita');

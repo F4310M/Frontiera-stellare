@@ -196,27 +196,6 @@ if(typeof boardAdd==='function'){
   return pos;
  };
 }
-if(typeof boardRows==='function'){
- boardRows=function(b,hi){
-  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  return '<div class="board-row head"><span>POS.</span><span>NOME</span><span>PUNTI</span><span>DATA</span></div>'+
-   b.map((r,i)=>`<div class="board-row${hi(r,i)?' me':''}${i<3?' podium':''}"><span>${i+1}</span><span class="board-name">${profAva(r.a,'',r.n)}<em>${esc(r.n)}</em></span><span>${scoreFmt(r.s)}</span><span>${esc(r.d||'')}</span></div>`).join('');
- };
-}
-if(typeof mapBoardRender==='function'){
- mapBoardRender=async function(){
-  const list=$('mapBoardList');if(!list)return;
-  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  let rows,offline=false;
-  if(coOn){try{rows=await coTop(false)}catch(e){rows=boardLoad();offline=true}}else rows=boardLoad();
-  if(typeof mapBoardMe==='function')mapBoardMe(offline);
-  rows=(rows||[]).slice(0,MAP_BOARD_ROWS);
-  if(!rows.length){list.innerHTML='<p class="board-empty">Nessun punteggio ancora: completa una partita per entrare in classifica.</p>';return}
-  const run=typeof recLoad==='function'?recLoad():null;
-  list.innerHTML=(offline?'<p class="board-offline">OFFLINE</p>':'')+rows.map((r,i)=>
-   `<div class="map-board-row${i<3?' top'+(i+1):''}${(coMyId&&r.id===coMyId)||(run&&r.id===run.id)||(typeof boardIsMe==='function'&&boardIsMe(r))?' me':''}"><span class="pos">${i+1}</span><span class="name">${profAva(r.a,'map-ava',r.n)}${esc(r.n)}</span><span class="pts">${scoreFmt(r.s)}</span></div>`).join('');
- };
-}
 // A fine gioco il punteggio parte da solo con il nome e la foto del pilota (niente casella da riempire).
 let profNoBoard=false;
 if(typeof boardOpen==='function'){const bo=boardOpen;boardOpen=function(){if(profNoBoard)return;return bo.apply(this,arguments)}}

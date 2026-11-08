@@ -679,6 +679,7 @@ function gColonistBody(h,L,P,now){
  ctx.restore();
 }
 function gColonist(h,now){
+ if(typeof pfColonistSprite==='function'&&pfColonistSprite(h,now))return;
  if(h.state!=='evacuato'&&!h.air)gShadow(h.x,h.y,16,.38);
  const L=gLook(h);
  ctx.save();ctx.translate(h.x,h.y);ctx.scale(G_SCALE*L.size,G_SCALE*L.size);
@@ -816,7 +817,8 @@ drawPlatform=function(){
  pfDrawFlora(now);
  pfDrawShipOnPad(now);
  gDrawFrontLiquid(cx,VW,now);
- for(const h of [...pf.hostages,...pf.crowd])if(h.state!=='salvo'&&pfOnScreen(h.x,60))gColonist(h,now);
+ for(const f of pf.fx)if(f.jetSmoke)pfDrawJetSmoke(f);
+ for(const h of [...pf.hostages,...pf.crowd])if(h.state!=='salvo'&&(!h.crowd||h.t>=0)&&pfOnScreen(h.x,60))gColonist(h,now);
  for(const k of pf.pickups)pfDrawPickup(k,now);
  for(const w of pf.waves)pfDrawWave(w);
  if(pf.boss&&!pf.boss.gone)gBoss(pf.boss,now);
@@ -828,7 +830,7 @@ drawPlatform=function(){
  gCollectLights(now);
  gApplyLighting(VW);
  for(const b of pf.shots)drawBullet(b);
- for(const f of pf.fx)drawParticle(f);
+ for(const f of pf.fx)if(!f.jetSmoke)drawParticle(f);
  ctx.font='600 13px "Chakra Petch",sans-serif';ctx.textAlign='center';
  for(const t of pf.texts){ctx.globalAlpha=Math.max(0,1-t.t/1.6);ctx.fillStyle=t.color;ctx.shadowBlur=6;ctx.shadowColor='#000';ctx.fillText(t.text,t.x,t.y)}ctx.globalAlpha=1;ctx.shadowBlur=0;
  ctx.restore();

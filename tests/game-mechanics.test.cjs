@@ -30,6 +30,12 @@ run('player.angle=1;handleFlightMouse({clientX:W/2+3,clientY:H/2+2});updateMouse
 run('player.angle=0;handleFlightMouse({clientX:W/2,clientY:H/2+300});for(let i=0;i<60;i++)updateMouseSteering(1/60)');const at60=run('player.angle');run('player.angle=0;for(let i=0;i<120;i++)updateMouseSteering(1/120)');assert(Math.abs(run('player.angle')-at60)<.00002,'Aiming is independent of frame rate');
 run('handleFlightMouse({clientX:123,clientY:77})');assert.equal(run('$("crosshair").style.left'),'123px','Crosshair follows the cursor');run('paused=false;togglePause()');assert.equal(run('player.turnRemaining'),0,'Pause clears pending rotation');run('togglePause()');
 console.log('PASS: bow aims at cursor, dead zone, frame-rate independent aiming, crosshair, pause reset');
+run('player.x=0;player.y=0;player.angle=0;enemies=[];spawnTestEnemy(-220,0);mouse.x=W/2;mouse.y=H/2;updateFlightAim(.08)');
+assert(run('player.turnAssist===enemies[0]&&Math.abs(player.angle)>.5'),'A lone ship behind triggers a fast turn');
+run('spawnTestEnemy(180,0);mouse.x=W/2;mouse.y=H/2-150;updateFlightAim(.08)');
+assert(run('player.turnAssist===enemies[0]&&player.turnAssistAngle===null&&player.angle<0'),'Manual aim cancels the turn without selecting another ship');
+run('enemies[0].hp=0;player.angle=0;mouse.x=W/2;mouse.y=H/2;updateFlightAim(.08)');
+assert(run('!player.turnAssist&&player.angle===0'),'An enemy ahead prevents another automatic turn');
 
 marks.length=0;run('stars=[{x:100,y:120,z:.5,a:1,hue:.5},{x:200,y:220,z:1.5,a:1,hue:.02}];drawStarfield(400,300,590,0,1)');assert.equal(marks.filter(m=>m[0]==='fillRect').length,2);assert(!marks.some(m=>m[0]==='lineTo'),'Stars render as points even under acceleration');console.log('PASS: no star trails under acceleration');
 
@@ -85,6 +91,10 @@ run('wrecks=[];spawnTestEnemy(0,0);enemies[0].hp=10;bullets=[];enemyShoot(enemie
 run('enemies=[];rocks=[{x:100,y:0,r:30,hp:5,rock:true,vx:0,vy:0}];player.x=70;player.y=0;player.vx=0;player.vy=0;const savedHull=player.health;burst(0,0,"#ff9d3d",20)');assert(run('player.vx>0'),'Blast pushes nearby player');assert(run('rocks[0].vx>0'),'Blast pushes nearby objects');assert(run('player.health===savedHull'),'Shockwave adds impulse without extra hull damage');assert(run('shockwaves.length>0'));run('drawShockwaves();updateShockwaves(1)');assert.equal(run('shockwaves.length'),0,'Shockwaves expire');
 run('pickups=[];wrecks=[{x:500,y:0,r:150,rot:.2,hp:1}];drawWreck(wrecks[0]);destroyableHit(wrecks[0],1)');assert.equal(run('pickups.length'),4,'Wreck always drops four energy supplies');assert(run('pickups.every(p=>p.kind==="energy")'));run('player.x=500;player.y=0;player.shield=0;player.boost=0;updateSupplies(.05);updateSupplies(.05)');assert(run('player.shield')>30,'Wreck salvage restores substantially more energy');
 console.log('PASS: enemy projectile obstruction and owner safety, harmless blast impulses, shockwave rendering/expiry, detailed wreck rendering and four energy salvage drops');
+run('startGame();player.x=100;player.y=0;player.vx=player.vy=player.shield=0;rocks=[];monsters=[];enemies=[];wrecks=[{x:0,y:0,r:100,hp:1}];destroyableHit(wrecks[0],1)');
+assert.equal(run('fragments.filter(f=>f.metal).length'),30,'Wreck throws physical metal pieces');
+run('spawnTestEnemy(100,100);enemies[0].vx=enemies[0].vy=0;enemies[0].hp=5;fragments=[0,100].map(y=>({x:10,y,vx:400,vy:0,r:5,rot:0,spin:0,life:4,cooldown:0,metal:true}));updateFragments(.3)');
+assert(run('player.health<100&&player.vx>0&&enemies[0].hp===3&&enemies[0].vx>0'),'Fast debris hits and pushes both kinds of ship');
 
 run('startGame()');assert(run('new Set(rocks.filter(r=>r.orbital).map(r=>r.hp)).size===3'),'Three rock resistance levels');assert(run('new Set(rocks.filter(r=>r.orbital).map(r=>r.fill)).size===3'),'Colors identify rock resistance');assert(run('new Set(rocks.filter(r=>r.orbital).map(r=>Math.round(Math.hypot(r.x-world.x,r.y-world.y)))).size>100'),'Rocks are scattered rather than concentric rings');assert(run('enemies.every(e=>Math.hypot(e.x-world.x,e.y-world.y)>=world.r+1150-1e-6)'),'Initial enemy ships appear outside labyrinth');run('spawnTestEnemy(world.x,world.y)');assert(run('Math.hypot(enemies.at(-1).x-world.x,enemies.at(-1).y-world.y)>=world.r+1150-1e-6'),'Even requested interior spawn is moved outside');
 run('enemies=[];rocks=[{rock:true,x:100,y:0,r:55,hp:5}];wrecks=[];monsters=[];spawnTestEnemy(0,0);enemies[0].x=0;enemies[0].y=0;const avoidance=avoidEnemyObstacles(enemies[0],100,0)');assert(run('Math.abs(avoidance.y)>1||avoidance.x<30'),'Enemy steers around or brakes before obstacle');

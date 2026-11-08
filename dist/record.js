@@ -109,7 +109,7 @@ function recMission(){
    try{
     await recWrite(name,pts);
     const pos=boardAdd(name,pts);localStorage.setItem('stellarUltimoNome',name);
-    scorePending=0;inp.disabled=true;$('scoreSaveBtn').disabled=true;boardHighlight=pos;coMyId=r.id;
+    scorePending=0;inp.disabled=true;$('scoreSaveBtn').disabled=true;boardHighlight=pos>0?{n:name,s:pts}:null;coMyId=r.id;
     const rank=await coRank(pts);
     $('scoreMsg').textContent='CLASSIFICA MONDIALE · POSIZIONE '+scoreFmt(rank);
     await coTop(true);
