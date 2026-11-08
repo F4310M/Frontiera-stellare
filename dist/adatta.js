@@ -3,7 +3,7 @@
 // si distribuiscono meglio) e si rimpicciolisce con zoom finché entra tutta. Sotto FIT_MIN resta lo scroll.
 const FIT_MIN=.5,FIT_PAD=16;
 // La classifica resta fuori: la sua lista di 100 piloti scorre apposta.
-const FIT_CARDS='.overlay:not(.hidden)>.brief-card:not(.board-card)';
+const FIT_CARDS='.overlay:not(.hidden)>.brief-card:not(.board-card):not(.settings-card)';
 function fitReset(c){for(const p of ['zoom','width','max-width','max-height','flex-shrink'])c.style.removeProperty(p)}
 // La finestra entra con un'animazione che la scala: misuro come se fosse già finita, poi la lascio proseguire.
 function fitStill(c,fn){
