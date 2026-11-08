@@ -14,13 +14,15 @@
 const BI={
  scorpione:{
   kind:'deserto',dir:'boss-immagini/scorpione/',S:.2,O:[775,1010],
-  parts:{coda:[177,0,765,507],corpo:[11,404,1520,613],'chela-avanti':[811,874,348,138],'chela-dietro':[1278,720,173,185]},
+  parts:{coda:[177,0,765,507],corpo:[206,404,1101,613],'chela-avanti':[811,874,348,138],'chela-dietro':[1278,720,173,185],
+   'braccio-avanti':[639,638,500,379],'braccio-dietro':[1088,538,443,383],zampa1:[11,529,272,350],zampa2:[181,580,222,361],zampa3:[398,598,175,411]},
+  armFront:[700,690],armBack:[1110,640],legs:[[250,560],[360,610],[520,620]],
   tailBase:[305,470],stingTip:[935,390],stingBase:[795,210],jawFront:[875,870],jawBack:[1305,700],
   eyes:[[1005,660],[890,630],[1055,625]]
  },
  millepiedi:{
   kind:'mare',dir:'boss-immagini/millepiedi/',S:.2,O:[1075,640],raise:50,strips:42,
-  parts:{corpo:[27,115,2097,529]},
+  parts:{corpo:[27,115,2097,529],zampe:[27,115,2097,529]},
   mouth:[1986,600],eyes:[[1981,500],[1901,480]]
  },
  sfera:{
@@ -30,12 +32,15 @@ const BI={
  },
  drago:{
   kind:'lava',dir:'boss-immagini/drago/',S:.21,O:[885,870],
-  parts:{'ala-lontana':[1020,10,748,302],'ala-vicina':[3,0,953,467],corpo:[10,199,1759,676]},
+  parts:{'ala-lontana':[1020,10,748,302],'ala-vicina':[3,0,953,467],corpo:[10,199,1759,541],
+   'zampa-dietro':[565,583,268,290],'zampa-dietro2':[819,648,125,146],'zampa-avanti':[979,608,354,267],braccio:[1338,558,331,175]},
+  legs:{'zampa-dietro2':[[890,660],Math.PI],'braccio':[[1360,585],0],'zampa-dietro':[[790,610],0],'zampa-avanti':[[1010,620],Math.PI]},
   wingNear:[933,370],wingFar:[1153,300],mouth:[1663,470],eye:[1643,410]
  },
  vespa:{
   kind:'foresta',dir:'boss-immagini/vespa/',S:.19,O:[895,560],lift:150,
-  parts:{ali:[20,10,878,413],addome:[157,447,559,554],corpo:[89,10,1430,854]},
+  parts:{ali:[20,10,878,413],addome:[157,447,559,554],corpo:[89,10,1430,672],zampa1:[700,573,114,285],zampa2:[814,583,156,281],zampa3:[928,613,155,218],zampa4:[1015,623,143,168]},
+  legs:[[780,590],[900,600],[960,640],[1060,630]],
   waist:[695,535],sting:[163,1000],wing:[800,360],eyes:[[1175,500],[1275,520]]
  }
 };
@@ -82,9 +87,13 @@ function bScorpioneImg(c,B,now){
   const [sx,sy]=biP(D,...D.stingTip),heat=st==='raffica'?Math.min(1,t/.45):.3+.2*Math.sin(now*6);
   c.save();c.globalCompositeOperation='lighter';biGlow(c,sx,sy,8+heat*12,'255,50,40',.3+heat*.6);if(rec>0)biGlow(c,sx+4,sy,20+rec*16,'255,140,90',rec);c.restore();
  });
- biAround(c,N,D.jawBack,o*.32,()=>biPart(c,N,'chela-dietro'));
+ // zampe che camminano a passo alternato, chele che si muovono avanti e indietro
+ const walk=st==='passi'||(st==='carica'&&t>=.8)?(B.legT||0)*3+now*(st==='carica'?18:0):now*1.2,stepA=st==='passi'||st==='carica'?.14:.04;
+ const arm=st==='carica'&&t<.8?-.12*biEase(t/.8):st==='raffica'?.05:.06*Math.sin(now*1.8);
+ biAround(c,N,D.armBack,-arm+.05*Math.sin(now*1.5+1),()=>{biPart(c,N,'braccio-dietro');biAround(c,N,D.jawBack,o*.32,()=>biPart(c,N,'chela-dietro'))});
+ D.legs.forEach((h,i)=>biAround(c,N,h,stepA*Math.sin(walk*2+i*2.1),()=>biPart(c,N,'zampa'+(i+1))));
  biPart(c,N,'corpo');
- biAround(c,N,D.jawFront,o*.3,()=>biPart(c,N,'chela-avanti'));
+ biAround(c,N,D.armFront,arm,()=>{biPart(c,N,'braccio-avanti');biAround(c,N,D.jawFront,o*.3,()=>biPart(c,N,'chela-avanti'))});
  c.save();c.globalCompositeOperation='lighter';
  const eye=st==='carica'&&t<.8?(Math.floor(now*16)%2?1.6:.6):.55+.25*Math.sin(now*4)+(B.rage?.4:0);
  for(const [x,y] of D.eyes){const [ex,ey]=biP(D,x,y);biGlow(c,ex,ey,7,'255,40,30',eye*.6)}
@@ -130,7 +139,7 @@ function biCentRaise(B,now){
 }
 function bMillepiediImg(c,B,now){
  if(!biOrig.ready.millepiedi)return biOrig.draw.mare&&biOrig.draw.mare(c,B,now);
- const N='millepiedi',D=BI[N],st=B.state,t=B.t||0,img=biOrig.img[N].corpo,[px,py,pw,ph]=D.parts.corpo;
+ const N='millepiedi',D=BI[N],st=B.state,t=B.t||0,img=biOrig.img[N].corpo,legs=biOrig.img[N].zampe,[px,py,pw,ph]=D.parts.corpo;
  const iw=img.naturalWidth||img.width||1,ih=img.naturalHeight||img.height||1,kx=iw/pw,ky=ih/ph;
  let speed=st==='passi'?9:st==='carica'&&t>=.8?22:3,amp=st==='passi'?4:st==='carica'&&t>=.8?6:1.5,hump=0;
  if(st==='onda'){hump=B.shots===2?0:22*biEase(t/.5)}
@@ -139,6 +148,9 @@ function bMillepiediImg(c,B,now){
  const off=xn=>Math.sin(now*speed-xn*12)*amp-raise*biEase((xn-.5)/.5)-hump*Math.sin(Math.PI*xn);
  for(let i=0;i<n;i++){
   const xn=(i+.5)/n,sx=i*sw,[dx,dy]=biP(D,px+sx,py);
+  // zampe: avanti e indietro a onda, una sì e una no
+  const st2=Math.sin(now*(speed?speed*1.6:0)-xn*70),lx=st2*(amp?2.5:0)+(amp?0:.6*Math.sin(now*3-xn*70)),ly=-Math.max(0,Math.cos(now*speed*1.6-xn*70))*(amp>2?2.5:.8);
+  c.drawImage(legs,sx*kx,0,(sw+2)*kx,ih,dx+lx,dy+off(xn)+ly,(sw+2)*D.S,ph*D.S);
   c.drawImage(img,sx*kx,0,(sw+2)*kx,ih,dx,dy+off(xn),(sw+2)*D.S,ph*D.S);
  }
  c.save();c.globalCompositeOperation='lighter';
@@ -167,6 +179,14 @@ function bDragoImg(c,B,now){
  const wing=(name,pt,sign)=>biAround(c,N,pt,0,()=>{const [x,y]=biP(D,...pt);c.translate(x,y);c.rotate(sign*amp*beat);c.scale(1,1-.22*amp*(1+beat));c.translate(-x,-y);biPart(c,N,name)});
  c.save();c.translate(0,bob+jump);c.rotate(lean);
  wing('ala-lontana',D.wingFar,1);
+ // zampe a passo alternato (diagonali insieme), il braccio davanti graffia l'aria
+ const walking=st==='passi'||(st==='carica'&&t>=.8),ph=walking?(B.legT||0)*3+(st==='carica'?now*16:0):now*1.3,la=walking?.16:.035;
+ for(const [n,[pt,off]] of Object.entries(D.legs)){
+  let a=la*Math.sin(ph+off);
+  if(n==='braccio'&&(st==='raffica'||st==='ruggito'))a=-.25+.08*Math.sin(now*10);
+  if(st==='onda'&&B.shots!==2)a=-.2*biEase(t/.5);
+  biAround(c,N,pt,a,()=>biPart(c,N,n));
+ }
  biPart(c,N,'corpo');
  wing('ala-vicina',D.wingNear,-1);
  // fuoco dalla bocca verso il pilota
@@ -213,6 +233,9 @@ function bVespaImg(c,B,now){
  // piegato in avanti l'addome passa davanti al corpo
  const front=curl<-1.2;
  if(!front)abdomen();
+ // zampe che penzolano e scalciano in volo
+ const kick=st==='carica'&&t>=.8?.35:st==='onda'&&B.shots!==2?.25:.1;
+ D.legs.forEach((h,i)=>biAround(c,N,h,kick*Math.sin(now*(4+i*.7)+i*1.7)+(st==='carica'&&t>=.8?-.3:0),()=>biPart(c,N,'zampa'+(i+1))));
  biPart(c,N,'corpo');
  if(front)abdomen();
  c.save();c.globalCompositeOperation='lighter';

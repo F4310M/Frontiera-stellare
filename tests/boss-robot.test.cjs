@@ -13,7 +13,7 @@ const run=s=>vm.runInContext('{'+s+'\n}',sandbox),val=s=>vm.runInContext(s,sandb
 run('soundEnabled=false');
 
 // Pezzi dell'immagine: esistono tutti su disco
-assert.equal(images.length,5,'cinque pezzi caricati');
+assert.equal(images.length,7,'sette pezzi caricati');
 for(const im of images)assert(fs.existsSync(path.join(dist,im.src)),'manca '+im.src);
 assert.equal(val('BOSS_DRAW.omega'),val('bRobot'));
 // Finché le immagini non sono pronte resta il disegno vecchio
@@ -25,7 +25,7 @@ console.log('PASS: immagini del robot');
 // Ogni stato si disegna con i pezzi
 for(const st of ['pausa','passi','raffica','carica','artiglio','onda','missili','stordito','ruggito','distrutto'])for(const t of [0,.3,.7,1.1]){
  drawn.length=0;run(`bDrawBody(ctx,{x:0,y:0,face:-1,aim:Math.PI,legT:1,state:"${st}",t:${t},hp:1,max:2,hit:0,rage:${t>1},kind:"omega",charge:0,shots:${st==='raffica'?1:st==='onda'?2:0},rbLand:0},1)`);
- assert(drawn.length>=5,`stato ${st}: disegna tutti i pezzi`);
+ assert(drawn.length>=7,`stato ${st}: disegna tutti i pezzi`);
 }
 console.log('PASS: animazioni');
 

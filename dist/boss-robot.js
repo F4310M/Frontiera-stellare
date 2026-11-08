@@ -9,8 +9,9 @@
 
 const RB={
  S:.27*.85,O:[605,1010],          // scala (unità di gioco per pixel dell'immagine originale) e punto tra i piedi
- parts:{corpo:[177,0,1077,1017],braccio:[123,236,325,236],dita:[95,465,195,246],pollice:[271,467,100,234],cannone:[916,321,556,247]},
+ parts:{corpo:[331,0,923,750],'gamba-dietro':[177,453,491,564],'gamba-avanti':[688,498,419,485],braccio:[123,236,325,236],dita:[95,465,195,246],pollice:[271,467,100,234],cannone:[916,321,556,247]},
  shoulder:[415,275],wrist:[255,462],thumb:[312,492],elbow:[952,428],muzzle:[1455,445],lens:[1398,445],
+ hips:{'gamba-dietro':[600,500],'gamba-avanti':[800,540]},
  eyes:[848,200],chest:[850,352],antenne:[[588,40],[716,46]],
  gunRest:Math.atan2(445-428,1455-952),
  claw:{wind:.55,swipe:.8,end:1.3,reach:196,dmg:28}
@@ -105,6 +106,12 @@ function bRobot(c,B,now){
  c.translate(0,p.bob);c.rotate(p.lean);
  // braccio dell'artiglio dietro al corpo, davanti quando colpisce
  if(!p.front)rbArm(c,p);
+ // gambe: passo alternato quando cammina, piccolo dondolio da fermo
+ const walking=B.state==='passi'||(B.state==='carica'&&B.t>=.8),ph=walking?(B.legT||0)*2:now*1.4;
+ for(const [n,hip] of Object.entries(RB.hips)){
+  const k=n==='gamba-dietro'?0:Math.PI,sw=Math.sin(ph+k),a=(walking?.09:.02)*sw,lift=walking?Math.max(0,Math.cos(ph+k))*6:0;
+  c.save();c.translate(0,-lift);rbAround(c,hip,a,()=>rbPart(c,n));c.restore();
+ }
  rbPart(c,'corpo');
  // cannone: segue la mira e rincula
  const rec=bRecoilSafe(B),aim=(typeof bArmAngle==='function'?bArmAngle(B):0)-RB.gunRest;

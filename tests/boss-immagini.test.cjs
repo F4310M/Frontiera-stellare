@@ -12,7 +12,7 @@ for(const f of ['icone.js','game.js','pianeta.js','fase2.js','grafica2.js','boss
 const run=s=>vm.runInContext('{'+s+'\n}',sandbox),val=s=>vm.runInContext(s,sandbox);
 run('soundEnabled=false');
 
-assert.equal(images.length,12,'millepiedi, scorpione (4), sfera, vespa (3), drago (3)');
+assert.equal(images.length,26,'millepiedi (2), scorpione (9), sfera, vespa (7), drago (7)');
 for(const im of images)assert(fs.existsSync(path.join(dist,im.src)),'manca '+im.src);
 assert.equal(val('pfBossInfo(planets[0]).id'),'mare');assert.equal(val('pfBossInfo(planets[2]).id'),'tempesta');
 assert.equal(val('planets[0].name'),'LYRA');assert.equal(val('planets[1].name'),'VESPER');assert.equal(val('pfBossInfo(planets[1]).id'),'deserto');assert.equal(val('planets[2].name'),'NIMBUS');assert.equal(val('planets[3].name'),'KHEPRI');assert.equal(val('pfBossInfo(planets[3]).id'),'foresta');
@@ -21,7 +21,7 @@ const B=k=>`{x:0,y:0,face:-1,aim:Math.PI,legT:1,state:S,t:T,hp:1,max:2,hit:0,rag
 drawn.length=0;run(`const S="pausa",T=0;bDrawBody(ctx,${B('mare')},1);bDrawBody(ctx,${B('tempesta')},1);bDrawBody(ctx,${B('foresta')},1);bDrawBody(ctx,${B('deserto')},1);bDrawBody(ctx,${B('lava')},1)`);assert.equal(drawn.length,0);
 images.forEach(im=>im.onload());
 for(const k of ['mare','deserto','tempesta','foresta','lava'])for(const st of ['pausa','passi','raffica','carica','onda','stordito','ruggito','distrutto'])for(const t of [0,.5,1.2]){
- drawn.length=0;run(`const S="${st}",T=${t};bDrawBody(ctx,${B(k)},1)`);assert(drawn.length>=({mare:20,deserto:4,tempesta:1,foresta:4,lava:3})[k],`${k} ${st}`);
+ drawn.length=0;run(`const S="${st}",T=${t};bDrawBody(ctx,${B(k)},1)`);assert(drawn.length>=({mare:40,deserto:9,tempesta:1,foresta:7,lava:7})[k],`${k} ${st}`);
 }
 console.log('PASS: disegni');
 assert.equal(val('PF_BOSS.foresta.gun.len'),Math.round(Math.hypot(532,465)*.19),'il pungiglione della vespa');
