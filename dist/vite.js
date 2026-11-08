@@ -64,9 +64,9 @@ viteHud=function(){
   const m=$('mapVite');
   if(m){
    const f=vtFoto();
-   if(m.dataset.v!==String(vite)||m.dataset.f!==f){
+   if(m.dataset.v!==String(vite)||m.dataset.f!==f||!m.querySelector('.pb-val')){
     m.dataset.v=String(vite);m.dataset.f=f;
-    m.innerHTML='<small>VITE</small><img alt=""><b>× '+vite+'</b>';m.querySelector('img').src=f;
+    m.innerHTML='<small>VITE</small><span class="pb-val"><img alt=""><b>× '+vite+'</b></span>';m.querySelector('img').src=f;
    }
   }
   vtUpdateHud();
@@ -82,6 +82,30 @@ function vtGroupPilot(){
  chip.parentNode.insertBefore(box,chip);
  box.appendChild(chip);box.appendChild(cred);
  cred.removeAttribute('title');
+ // tre colonne uguali: etichetta sopra, valore sotto (CREDITI / VITE / PUNTI)
+ const mc=$('mapCredits'),lab=mc&&mc.previousElementSibling;
+ if(mc&&cred.insertBefore){
+  const cell=document.createElement('div');cell.className='pb-cell';cred.insertBefore(cell,cred.firstChild);
+  if(lab&&lab.tagName==='SMALL')cell.appendChild(lab);cell.appendChild(mc);
+  const v=$('mapVite'),sc=$('mapScore');if(v)cred.appendChild(v);if(sc)cred.appendChild(sc);
+ }
+}
+// Il pulsante CLASSIFICA in alto sparisce: prende il posto di VEDI TUTTA sotto la classifica della mappa.
+function vtBoardButton(){
+ const b=$('mapBoardAll');if(!b||!b.dataset||b.dataset.vt)return;
+ b.dataset.vt='1';b.classList.add('vt-board');
+ const I=n=>typeof ico==='function'?ico(n):'';
+ b.innerHTML='<span class="vt-board-l"><b>'+I('trophy')+'</b><span>CLASSIFICA</span></span><b>'+I('arrow-right')+'</b>';
+ b.setAttribute('aria-label','Apri la classifica');
+}
+// PUNTI: anche qui etichetta sopra e numero sotto
+if(typeof scoreHud==='function'){
+ const vtScoreHud=scoreHud;
+ scoreHud=function(){
+  const r=vtScoreHud.apply(this,arguments);
+  try{const m=$('mapScore');if(m&&typeof score!=='undefined'){const t=scoreFmt(score);if(m.dataset.v!==t){m.dataset.v=t;m.innerHTML='<small>PUNTI</small><b>'+t+'</b>'}}}catch(e){}
+  return r;
+ };
 }
 
 // ---------------------------------------------------------------- 3) spazio: la nave di riserva riparte un po' prima
@@ -244,6 +268,7 @@ update=function(dt){
   vtUpdateHud();
   // foto del profilo cambiata: si aggiorna anche nella mappa
   const m=$('mapVite');if(m&&m.dataset&&m.dataset.f!==vtFoto())viteHud();
+  vtBoardButton();
  }catch(e){console.error(e)}
  return r;
 };
@@ -262,15 +287,23 @@ try{
    'body.lives-on .spec-badge{top:136px}'+
    '#viteHud{display:none!important}'+
    // riquadro del pilota nella mappa: foto, nome, crediti, vite e punti insieme
-   '.pilot-box{display:flex;align-items:stretch;border:1px solid rgba(255,207,74,.35);border-radius:8px;background:linear-gradient(90deg,rgba(6,24,36,.85),rgba(30,22,6,.6));box-shadow:0 0 18px rgba(255,190,80,.08);overflow:hidden}'+
-   '.pilot-box .prof-chip{height:auto!important;border:0!important;border-right:1px solid rgba(255,207,74,.22)!important;background:transparent!important;padding:6px 14px 6px 8px!important;flex-direction:column;justify-content:center;gap:4px!important}'+
-   '.pilot-box .prof-chip img{width:42px;height:42px;border:2px solid rgba(140,233,236,.7)}'+
-   '.pilot-box .prof-chip span{display:block!important;font-size:9px;max-width:90px;text-align:center;color:#eafcff}'+
-   '.pilot-box .credits-chip{border:0!important;border-radius:0!important;background:transparent!important;padding:5px 14px!important;justify-content:center;gap:1px;height:auto!important}'+
-   '#mapVite{display:flex!important;align-items:center;gap:5px;justify-content:flex-end}#mapVite small{font:8px "Chakra Petch";letter-spacing:2px;color:var(--muted)}'+
-   '#mapVite img{width:18px;height:18px;border-radius:50%;object-fit:cover;border:1px solid #8cf2ff}#mapVite b{color:#ff9aa6;font:700 13px "Chakra Petch";white-space:nowrap}'+
-   '@media(max-width:600px){.pilot-box .prof-chip{padding:4px 6px!important}.pilot-box .credits-chip{padding:3px 8px!important}#mapVite small,#mapScore{display:none!important}}'+
-   '@media(max-width:850px){.pilot-box .credits-chip{display:flex!important}.pilot-box .prof-chip span{display:none!important}.pilot-box .prof-chip img{width:30px;height:30px}}'+
+   '.pilot-box{display:flex;align-items:center;height:46px;border:1px solid rgba(255,207,74,.35);border-radius:8px;background:linear-gradient(90deg,rgba(6,24,36,.85),rgba(30,22,6,.6));box-shadow:0 0 18px rgba(255,190,80,.08);overflow:hidden}'+
+   '.pilot-box .prof-chip{height:100%!important;border:0!important;border-right:1px solid rgba(255,207,74,.22)!important;background:transparent!important;padding:0 12px 0 7px!important;flex-direction:row;align-items:center;gap:8px!important}'+
+   '.pilot-box .prof-chip img{width:32px;height:32px;border:2px solid rgba(140,233,236,.7)}'+
+   '.pilot-box .prof-chip span{display:block!important;font-size:10px;max-width:90px;color:#eafcff}'+
+   '.pilot-box .credits-chip{display:flex!important;flex-direction:row!important;align-items:stretch!important;border:0!important;border-radius:0!important;background:transparent!important;padding:0!important;gap:0!important;height:100%!important}'+
+   '.pilot-box .pb-cell,#mapVite,#mapScore{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:74px;padding:0 12px!important;margin:0!important;border-left:1px solid rgba(255,207,74,.14)}'+
+   '.pilot-box .pb-cell:first-child{border-left:0}'+
+   '.pilot-box .credits-chip small{display:block!important;font:600 8px "Chakra Petch";letter-spacing:2px;color:var(--muted);line-height:1}'+
+   '.pilot-box .credits-chip b{display:flex;align-items:center;gap:5px;font:700 14px "Chakra Petch"!important;letter-spacing:1px;line-height:16px;white-space:nowrap}'+
+   '#mapCredits{color:#ffd36b}#mapScore b{color:#9fefff}#mapVite b{color:#ff9aa6}'+
+   '#mapVite .pb-val{display:flex;align-items:center;gap:5px;height:16px}#mapVite img{width:16px;height:16px;border-radius:50%;object-fit:cover;border:1px solid #8cf2ff}'+
+   '#boardBtn{display:none!important}'+
+   '.map-board-all.vt-board{border-color:rgba(255,207,74,.5);background:linear-gradient(90deg,rgba(60,42,6,.55),rgba(30,22,6,.35));color:#ffd76a}'+
+   '.map-board-all.vt-board:hover{border-color:#ffd76a;background:rgba(255,207,74,.18)}'+
+   '.vt-board .vt-board-l{display:inline-flex;align-items:center;gap:8px}.vt-board .vt-board-l b{display:inline-flex}.vt-board .ico{width:16px;height:16px}'+
+   '@media(max-width:850px){.pilot-box .prof-chip span{display:none!important}.pilot-box .pb-cell,#mapVite,#mapScore{min-width:0;padding:0 8px!important}}'+
+   '@media(max-width:600px){.pilot-box{height:38px}.pilot-box .prof-chip img{width:26px;height:26px}#mapScore{display:none!important}.pilot-box .credits-chip b{font-size:12px!important}}'+
    'body.touch .lives-hud{top:64px;left:12px;padding:2px 9px 2px 2px}body.touch .lives-hud img{width:24px;height:24px}body.touch .lives-hud strong{font-size:16px}';
   document.head.appendChild(st);
  }
@@ -285,4 +318,4 @@ if(typeof I18N_ROWS!=='undefined'){
  if(typeof i18nBuild==='function')i18nBuild();
 }
 
-try{vtGroupPilot();viteHud()}catch(e){console.error(e)}
+try{viteHud();if(typeof scoreHud==='function')scoreHud();vtGroupPilot();viteHud();vtBoardButton()}catch(e){console.error(e)}
