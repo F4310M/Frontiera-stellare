@@ -5,7 +5,7 @@
 // Ogni pilota scrive solo il proprio stato; chi viene colpito decide il danno sulla propria nave
 // e, se muore, dice chi lo ha abbattuto. L'host (il primo entrato) guida le fasi della partita.
 const ARENA={R:2200,max:6,dur:300,win:10,respawn:3,hz:12,hp:100,dmg:10,bulletSpeed:1050,bulletLife:1.05,
- fireCd:.17,stale:7,rocks:16,inv:2,countdown:4,endTime:12,shipR:16,
+ fireCd:.17,maxDmg:25,stale:7,rocks:16,inv:2,countdown:4,endTime:12,shipR:16,
  colors:['#51e6ff','#ffb340','#ff5268','#9dff6a','#c38bff','#ff7ad9'],
  quick:['ALFA','BETA','VEGA','NOVA','ORSA','LIRA','SOLE','LUNA']};
 
@@ -47,8 +47,11 @@ function arApply(tree,path,data,patch){
 function arList(v){return Array.isArray(v)?v:(v&&typeof v==='object'?Object.values(v):[])}
 
 // ---------------------------------------------------------------- partita (un'istanza per pilota)
-function arNew(pid,name,avatar){
- return {pid,room:'',rocks:[],time:0,phase:'L',rt:0,isHost:true,wantStart:false,
+// potenziamenti comprati nel mercato che valgono anche in arena: laser, barriera, motori, doppio laser
+function arUpgrades(get){const u={};for(const k of ['laser','shield','speed','twin'])u[k]=Math.max(0,Math.min(3,Math.floor(+(get?get(k):0)||0)));return u}
+function arDamage(up){return Math.round(ARENA.dmg*(1+.5*(up&&up.laser||0))*(up&&up.twin?.65:1))}
+function arNew(pid,name,avatar,up){
+ return {pid,up:arUpgrades(k=>up&&up[k]),room:'',rocks:[],time:0,phase:'L',rt:0,isHost:true,wantStart:false,
   me:{n:arCleanName(name),a:avatar||'',j:Date.now(),x:0,y:0,vx:0,vy:0,r:0,f:0,s:0,h:ARENA.hp,sd:0,bo:0,iv:0,al:1,k:0,d:0,dz:0,by:'',sh:[]},
   boost:100,shield:100,inv:0,respawnT:0,fireCd:0,shotSeq:0,shots:[],sendT:0,
   others:{},bullets:[],parts:[],events:[],drop:[]};
@@ -109,7 +112,8 @@ function arOnState(g,tree,changed){
   // colpi nuovi
   const col=arColor(g,pid);
   for(const raw of arList(s.sh)){const sh=arList(raw);const i=+sh[0]||0;if(i<=o.lastShot)continue;o.lastShot=i;
-   g.bullets.push({x:+sh[1],y:+sh[2],vx:+sh[3],vy:+sh[4],o:pid,life:ARENA.bulletLife,c:col})}
+   const dmg=Math.max(1,Math.min(ARENA.maxDmg,+sh[5]||ARENA.dmg));// danno dichiarato da chi spara, con un tetto
+   g.bullets.push({x:+sh[1],y:+sh[2],vx:+sh[3],vy:+sh[4],dmg,o:pid,life:ARENA.bulletLife,c:col,big:dmg>ARENA.dmg*1.2})}
   // abbattimenti: chi è morto dice chi lo ha colpito
   const dz=+s.dz||0;
   if(dz>o.lastDz){o.lastDz=dz;
@@ -120,10 +124,12 @@ function arOnState(g,tree,changed){
  }
 }
 function arShoot(g){
- const m=g.me,c=Math.cos(m.r),s=Math.sin(m.r);g.shotSeq++;
- const sh=[g.shotSeq,Math.round(m.x+c*24),Math.round(m.y+s*24),Math.round(m.vx*.5+c*ARENA.bulletSpeed),Math.round(m.vy*.5+s*ARENA.bulletSpeed)];
- g.shots.push({t:g.time,sh});
- g.bullets.push({x:sh[1],y:sh[2],vx:sh[3],vy:sh[4],o:g.pid,life:ARENA.bulletLife,c:arColor(g,g.pid)});
+ const m=g.me,c=Math.cos(m.r),s=Math.sin(m.r),dmg=arDamage(g.up),offs=g.up.twin?[-7,7]:[0];
+ for(const o of offs){g.shotSeq++;
+  const sh=[g.shotSeq,Math.round(m.x+c*24-s*o),Math.round(m.y+s*24+c*o),Math.round(m.vx*.5+c*ARENA.bulletSpeed),Math.round(m.vy*.5+s*ARENA.bulletSpeed),dmg];
+  g.shots.push({t:g.time,sh});
+  g.bullets.push({x:sh[1],y:sh[2],vx:sh[3],vy:sh[4],dmg,o:g.pid,life:ARENA.bulletLife,c:arColor(g,g.pid),big:g.up.laser});
+ }
  g.fireCd=ARENA.fireCd;g.events.push({type:'shot'});
 }
 function arPhysics(g,dt,inp){
@@ -138,7 +144,7 @@ function arPhysics(g,dt,inp){
  if(inp.world&&!locked){fx=0;sx=0}
  const boosting=!locked&&inp.boost&&g.boost>5&&(fx>0||inp.world&&(inp.wx||inp.wy));
  g.boost=Math.max(0,Math.min(100,g.boost+(boosting?-38:16)*dt));
- const acc=boosting?950:520,max=boosting?620:340;
+ const sp1=1+.12*(g.up.speed||0),acc=(boosting?950:520)*sp1,max=(boosting?620:340)*sp1;
  if(inp.world&&!locked){m.vx+=inp.wx*acc*dt;m.vy+=inp.wy*acc*dt}
  else{m.vx+=(c*fx-s*sx*.8)*acc*dt;m.vy+=(s*fx+c*sx*.8)*acc*dt}
  const sp=Math.hypot(m.vx,m.vy);if(sp>max){const k=max/sp;m.vx*=k+(1-k)*.85;m.vy*=k+(1-k)*.85}
@@ -147,7 +153,7 @@ function arPhysics(g,dt,inp){
  m.f=fx>0||(inp.world&&(inp.wx||inp.wy))?1:fx<0?-1:0;m.s=sx>0?1:sx<0?-1:0;m.bo=boosting?1:0;
  // barriera
  const shieldOn=!locked&&inp.shield&&g.shield>2;
- g.shield=Math.max(0,Math.min(100,g.shield+(shieldOn?-32:12)*dt));m.sd=shieldOn?1:0;
+ g.shield=Math.max(0,Math.min(100,g.shield+(shieldOn?-32/(1+.35*(g.up.shield||0)):12)*dt));m.sd=shieldOn?1:0;
  // asteroidi: rimbalzo
  for(const o of g.rocks){const dx=m.x-o.x,dy=m.y-o.y,d=Math.hypot(dx,dy),min=o.r+ARENA.shipR;
   if(d<min&&d>0){const nx=dx/d,ny=dy/d;m.x=o.x+nx*min;m.y=o.y+ny*min;const vn=m.vx*nx+m.vy*ny;if(vn<0){m.vx-=1.6*vn*nx;m.vy-=1.6*vn*ny}}}
@@ -183,7 +189,7 @@ function arTick(g,dt,inp){
   b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
   if(g.rocks.some(o=>Math.hypot(o.x-b.x,o.y-b.y)<o.r)){b.life=0;arBlast(g,b.x,b.y,'#9aa7b8',4,.35);continue}
   if(b.o!==g.pid&&g.me.al&&Math.hypot(g.me.x-b.x,g.me.y-b.y)<ARENA.shipR+3){
-   b.life=0;arBlast(g,b.x,b.y,b.c,6,.4);if(arHurt(g,ARENA.dmg,b.o))g.events.push({type:'hit'});continue;
+   b.life=0;arBlast(g,b.x,b.y,b.c,6,.4);if(arHurt(g,b.dmg||ARENA.dmg,b.o))g.events.push({type:'hit'});continue;
   }
   for(const pid in g.others){if(pid===b.o)continue;const o=g.others[pid];
    if(o.s.al&&!o.s.iv&&Math.hypot(o.x-b.x,o.y-b.y)<ARENA.shipR+3){b.life=0;arBlast(g,b.x,b.y,b.c,6,.4);break}}
@@ -281,6 +287,7 @@ function arBuildUI(){
   <h2>ARENA SPAZIALE</h2>
   <p class="ar-desc">Tutti contro tutti, fino a 6 piloti. Vince chi arriva per primo a 10 abbattimenti o chi ne ha di più dopo 5 minuti.</p>
   <p class="ar-pilot"><span>PILOTA</span> <b id="arName"></b></p>
+  <p class="ar-note ar-up">I tuoi potenziamenti del mercato valgono anche qui: laser, barriera, motori e doppio laser.</p>
   <button id="arQuick" class="launch-btn"><span>PARTITA VELOCE</span><b>${AR_ICO('play')}</b></button>
   <button id="arCreate" class="launch-btn ar-alt"><span>CREA UNA STANZA</span><b>${AR_ICO('user')}</b></button>
   <div class="ar-join"><input id="arCode" maxlength="4" placeholder="CODICE" aria-label="Codice della stanza" autocomplete="off" spellcheck="false"><button id="arJoinBtn" class="settings-btn"><span>ENTRA</span></button></div>
@@ -363,7 +370,7 @@ async function arJoin(code,checked=false){
  const url=arDbUrl();
  try{
   if(url&&!checked){const n=await arRoomCount(url,code);if(n>=ARENA.max){arUI.busy=false;return arErr(AR_T('STANZA PIENA'))}}
-  const p=arProfile(),pid=arPid(),g=arNew(pid,p.nome,p.mini);g.room=code;g.rocks=arRocks(code);arSpawn(g);
+  const p=arProfile(),pid=arPid(),g=arNew(pid,p.nome,p.mini,arUpgrades(typeof upg==='function'?upg:null));g.room=code;g.rocks=arRocks(code);arSpawn(g);
   const net=url?arNetFirebase(url,code,pid,(t,ch)=>{if(ar===g)arOnState(g,t,ch)}):arNetLocal(code,pid,(t,ch)=>{if(ar===g)arOnState(g,t,ch)});
   g.net=net;ar=g;
   await net.join(arFull(g));
@@ -500,7 +507,7 @@ function arDraw(){
  const sp=arRockSprites(g);g.rocks.forEach((o,i)=>{const s=sp[i];if(s)ctx.drawImage(s.c,o.x-s.s/2,o.y-s.s/2);else{ctx.fillStyle='#555a66';ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,6.28);ctx.fill()}});
  // colpi
  ctx.lineCap='round';
- for(const b of g.bullets){const l=Math.hypot(b.vx,b.vy)||1;ctx.strokeStyle=b.c;ctx.globalAlpha=Math.min(1,b.life*3);ctx.lineWidth=3.2;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x-b.vx/l*22,b.y-b.vy/l*22);ctx.stroke();ctx.strokeStyle='#fff';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x-b.vx/l*12,b.y-b.vy/l*12);ctx.stroke()}
+ for(const b of g.bullets){const l=Math.hypot(b.vx,b.vy)||1;ctx.strokeStyle=b.c;ctx.globalAlpha=Math.min(1,b.life*3);ctx.lineWidth=b.big?5:3.2;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x-b.vx/l*22,b.y-b.vy/l*22);ctx.stroke();ctx.strokeStyle='#fff';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x-b.vx/l*12,b.y-b.vy/l*12);ctx.stroke()}
  ctx.globalAlpha=1;
  // altri piloti
  ctx.textAlign='center';ctx.font="600 12px 'Chakra Petch',sans-serif";
@@ -558,6 +565,7 @@ if(typeof I18N_ROWS!=='undefined'){
   ["SFIDA ONLINE · DEATHMATCH","ONLINE BATTLE · DEATHMATCH","DÉFI EN LIGNE · DEATHMATCH","DESAFÍO ONLINE · DEATHMATCH","ОНЛАЙН-БИТВА · ДЕЗМАТЧ","在线对战 · 死亡竞赛","オンライン対戦 · デスマッチ"],
   ["ARENA SPAZIALE","SPACE ARENA","ARÈNE SPATIALE","ARENA ESPACIAL","КОСМИЧЕСКАЯ АРЕНА","太空竞技场","宇宙アリーナ"],
   ["Tutti contro tutti, fino a 6 piloti. Vince chi arriva per primo a 10 abbattimenti o chi ne ha di più dopo 5 minuti.","Free for all, up to 6 pilots. The first to reach 10 kills wins, or whoever has the most after 5 minutes.","Chacun pour soi, jusqu’à 6 pilotes. Le premier à 10 victoires gagne, ou celui qui en a le plus après 5 minutes.","Todos contra todos, hasta 6 pilotos. Gana el primero en llegar a 10 derribos o quien tenga más tras 5 minutos.","Каждый сам за себя, до 6 пилотов. Побеждает первый, кто сбьёт 10 врагов, или тот, у кого больше побед через 5 минут.","混战模式，最多 6 名飞行员。率先击落 10 架者获胜，或 5 分钟后击落最多者获胜。","最大6人のバトルロイヤル。先に10機撃墜するか、5分後に撃墜数が最も多いパイロットの勝利。"],
+  ["I tuoi potenziamenti del mercato valgono anche qui: laser, barriera, motori e doppio laser.","Your market upgrades work here too: laser, barrier, engines and twin laser.","Tes améliorations du marché valent aussi ici : laser, barrière, moteurs et double laser.","Tus mejoras del mercado también valen aquí: láser, barrera, motores y doble láser.","Улучшения из магазина действуют и здесь: лазер, барьер, двигатели и двойной лазер.","你在商店购买的升级在这里同样有效：激光、护盾、引擎和双激光。","マーケットで買った強化はここでも有効：レーザー、バリア、エンジン、ダブルレーザー。"],
   ["PILOTA","PILOT","PILOTE","PILOTO","ПИЛОТ","飞行员","パイロット"],
   ["PARTITA VELOCE","QUICK MATCH","PARTIE RAPIDE","PARTIDA RÁPIDA","БЫСТРАЯ ИГРА","快速匹配","クイックマッチ"],
   ["CREA UNA STANZA","CREATE A ROOM","CRÉER UN SALON","CREAR UNA SALA","СОЗДАТЬ КОМНАТУ","创建房间","ルームを作成"],

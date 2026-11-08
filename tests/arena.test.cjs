@@ -17,7 +17,7 @@ const dist=path.join(__dirname,'..','dist'),src=f=>fs.readFileSync(path.join(dis
 // ---- 2) logica di gioco con due piloti collegati da una rete finta
 const I18N_ROWS=[];
 const sb={I18N_ROWS,console,Math,Date,JSON,Object,Array,Set,String,Number,Promise};vm.createContext(sb);
-vm.runInContext(src('arena.js')+';this.A={arHurt,ARENA,arRocks,arApply,arNew,arTick,arOnState,arHostPid,arScore,arSpawn,arCode,arCleanCode,arCleanName,arFull,arColor};',sb);
+vm.runInContext(src('arena.js')+';this.A={arHurt,arUpgrades,arDamage,arShoot,ARENA,arRocks,arApply,arNew,arTick,arOnState,arHostPid,arScore,arSpawn,arCode,arCleanCode,arCleanName,arFull,arColor};',sb);
 const A=sb.A;
 {
  // stanza: stessi asteroidi per tutti
@@ -77,6 +77,30 @@ const A=sb.A;
  assert.ok(!b.others[a.pid]&&b.isHost,'Luca è il nuovo host');
  assert.strictEqual(JSON.stringify(b.drop),JSON.stringify([a.pid]),'il pilota sparito viene tolto dalla stanza');
  console.log('PASS: partita a due, abbattimenti, fasi, cambio host');
+}
+{
+ // potenziamenti del mercato: danno, doppio laser, motori, barriera
+ assert.strictEqual(A.arDamage(A.arUpgrades(()=>0)),10);
+ assert.strictEqual(A.arDamage(A.arUpgrades(k=>k==='laser'?3:0)),25);
+ assert.ok(A.arDamage(A.arUpgrades(k=>({laser:3,twin:1})[k]||0))<=A.ARENA.maxDmg);
+ assert.strictEqual(A.arUpgrades(k=>k==='laser'?99:0).laser,3,'livello massimo 3');
+ const a=A.arNew('dddddddddd','Forte','',A.arUpgrades(k=>({laser:2,twin:1,speed:3})[k]||0)),b=A.arNew('eeeeeeeeee','Base');
+ a.phase=b.phase='P';a.rt=b.rt=100;a.rocks=b.rocks=[];
+ A.arShoot(a);assert.strictEqual(a.shots.length,2,'doppio laser: due colpi');
+ assert.strictEqual(a.shots[0].sh[5],13,'danno dichiarato nel colpo');
+ const tree={dddddddddd:Object.assign(A.arFull(a),{sh:a.shots.map(s=>s.sh)})};
+ Object.assign(b.me,{x:a.shots[0].sh[1],y:a.shots[0].sh[2]});b.inv=0;
+ A.arOnState(b,tree,new Set(['dddddddddd']));
+ // il colpo nuovo appena visto viene ignorato (era già in volo prima): ne spara altri due
+ A.arShoot(a);tree.dddddddddd.sh=a.shots.map(s=>s.sh);A.arOnState(b,tree,new Set(['dddddddddd']));
+ assert.ok(b.bullets.length>=2&&b.bullets.every(x=>x.dmg===13));
+ // chi dichiara troppo danno viene limitato
+ tree.dddddddddd.sh=[[99,0,0,0,0,999]];A.arOnState(b,tree,new Set(['dddddddddd']));
+ assert.strictEqual(b.bullets[b.bullets.length-1].dmg,A.ARENA.maxDmg);
+ // motori: più veloce
+ const run=g=>{Object.assign(g.me,{x:0,y:0,vx:0,vy:0,r:0});for(let i=0;i<120;i++)A.arTick(g,1/60,{ax:0,ay:1,aim:0,fire:false,boost:false,shield:false});return Math.hypot(g.me.vx,g.me.vy)};
+ assert.ok(run(a)>run(b)*1.2,'i motori potenziati vanno più veloci');
+ console.log('PASS: potenziamenti del mercato');
 }
 {
  // bordo dell'arena: fa male e spinge dentro
