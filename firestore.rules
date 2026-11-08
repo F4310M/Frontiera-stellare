@@ -22,6 +22,47 @@ service cloud.firestore {
         && request.resource.data.h != resource.data.h;
       allow delete: if false;
     }
+    // CLASSIFICA ARENA (sfide online): una riga per pilota.
+    // p (punti) = 100 per abbattimento (b) + 500 per vittoria (v) + 50 per sfida (m).
+    // Si crea con al massimo 5 sfide; ogni aggiornamento aggiunge da 1 a 5 sfide,
+    // con al massimo 15 abbattimenti e 1 vittoria per sfida, e solo con la chiave segreta della riga.
+    match /arena/{id} {
+      allow read: if true;
+      allow create: if arenaValida(request.resource.data)
+        && request.resource.data.m <= 5
+        && request.resource.data.v <= request.resource.data.m
+        && request.resource.data.b <= request.resource.data.m * 15;
+      allow update: if arenaValida(request.resource.data)
+        && request.resource.data.n == resource.data.n
+        && request.resource.data.m > resource.data.m
+        && request.resource.data.m - resource.data.m <= 5
+        && request.resource.data.v >= resource.data.v
+        && request.resource.data.v - resource.data.v <= request.resource.data.m - resource.data.m
+        && request.resource.data.b >= resource.data.b
+        && request.resource.data.b - resource.data.b <= (request.resource.data.m - resource.data.m) * 15
+        && request.resource.data.k is string
+        && request.resource.data.k.size() <= 64
+        && hashing.sha256(request.resource.data.k).toHexString().lower() == resource.data.h
+        && request.resource.data.h != resource.data.h;
+      allow delete: if false;
+    }
+    function arenaValida(r) {
+      return r.keys().hasOnly(['n', 'p', 'v', 'b', 'm', 'a', 'h', 'k'])
+        && r.keys().hasAll(['n', 'p', 'v', 'b', 'm', 'h'])
+        && r.n is string
+        && r.n.size() >= 1
+        && r.n.size() <= 20
+        && r.n.matches('^[\\p{L}\\p{N} ]+$')
+        && r.v is int && r.v >= 0
+        && r.b is int && r.b >= 0
+        && r.m is int && r.m >= 1 && r.m <= 100000
+        && r.p is int && r.p == r.b * 100 + r.v * 500 + r.m * 50
+        && r.h is string && r.h.matches('^[0-9a-f]{64}$')
+        && (!('a' in r)
+            || (r.a is string
+                && r.a.size() <= 8000
+                && r.a.matches('^data:image/jpeg;base64,[A-Za-z0-9+/]+=*$')));
+    }
     function valida(r) {
       return r.keys().hasOnly(['n', 's', 'd', 'a', 'h', 'k'])
         && r.keys().hasAll(['n', 's', 'd'])
