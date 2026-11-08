@@ -30,21 +30,21 @@ for(const st of ['pausa','passi','raffica','carica','artiglio','onda','missili',
 console.log('PASS: animazioni');
 
 // Cannone: la bocca calcolata dal gioco coincide col disegno
-const gun=val('PF_BOSS.omega.gun');assert.equal(gun.x,94);assert.equal(gun.y,157);assert.equal(gun.len,136);
-assert.equal(val('PF_BOSS.omega.h'),270);
+const gun=val('PF_BOSS.omega.gun');assert.equal(gun.x,80);assert.equal(gun.y,134);assert.equal(gun.len,115);
+assert.equal(val('PF_BOSS.omega.h'),230);
 
 // Attacco ARTIGLIO quando il pilota è vicino
 const fi=val('planets.push(FINAL_PLANET),planets.indexOf(FINAL_PLANET)');
 run(`abort();vite=3;selected=${fi};startPlatform()`);for(let i=0;i<210;i++)run('update(1/60)');
-run('pf.phase="missione";pfEnterArena();pf.boss.y=PF_FLOOR;pf.boss.vy=0;pfBossSet(pf.boss,"pausa",2);Object.assign(pf.pilot,{x:pf.boss.x-150,y:PF_FLOOR,hp:100,visible:true,vx:0,vy:0})');
+run('pf.phase="missione";pfEnterArena();pf.boss.y=PF_FLOOR;pf.boss.vy=0;pfBossSet(pf.boss,"pausa",2);Object.assign(pf.pilot,{x:pf.boss.x-130,y:PF_FLOOR,hp:100,visible:true,vx:0,vy:0})');
 run('pfUpdateBoss(1/60)');assert.equal(val('pf.boss.state'),'artiglio','pilota vicino: artiglio');
 assert.equal(val('pf.boss.face'),-1);
 let hp0=val('pf.pilot.hp');
-for(let i=0;i<90&&val('pf.boss.state')==='artiglio';i++)run('pf.pilot.x=pf.boss.x-150;pf.pilot.y=PF_FLOOR;pfUpdateBoss(1/60)');
+for(let i=0;i<90&&val('pf.boss.state')==='artiglio';i++)run('pf.pilot.x=pf.boss.x-130;pf.pilot.y=PF_FLOOR;pfUpdateBoss(1/60)');
 assert(val('pf.pilot.hp')<hp0,'l\'artiglio ferisce');assert(val('pf.pilot.vx')<0,'e spinge via il pilota');
 assert.equal(val('pf.boss.state'),'pausa','poi torna in pausa');
 // lontano: niente artiglio
-run('pfBossSet(pf.boss,"pausa",2);pf.boss.last="";pf.pilot.x=pf.boss.x-700;pfUpdateBoss(1/60)');
+run('pfBossSet(pf.boss,"pausa",2);pf.boss.last="";pf.pilot.x=pf.boss.x-600;pfUpdateBoss(1/60)');
 assert.notEqual(val('pf.boss.state'),'artiglio');
 console.log('PASS: attacco artiglio');
 run("setLang('en')");assert.equal(val("tr('ARTIGLIO · ALLONTANATI!')"),'CLAW STRIKE · GET BACK!');
