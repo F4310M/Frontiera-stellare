@@ -1,8 +1,11 @@
 // Conex — BOSS DALLE IMMAGINI DI FABIO (2026-11-08).
-//  LYRA (mare):     lo scorpione meccanico arrugginito; coda col pungiglione laser che mira e colpisce,
+//  LYRA (mare):     il millepiedi meccanico; il corpo ondeggia a segmenti mentre striscia, per sparare
+//                   alza la testa come un cobra e spara dalle mandibole.
+//  VESPER (deserto): lo scorpione meccanico arrugginito; coda col pungiglione laser che mira e colpisce,
 //                   chele che si aprono e si chiudono. Immagine specchiata: guarda a destra come gli altri boss.
 //  NIMBUS (tempesta): la sfera robotica con l'occhio incandescente; vola, ruota per guardare il pilota
 //                   e spara dall'occhio.
+//  UMBRA (lava):     il drago meccanico; sbatte le ali, sputa fuoco dalla bocca verso il pilota.
 //  KHEPRI (foresta): la vespa meccanica; vola sbattendo le ali, per sparare piega l'addome in avanti
 //                   e punta il pungiglione laser sul pilota.
 // Le immagini (dist/boss-immagini/) sono tagliate in pezzi; le coordinate sono in pixel dell'immagine originale.
@@ -10,15 +13,25 @@
 
 const BI={
  scorpione:{
-  kind:'mare',dir:'boss-immagini/scorpione/',S:.2,O:[775,1010],
+  kind:'deserto',dir:'boss-immagini/scorpione/',S:.2,O:[775,1010],
   parts:{coda:[177,0,765,507],corpo:[11,404,1520,613],'chela-avanti':[811,874,348,138],'chela-dietro':[1278,720,173,185]},
   tailBase:[305,470],stingTip:[935,390],stingBase:[795,210],jawFront:[875,870],jawBack:[1305,700],
   eyes:[[1005,660],[890,630],[1055,625]]
+ },
+ millepiedi:{
+  kind:'mare',dir:'boss-immagini/millepiedi/',S:.2,O:[1075,640],raise:50,strips:42,
+  parts:{corpo:[27,115,2097,529]},
+  mouth:[1986,600],eyes:[[1981,500],[1901,480]]
  },
  sfera:{
   kind:'tempesta',dir:'boss-immagini/sfera/',S:.15,O:[661,584],lift:128,
   parts:{corpo:[22,25,1279,1119]},
   eye:[815,550],pods:[[60,550],[1290,550]]
+ },
+ drago:{
+  kind:'lava',dir:'boss-immagini/drago/',S:.21,O:[885,870],
+  parts:{'ala-lontana':[1020,10,748,302],'ala-vicina':[3,0,953,467],corpo:[10,199,1759,676]},
+  wingNear:[933,370],wingFar:[1153,300],mouth:[1663,470],eye:[1643,410]
  },
  vespa:{
   kind:'foresta',dir:'boss-immagini/vespa/',S:.19,O:[895,560],lift:150,
@@ -49,9 +62,9 @@ function biGlow(c,x,y,r,rgb,a){
  c.fillStyle=g;c.fillRect(x-r,y-r,r*2,r*2);
 }
 
-// ---------------------------------------------------------------- scorpione (LYRA)
+// ---------------------------------------------------------------- scorpione (VESPER)
 function bScorpioneImg(c,B,now){
- if(!biOrig.ready.scorpione)return biOrig.draw.mare&&biOrig.draw.mare(c,B,now);
+ if(!biOrig.ready.scorpione)return biOrig.draw.deserto&&biOrig.draw.deserto(c,B,now);
  const N='scorpione',D=BI[N],st=B.state,t=B.t||0,rec=biRecoil(B);
  let tail=.3*biAim(B)+.04*Math.sin(now*2),open=.25+.2*Math.sin(now*3),bob=Math.sin(now*3)*1.2,lean=0;
  if(st==='passi'){bob=-Math.abs(Math.sin((B.legT||0)*2))*3;open=.15}
@@ -104,6 +117,74 @@ function bSferaImg(c,B,now){
  c.restore();
 }
 
+// ---------------------------------------------------------------- millepiedi (LYRA)
+// L'immagine si disegna a strisce verticali: ogni striscia sale e scende con un'onda che corre
+// dalla coda alla testa, e la parte davanti si alza quando spara.
+function biCentRaise(B,now){
+ const st=B.state,t=B.t||0,D=BI.millepiedi;
+ if(st==='raffica')return D.raise*biEase(t/.45);
+ if(st==='carica'&&t<.8)return 30*biEase(t/.8)+Math.sin(now*30)*2;
+ if(st==='ruggito'||st==='caduta')return 35+Math.sin(now*8)*6;
+ if(st==='missili')return 20;
+ return 4+Math.sin(now*2)*3;
+}
+function bMillepiediImg(c,B,now){
+ if(!biOrig.ready.millepiedi)return biOrig.draw.mare&&biOrig.draw.mare(c,B,now);
+ const N='millepiedi',D=BI[N],st=B.state,t=B.t||0,img=biOrig.img[N].corpo,[px,py,pw,ph]=D.parts.corpo;
+ const iw=img.naturalWidth||img.width||1,ih=img.naturalHeight||img.height||1,kx=iw/pw,ky=ih/ph;
+ let speed=st==='passi'?9:st==='carica'&&t>=.8?22:3,amp=st==='passi'?4:st==='carica'&&t>=.8?6:1.5,hump=0;
+ if(st==='onda'){hump=B.shots===2?0:22*biEase(t/.5)}
+ if(st==='stordito'){speed=0;amp=0}
+ const raise=biCentRaise(B,now),n=D.strips,sw=pw/n;
+ const off=xn=>Math.sin(now*speed-xn*12)*amp-raise*biEase((xn-.5)/.5)-hump*Math.sin(Math.PI*xn);
+ for(let i=0;i<n;i++){
+  const xn=(i+.5)/n,sx=i*sw,[dx,dy]=biP(D,px+sx,py);
+  c.drawImage(img,sx*kx,0,(sw+2)*kx,ih,dx,dy+off(xn),(sw+2)*D.S,ph*D.S);
+ }
+ c.save();c.globalCompositeOperation='lighter';
+ const yHead=off((D.eyes[0][0]-px)/pw),heat=st==='raffica'?Math.min(1,t/.45):0,rec=biRecoil(B);
+ const eye=st==='carica'&&t<.8?(Math.floor(now*16)%2?1.4:.5):.5+.2*Math.sin(now*4)+(B.rage?.4:0);
+ for(const [x,y] of D.eyes){const [ex,ey]=biP(D,x,y);biGlow(c,ex,ey+yHead,9,'255,40,30',eye*.6)}
+ const [mx,my]=biP(D,...D.mouth);
+ if(heat>0)biGlow(c,mx+6,my+yHead,8+heat*12,'255,90,40',.3+heat*.6);
+ if(rec>0)biGlow(c,mx+10,my+yHead,20+rec*16,'255,170,110',rec);
+ c.restore();
+}
+
+// ---------------------------------------------------------------- drago (UMBRA)
+function bDragoImg(c,B,now){
+ if(!biOrig.ready.drago)return biOrig.draw.lava&&biOrig.draw.lava(c,B,now);
+ const N='drago',D=BI[N],st=B.state,t=B.t||0,rec=biRecoil(B);
+ let speed=2.2,amp=.12,bob=Math.sin(now*2)*1.5,lean=0,jump=0;
+ if(st==='passi'){bob=-Math.abs(Math.sin((B.legT||0)*1.5))*4}
+ else if(st==='carica'){if(t<.8){const k=biEase(t/.8);lean=-.06*k;speed=5;amp=.3}else{lean=.06;speed=12;amp=.35}}
+ else if(st==='onda'){if(B.shots===2){speed=3}else{jump=biEase(t/.5)*12;speed=14;amp=.45}}
+ else if(st==='ruggito'||st==='caduta'){speed=9;amp=.4;lean=-.05}
+ else if(st==='stordito'){speed=0;amp=0;lean=.05}
+ else if(st==='distrutto'){speed=1;amp=.05;lean=.08}
+ else if(st==='raffica'){lean=-.03*biEase(t/.45)}
+ const beat=Math.sin(now*speed*Math.PI);
+ const wing=(name,pt,sign)=>biAround(c,N,pt,0,()=>{const [x,y]=biP(D,...pt);c.translate(x,y);c.rotate(sign*amp*beat);c.scale(1,1-.22*amp*(1+beat));c.translate(-x,-y);biPart(c,N,name)});
+ c.save();c.translate(0,bob+jump);c.rotate(lean);
+ wing('ala-lontana',D.wingFar,1);
+ biPart(c,N,'corpo');
+ wing('ala-vicina',D.wingNear,-1);
+ // fuoco dalla bocca verso il pilota
+ const [mx,my]=biP(D,...D.mouth),[ex,ey]=biP(D,...D.eye);
+ c.save();c.globalCompositeOperation='lighter';
+ const eye=st==='carica'&&t<.8?(Math.floor(now*16)%2?1.4:.5):.5+.2*Math.sin(now*4)+(B.rage?.4:0);
+ biGlow(c,ex,ey,8,'255,40,30',eye*.7);
+ const heat=st==='raffica'?Math.min(1,t/.45):.15+.1*Math.sin(now*5);
+ biGlow(c,mx,my,8+heat*16,'255,110,30',.3+heat*.6);
+ if(st==='raffica'){
+  c.save();c.translate(mx,my);c.rotate(biAim(B)+lean*0);
+  const L=40+heat*50+rec*30,g=c.createLinearGradient(0,0,L,0);g.addColorStop(0,'rgba(255,240,200,.95)');g.addColorStop(.35,'rgba(255,150,40,.75)');g.addColorStop(1,'rgba(255,60,20,0)');
+  c.fillStyle=g;c.beginPath();c.moveTo(0,-3);c.quadraticCurveTo(L*.5,-10-6*Math.sin(now*40),L,0);c.quadraticCurveTo(L*.5,10+6*Math.sin(now*37),0,3);c.closePath();c.fill();c.restore();
+ }
+ c.restore();
+ c.restore();
+}
+
 // ---------------------------------------------------------------- vespa (KHEPRI)
 function bVespaImg(c,B,now){
  if(!biOrig.ready.vespa)return biOrig.draw.foresta&&biOrig.draw.foresta(c,B,now);
@@ -142,33 +223,57 @@ function bVespaImg(c,B,now){
 }
 
 if(typeof BOSS_DRAW!=='undefined'){
- biOrig.draw.mare=BOSS_DRAW.mare;biOrig.draw.tempesta=BOSS_DRAW.tempesta;biOrig.draw.foresta=BOSS_DRAW.foresta;
- BOSS_DRAW.mare=bScorpioneImg;BOSS_DRAW.tempesta=bSferaImg;BOSS_DRAW.foresta=bVespaImg;
- biLoad('scorpione');biLoad('sfera');biLoad('vespa');
+ biOrig.draw.mare=BOSS_DRAW.mare;biOrig.draw.deserto=BOSS_DRAW.deserto;biOrig.draw.tempesta=BOSS_DRAW.tempesta;biOrig.draw.foresta=BOSS_DRAW.foresta;biOrig.draw.lava=BOSS_DRAW.lava;
+ BOSS_DRAW.mare=bMillepiediImg;BOSS_DRAW.deserto=bScorpioneImg;BOSS_DRAW.tempesta=bSferaImg;BOSS_DRAW.foresta=bVespaImg;BOSS_DRAW.lava=bDragoImg;
+ biLoad('millepiedi');biLoad('scorpione');biLoad('sfera');biLoad('vespa');biLoad('drago');
 }
 if(typeof PF_BOSS!=='undefined'){
  // la bocca da fuoco è la punta del pungiglione e l'occhio della sfera
  const D=BI.scorpione,[tx,ty]=biP(D,...D.stingTip);
- if(PF_BOSS.mare)Object.assign(PF_BOSS.mare,{w:240,h:170,gun:{x:Math.round(tx),y:Math.round(-ty),len:4},pod:{x:-40,y:150},
-  sub:'SCORPIONE CORAZZATO DEL FRONTE OMBRA',brief:'uno scorpione meccanico corazzato con un pungiglione laser'});
+ if(PF_BOSS.deserto)Object.assign(PF_BOSS.deserto,{w:240,h:170,gun:{x:Math.round(tx),y:Math.round(-ty),len:4},pod:{x:-40,y:150}});
+ const M=BI.millepiedi,[mx,my]=biP(M,...M.mouth);
+ if(PF_BOSS.mare)Object.assign(PF_BOSS.mare,{w:380,h:110,gun:{x:Math.round(mx),y:Math.round(M.raise-my),len:6},pod:{x:0,y:70},
+  sub:'MILLEPIEDI CORAZZATO DEL FRONTE OMBRA',brief:'un millepiedi meccanico corazzato lungo come un treno'});
  const V=BI.vespa,[vx,vy]=biP(V,...V.waist);
  if(PF_BOSS.foresta)Object.assign(PF_BOSS.foresta,{w:170,h:V.lift+90,gun:{x:Math.round(vx),y:Math.round(V.lift-vy),len:Math.round(Math.hypot(V.sting[0]-V.waist[0],V.sting[1]-V.waist[1])*V.S)},pod:{x:0,y:V.lift+60},
   sub:'VESPA DA GUERRA DEL FRONTE OMBRA',brief:'una vespa meccanica corazzata con un pungiglione laser'});
+ const G=BI.drago,[gx,gy]=biP(G,...G.mouth);
+ if(PF_BOSS.lava)Object.assign(PF_BOSS.lava,{w:250,h:170,gun:{x:Math.round(gx),y:Math.round(-gy),len:8},pod:{x:-40,y:150},
+  sub:'DRAGO DA GUERRA DEL FRONTE OMBRA',brief:'il drago meccanico che tiene in ostaggio la colonia'});
  const F=BI.sfera;
  if(PF_BOSS.tempesta)Object.assign(PF_BOSS.tempesta,{w:170,h:F.lift+85,gun:{x:0,y:F.lift,len:Math.round((F.eye[0]-F.O[0])*F.S)},pod:{x:0,y:F.lift+80}});
 }
 if(typeof B_SCORCH!=='undefined'){
- B_SCORCH.mare=[[-10,-110],[40,-100],[-60,-95],[90,-70],[-110,-160],[20,-80]].map(([x,y],i)=>[x,y,[16,13,12,11,10,11][i]]);
+ B_SCORCH.deserto=[[-10,-110],[40,-100],[-60,-95],[90,-70],[-110,-160],[20,-80]].map(([x,y],i)=>[x,y,[16,13,12,11,10,11][i]]);
+ B_SCORCH.mare=[[-150,-55],[-80,-70],[0,-78],[70,-68],[140,-55],[175,-45]].map(([x,y],i)=>[x,y,[13,14,15,13,12,11][i]]);
  B_SCORCH.foresta=[[-10,-170],[40,-160],[-60,-140],[20,-130],[-40,-120],[70,-165]].map(([x,y],i)=>[x,y,[15,13,12,11,11,10][i]]);
+ B_SCORCH.lava=[[20,-110],[70,-120],[-30,-90],[130,-110],[-90,-80],[0,-60]].map(([x,y],i)=>[x,y,[16,13,13,11,11,10][i]]);
  B_SCORCH.tempesta=[[-20,-150],[25,-110],[-40,-120],[35,-150],[0,-90],[-5,-175]].map(([x,y],i)=>[x,y,[16,13,12,11,12,10][i]]);
 }
 if(typeof I18N_ROWS!=='undefined'){
  const rows=[
-  ['SCORPIONE CORAZZATO DEL FRONTE OMBRA','ARMORED SCORPION OF THE SHADOW FRONT','SCORPION BLINDÉ DU FRONT DE L’OMBRE','ESCORPIÓN BLINDADO DEL FRENTE SOMBRA','БРОНИРОВАННЫЙ СКОРПИОН ТЕНЕВОГО ФРОНТА','暗影阵线的装甲蝎子','影の戦線の装甲サソリ'],
+  ['MILLEPIEDI CORAZZATO DEL FRONTE OMBRA','ARMORED CENTIPEDE OF THE SHADOW FRONT','MILLE-PATTES BLINDÉ DU FRONT DE L’OMBRE','CIEMPIÉS BLINDADO DEL FRENTE SOMBRA','БРОНИРОВАННАЯ МНОГОНОЖКА ТЕНЕВОГО ФРОНТА','暗影阵线的装甲蜈蚣','影の戦線の装甲ムカデ'],
+  ['DRAGO DA GUERRA DEL FRONTE OMBRA','WAR DRAGON OF THE SHADOW FRONT','DRAGON DE GUERRE DU FRONT DE L’OMBRE','DRAGÓN DE GUERRA DEL FRENTE SOMBRA','БОЕВОЙ ДРАКОН ТЕНЕВОГО ФРОНТА','暗影阵线的战龙','影の戦線の戦闘ドラゴン'],
+  ['il drago meccanico che tiene in ostaggio la colonia','the mechanical dragon holding the colony hostage','le dragon mécanique qui retient la colonie en otage','el dragón mecánico que tiene a la colonia como rehén','механический дракон, держащий колонию в заложниках','挟持殖民地的机械巨龙','コロニーを人質に取る機械のドラゴン'],
   ['VESPA DA GUERRA DEL FRONTE OMBRA','WAR WASP OF THE SHADOW FRONT','GUÊPE DE GUERRE DU FRONT DE L’OMBRE','AVISPA DE GUERRA DEL FRENTE SOMBRA','БОЕВАЯ ОСА ТЕНЕВОГО ФРОНТА','暗影阵线的战争胡蜂','影の戦線の戦闘スズメバチ'],
   ['una vespa meccanica corazzata con un pungiglione laser','an armored mechanical wasp with a laser stinger','une guêpe mécanique blindée avec un dard laser','una avispa mecánica blindada con un aguijón láser','бронированная механическая оса с лазерным жалом','带激光毒刺的装甲机械胡蜂','レーザーの毒針を持つ装甲機械スズメバチ'],
-  ['uno scorpione meccanico corazzato con un pungiglione laser','an armored mechanical scorpion with a laser stinger','un scorpion mécanique blindé avec un dard laser','un escorpión mecánico blindado con un aguijón láser','бронированный механический скорпион с лазерным жалом','带激光毒刺的装甲机械蝎子','レーザーの毒針を持つ装甲機械サソリ']
+  ['un millepiedi meccanico corazzato lungo come un treno','an armored mechanical centipede as long as a train','un mille-pattes mécanique blindé long comme un train','un ciempiés mecánico blindado largo como un tren','бронированная механическая многоножка длиной с поезд','像火车一样长的装甲机械蜈蚣','列車ほど長い装甲機械ムカデ']
  ];
  for(const r of rows)if(!I18N_ROWS.some(x=>x[0]===r[0]))I18N_ROWS.push(r);
  if(typeof i18nBuild==='function')try{i18nBuild()}catch(e){}
 }
+
+// Millepiedi e drago sono molto lunghi: restano dentro lo schermo. Se durante la carica toccano il nuovo
+// bordo restano storditi come quando gli altri boss sbattono contro il muro.
+const BI_LARGO={mare:155,lava:135};
+const biOrigUpdate=typeof pfUpdateBoss==='function'?pfUpdateBoss:null;
+if(biOrigUpdate)pfUpdateBoss=function(dt){
+ const r=biOrigUpdate(dt),B=pf&&pf.boss,extra=B&&BI_LARGO[B.kind];
+ if(!extra||!pf.cam||typeof pfViewW!=='function'||B.state==='distrutto'||B.state==='caduta')return r;
+ const lo=pf.cam.lockX+90+extra,hi=pf.cam.lockX+Math.min(pfViewW(),1500)-70-extra;
+ if(B.x<lo||B.x>hi){
+  B.x=Math.max(lo,Math.min(hi,B.x));
+  if(B.state==='carica'&&B.t>=.8){B.vx=0;B.charge=0;pf.cam.shake=.6;if(typeof noise==='function')noise(.4,.06,500);pfBossSet(B,'stordito');pfStatus('NUCLEO ESPOSTO · DANNO DOPPIO',1600)}
+ }
+ return r;
+};
