@@ -5,6 +5,8 @@
 // Ai nemici (più lenti) tocca un passo di carica col fucile, al pilota una corsa piena.
 // Coloni (coloni.js): prima si piegavano solo gli stinchi; ora ogni gamba ha coscia e stinco che
 // ruotano su anca e ginocchio, con il ginocchio che si piega nel ritorno e il corpo che rimbalza.
+// Anche la parte alta si muove: il busto si piega a ogni passo, la testa segue in ritardo,
+// il bambino muove l'avambraccio libero e la valigetta dondola, l'anziano fa dondolare il bastone.
 // Col jetpack acceso il pilota raccoglie le gambe come i nemici col jetpack.
 // Va caricato dopo soldati.js e coloni.js.
 
@@ -15,7 +17,7 @@ const CAMM={
   appoggio:[.44,.27],         // parte del ciclo con il piede a terra: passo di carica → corsa
   alza:[140,250],             // quanto sale il tallone nel ritorno
   bacino:[42,30],             // quanto è piegato il bacino (più basso = più accovacciato)
-  molla:[16,30],              // quanto scende il bacino sul piede d'appoggio
+  molla:[22,40],              // quanto scende il bacino sul piede d'appoggio
   lenta:150,veloce:250        // velocità (unità al secondo) della carica e della corsa
  },
  // coloni: punti delle gambe nelle immagini dimezzate (anca, ginocchio, caviglia); taglio = dove inizia la gamba
@@ -23,7 +25,15 @@ const CAMM={
   {dietro:{taglio:445,anca:[203,430],gin:[196,522],cav:[168,690]},avanti:{taglio:445,anca:[288,430],gin:[289,522],cav:[290,690]}},
   {dietro:{taglio:440,anca:[205,425],gin:[200,502],cav:[168,686]},avanti:{taglio:440,anca:[291,425],gin:[287,502],cav:[278,686]}},
   {dietro:{taglio:572,anca:[205,572],gin:[205,572],cav:[192,692]},avanti:{taglio:480,anca:[287,468],gin:[285,555],cav:[288,692]}},
-  {dietro:{taglio:470,anca:[200,455],gin:[190,520],cav:[157,692]},avanti:{taglio:470,anca:[272,455],gin:[268,520],cav:[252,692],fine:354}}
+  {dietro:{taglio:470,anca:[200,455],gin:[190,520],cav:[157,692]},avanti:{taglio:470,anca:[272,455],gin:[268,520],cav:[252,692],fine:364}}
+ ],
+ // parte alta: collo (perno della testa), vita (perno del busto) e pezzi che oscillano da soli
+ // (rettangolo [x0,y0,x1,y1] e perno): il braccio libero e la valigetta del bambino, il bastone dell'anziano
+ corpo:[
+  {collo:[245,142],vita:[225,325]},
+  {collo:[238,142],vita:[225,325]},
+  {collo:[255,182],braccio:{r:[333,362,512,482],perno:[338,362]},valigia:{r:[100,452,237,578],perno:[178,448]}},
+  {collo:[248,152],bastone:{r:[364,372,512,768],perno:[378,362]}}
  ],
  sfuma:12                     // pixel di sfumatura dove i pezzi si sovrappongono
 };
@@ -81,8 +91,8 @@ if(cammSoldOrig){
   p.hx=dir*(18+16*w);
   // il busto ondeggia appena a ogni passo, il fucile resta sul bersaglio
   const onda=Math.sin(4*Math.PI*f);
-  p.lean+=dir*(.05+.05*w)+onda*.018;
-  p.arm=Math.max(SOLD.armMin,Math.min(SOLD.armMax,p.arm-onda*.018-dir*(.05+.05*w)));
+  p.lean+=dir*(.06+.08*w)+onda*.03;
+  p.arm=Math.max(SOLD.armMin,Math.min(SOLD.armMax,p.arm-onda*.012-dir*(.06+.08*w)));
   return p;
  };
 }
@@ -115,6 +125,24 @@ function cammTaglia(a,G){
   const stinco=tela(),x=stinco.getContext('2d');x.drawImage(im,0,0);fuori(x,stinco,x0,x1,(coscia?L.gin[1]:L.taglio)-8,H,false,false);
   out.gambe[k]={coscia,stinco};
  }
+ // pezzi che oscillano da soli: tolti dal busto e tenuti a parte
+ const K=CAMM.coloni.indexOf(G),B=CAMM.corpo[K]||{};
+ out.pezzi={};
+ for(const n of ['braccio','valigia','bastone'])if(B[n]){
+  const [x0,y0,x1,y1]=B[n].r,c=tela(),x=c.getContext('2d');
+  x.drawImage(busto,x0,y0,x1-x0,y1-y0,x0,y0,x1-x0,y1-y0);
+  b.fillStyle='#000';b.fillRect(x0,y0,x1-x0,y1-y0);out.pezzi[n]=c;
+ }
+ // testa e petto: strati separati con il bordo inferiore sfumato sopra lo strato successivo
+ const strato=(y0,y1)=>{const c=tela(),x=c.getContext('2d');x.drawImage(busto,0,0);
+  x.globalCompositeOperation='destination-out';x.fillStyle='#000';x.fillRect(0,0,W,y0);
+  const g=x.createLinearGradient(0,y1,0,y1+F);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'#000');
+  x.fillStyle=g;x.fillRect(0,y1,W,F);x.fillStyle='#000';x.fillRect(0,y1+F,W,H);return c};
+ if(B.collo){
+  out.testa=strato(0,B.collo[1]);
+  if(B.vita)out.petto=strato(B.collo[1]-2,B.vita[1]);
+  b.fillStyle='#000';b.fillRect(0,0,W,(B.vita||B.collo)[1]);
+ }
  b.globalCompositeOperation='source-over';
  return out;
 }
@@ -127,7 +155,7 @@ function cammPosaColono(fi,aria,k){
  if(aria)return k==='avanti'?{a:.62,b:1.05}:{a:-.15,b:1.15};
  const sw=Math.max(0,Math.cos(fi));         // ritorno della gamba: il ginocchio si piega molto
  const ap=Math.max(0,-Math.cos(fi));        // appoggio: piccola piega che fa da molla
- return {a:.12+.52*Math.sin(fi),b:.12+1.25*sw**1.4+.3*ap};
+ return {a:.1+.64*Math.sin(fi),b:.15+1.55*sw**1.4+.35*ap};
 }
 
 function cammCatena(L,P){
@@ -158,19 +186,31 @@ if(cammColOrig){
    cat[k]=cammCatena(L,P);piede=Math.max(piede,cat[k].ay);rest=Math.max(rest,L.cav[1]);
   }
   // il piede più basso tocca terra; in volo (tra un passo e l'altro) il corpo si stacca un poco
-  const volo=aria?0:Math.max(0,Math.sin(2*fi))**2*8;
+  const volo=aria?0:Math.max(0,Math.sin(2*fi))**2*20;
   const giu=rest-piede-volo;
   const height=typeof SOLD==='undefined'?66:SOLD.H,s=height/(a.foot-a.top);
   if(!aria&&typeof gShadow==='function')gShadow(h.x,h.y,14,.32);
   ctx.save();ctx.translate(h.x,h.y);
-  ctx.scale(-s,s);ctx.rotate(.1+Math.sin(2*fi)*.02);
+  ctx.scale(-s,s);ctx.rotate(.17+Math.sin(2*fi)*.035);
   ctx.translate(-250,-a.foot+giu);
   for(const k of ['dietro','avanti']){
    const L=G[k],c=cat[k],pp=pz.gambe[k];
    ctx.save();ctx.translate(c.kx,c.ky);ctx.rotate(c.rs);ctx.translate(-L.gin[0],-L.gin[1]);ctx.drawImage(pp.stinco,0,0);ctx.restore();
    if(pp.coscia){ctx.save();ctx.translate(L.anca[0],L.anca[1]);ctx.rotate(c.rc);ctx.translate(-L.anca[0],-L.anca[1]);ctx.drawImage(pp.coscia,0,0);ctx.restore()}
   }
+  const B=CAMM.corpo[Math.floor(i/2)],P=pz.pezzi,rimb=Math.sin(2*fi);
+  const ruota=(p,ang,img)=>{ctx.save();ctx.translate(p[0],p[1]);ctx.rotate(ang);ctx.translate(-p[0],-p[1]);if(img)ctx.drawImage(img,0,0)};
   ctx.drawImage(pz.busto,0,0);
+  // valigetta: dondola appesa alla mano (sotto resta la sua copia ferma, così non si apre un buco)
+  if(P.valigia){ctx.drawImage(P.valigia,0,0);ruota(B.valigia.perno,aria?.15:.09*Math.sin(fi+2.4),P.valigia);ctx.restore()}
+  // busto che si piega a ogni passo, poi testa che segue in ritardo
+  if(pz.petto)ruota(B.vita,(aria?.08:.07+.06*Math.sin(2*fi-.6)),pz.petto);
+  if(pz.testa){ruota(B.collo,aria?-.08:(pz.petto?-.05:.03)+.08*Math.sin(2*fi-1.4),pz.testa);ctx.restore()}
+  if(pz.petto)ctx.restore();
+  // braccio libero del bambino: oscilla al contrario della gamba vicina
+  if(P.braccio){ruota(B.braccio.perno,aria?-.5:.42*Math.sin(fi)-.05*rimb,P.braccio);ctx.restore()}
+  // bastone dell'anziano: dondola nella mano
+  if(P.bastone){ruota(B.bastone.perno,aria?-.35:-.32*Math.sin(fi)+.1,P.bastone);ctx.restore()}
   ctx.restore();
   return true;
  };
