@@ -33,6 +33,7 @@ function terraUpdateJet(e,dt){
  const seen=pfOnScreen(e.x)&&P.visible&&P.hp>0&&pf.phase!=='vittoria';
  if(seen){e.fire-=dt;if(e.fire<=0){pfEnemyShot(sh.x+Math.cos(e.aim)*26,sh.y+Math.sin(e.aim)*26,e.aim,360+d*20,12);e.fire=1.9-d*.1+pf.rnd()*.7}}
  if(pf.rnd()<dt*14)pfBurst(e.x-e.face*11,e.y-30,'#ff9a4a',1,.35,false,{vy:160});
+ pfEmitJetSmoke(e,dt,e.x-e.face*11,e.y-26);
  if(pfOverlap(pfRect(P),pfRect(e)))pfContact(e);
 }
 
@@ -69,32 +70,15 @@ pfUpdateEnemies=function(dt){
 gEnemy=function(e,now){
  if(e.jet&&e.hp>0){
   // zaino e fiamma del jetpack dietro al soldato
-  const x=e.x-e.face*11,y=e.y-36,l=24+Math.random()*14;
+  const x=e.x-e.face*11,y=e.y-36;
   ctx.save();ctx.fillStyle='#3b2a30';ctx.strokeStyle='#ff8a5a';ctx.lineWidth=1;ctx.fillRect(x-5,y-22,10,24);ctx.strokeRect(x-5,y-22,10,24);
-  ctx.globalCompositeOperation='lighter';const g=ctx.createLinearGradient(x,y+2,x,y+2+l);g.addColorStop(0,'rgba(255,245,210,.95)');g.addColorStop(.4,'rgba(255,150,60,.85)');g.addColorStop(1,'rgba(255,70,30,0)');
-  ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(x-5,y+2);ctx.lineTo(x+5,y+2);ctx.lineTo(x,y+2+l);ctx.closePath();ctx.fill();ctx.restore();
+  ctx.restore();
+  pfDrawJetFlame(x,y+2,e.face,now,.88);
  }
  tOrig.gEnemy(e,now);
 };
 
 // ---- 3) barriera: copre tutto il pilota (disegnato più grande dell'area di collisione)
-pfDrawBarrier=function(P,now){
- const pulse=.5+.5*Math.sin(now*8),k=Math.max(.35,(P.shield||0)/100),rx=38,ry=P.crouch?36:50,cy=P.y-(P.crouch?28:38);
- ctx.save();ctx.translate(P.x,cy);
- const fill=ctx.createRadialGradient(0,0,ry*.2,0,0,ry);fill.addColorStop(0,'rgba(81,230,255,.04)');fill.addColorStop(.75,`rgba(81,230,255,${.12*k})`);fill.addColorStop(1,`rgba(160,248,255,${.32*k})`);
- ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,6.28);ctx.fillStyle=fill;ctx.fill();
- // trama esagonale dentro la bolla
- ctx.save();ctx.clip();ctx.strokeStyle=`rgba(150,245,255,${(.16+pulse*.1)*k})`;ctx.lineWidth=1;
- const s=9,hh=s*Math.sqrt(3)/2;ctx.beginPath();
- for(let r=-7;r<=7;r++)for(let c=-4;c<=4;c++){const hx=c*s*3+(r&1?s*1.5:0),hy=r*hh;for(let i=0;i<6;i++){const a=i*Math.PI/3,b=(i+1)*Math.PI/3;ctx.moveTo(hx+Math.cos(a)*s,hy+Math.sin(a)*s);ctx.lineTo(hx+Math.cos(b)*s,hy+Math.sin(b)*s)}}
- ctx.stroke();ctx.restore();
- // bordo luminoso e riflesso che gira
- ctx.shadowBlur=22;ctx.shadowColor='#51e6ff';ctx.strokeStyle=`rgba(140,242,255,${(.7+pulse*.3)*Math.min(1,k+.25)})`;ctx.lineWidth=3;
- ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,6.28);ctx.stroke();
- ctx.strokeStyle='rgba(235,253,255,.85)';ctx.lineWidth=2;ctx.beginPath();const a0=now*2.4;ctx.ellipse(0,0,rx-3,ry-3,0,a0,a0+.9);ctx.stroke();
- ctx.restore();
-};
-
 // ---- 4) pilota di riserva sganciato dalla navetta
 const DROP={come:1.1,release:1.35,leave:1.9,end:3.2,hover:200};
 pfLoseLife=function(...args){

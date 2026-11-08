@@ -80,7 +80,11 @@ console.log('PASS: granate');
 // Colono da salvare.
 run('const h=pf.hostages[0];h.state="legato";pf.cam.x=h.x-400;pf.pilot.x=h.x-10;pf.pilot.y=h.y;pf.pilot.vy=0;pf.rescued=0;pf.pickups=[]');step(.1);
 assert.equal(run('pf.rescued'),1,'Colono liberato');assert.equal(run('pf.checkpoint'),run('pf.hostages[0].x'),'Punto di controllo aggiornato');
-assert(run('pf.pickups.length')>=1,'Il colono lascia un rifornimento');step(3);assert.equal(run('pf.hostages[0].state'),'salvo','Il colono viene evacuato');
+assert.equal(run('pf.hostages[0].state'),'libero');
+assert(!run('pf.texts.some(t=>t.text==="GRAZIE!")'),'Si alza prima di ringraziare');
+step(.5);assert(run('pf.texts.some(t=>t.text==="GRAZIE!")'),'Ringrazia mentre è ancora vicino al pilota');
+assert.equal(run('pf.hostages[0].state'),'libero');
+assert(run('pf.pickups.length')>=1,'Il colono lascia un rifornimento');step(2.5);assert.equal(run('pf.hostages[0].state'),'salvo','Il colono viene evacuato');
 console.log('PASS: coloni da salvare');
 
 // Morte e vite.

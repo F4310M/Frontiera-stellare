@@ -93,6 +93,8 @@ const MINI='data:image/jpeg;base64,'+Buffer.alloc(300,7).toString('base64');
  const top=await run('coTop(true)');
  assert.equal(top.find(r=>r.s===7000).a,MINI,'la foto si legge dalla classifica mondiale');
  assert(run(`boardRows(coCache,()=>false)`).includes('<img class="board-ava" src="'+MINI),'foto accanto al nome');
+ assert(run(`boardRows(coCache,()=>true)`).includes('class="board-medal" data-rank="1"'),'medaglia accanto al proprio nome anche con avatar');
+ assert(!run(`boardRows(Array.from({length:11},()=>({n:'pilota',s:1})),(_,i)=>i===10)`).includes('class="board-medal"'),'nessuna medaglia fuori dai primi dieci');
  assert(!run(`boardRows([{n:'x',s:1,a:'javascript:alert(1)'}],()=>false)`).includes('javascript'),'solo immagini vere');
  console.log('PASS: classifica a fine gioco con nome e foto');
 

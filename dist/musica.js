@@ -143,12 +143,15 @@ function musTrackLoop(a,T){
 // Su telefono i lettori vanno "sbloccati" da un tocco: al primo gesto si preparano tutti i brani.
 function musUnlock(){
  const a=musCtx();if(!a)return;
+ // Il primo gesto (anche il clic del login) riattiva l'audio sospeso dal browser e fa partire subito il brano del menu.
+ if(a.state==='suspended'&&a.resume){const p=a.resume();if(p&&p.catch)p.catch(()=>{})}
+ if(!mus.track&&!mus.quiet)musTick();
  // Un brano bloccato dal browser riparte al gesto successivo.
  if(mus.track&&mus.track.blocked&&!mus.quiet)musTrackPlay(a,mus.track);
  for(const id in MUS_TRACKS){const T=musTrack(a,id);if(!T||T.unlocked)continue;T.unlocked=true;
   for(const el of T.els){if(!el.paused)continue;const p=el.play();if(p&&p.then)p.then(()=>{if(mus.track!==T||el!==T.els[T.cur])el.pause()}).catch(()=>{})}}
 }
-for(const ev of['pointerdown','keydown','touchend'])addEventListener(ev,musUnlock,{passive:true});
+for(const ev of['pointerdown','mousedown','keydown','touchstart','touchend','click'])addEventListener(ev,musUnlock,{passive:true,capture:true});
 
 // Intensità decisa dallo stato del gioco.
 function musLevel(){

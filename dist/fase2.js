@@ -316,11 +316,16 @@ function updatePlatform(dt){
  if(pf.phase==='atterraggio')pfUpdateLanding(dt);
  if(P.visible)pfUpdatePilot(dt);
  if(state!=='platform')return;
+ if(P.visible&&P.jetOn){
+  const nozzle=typeof soldJetNozzle==='function'?soldJetNozzle(P):{x:P.x-P.face*8,y:P.y-26};
+  pfEmitJetSmoke(P,dt,nozzle.x,nozzle.y+8);
+ }
  pfUpdateCamera(dt);
  if(pf.phase==='missione'){pfSpawnFromTriggers();pfPeriodicSpawn(dt)}
- pfUpdateEnemies(dt);
+ if(pf.phase==='vittoria')pfUpdateRetreat(dt);
+ else pfUpdateEnemies(dt);
  if(pf.boss)pfUpdateBoss(dt);
- pfUpdateShots(dt);pfUpdateGrenades(dt);pfUpdateMissiles(dt);pfUpdateWaves(dt);
+ if(pf.phase!=='vittoria'){pfUpdateShots(dt);pfUpdateGrenades(dt);pfUpdateMissiles(dt);pfUpdateWaves(dt)}
  pfUpdateHostages(dt);pfUpdatePickups(dt);pfUpdateAmbient(dt);
  for(const f of pf.fx){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.96;f.vy=f.grav?f.vy+520*dt:f.vy*.96;f.life-=dt}
  pf.fx=pf.fx.filter(f=>f.life>0);if(pf.fx.length>700)pf.fx.splice(0,pf.fx.length-700);
@@ -345,7 +350,8 @@ function pfUpdatePilot(dt){
  const jumpPressed=jumpKey&&(!pf.jumpHeld||(jk.w&&!pk.w)||(jk.u&&!pk.u)||(jk.s&&!pk.s));pf.jumpHeld=jumpKey;pf.jumpKeys=jk;
  P.crouch=down&&P.ground;P.h=P.crouch?40:50;
  const run=PF_RUN*(1+.08*(typeof upg==='function'?upg('speed'):0)),dir=(right?1:0)-(left?1:0),target=dir*(P.crouch?run*.35:run),accel=P.ground?2300:1400;
- if(control||P.ground)P.vx+=pfClamp(target-P.vx,-accel*dt,accel*dt);
+ P.shieldPush=Math.max(0,(P.shieldPush||0)-dt);
+ if((control||P.ground)&&P.shieldPush<=0)P.vx+=pfClamp(target-P.vx,-accel*dt,accel*dt);
  P.coyote=P.ground?.1:P.coyote-dt;
  P.jumpBuf=jumpPressed?.13:P.jumpBuf-dt;
  if(P.jumpBuf>0){
@@ -532,7 +538,7 @@ function pfContact(e){
 }
 function pfDamage(n,dir=1,piercing=false){
  const P=pf.pilot;if(P.hp<=0||pf.phase==='vittoria')return;
- if(!piercing&&P.barrier&&P.shield>0){P.shield=Math.max(0,P.shield-n*1.6/pfShieldEff());if(P.shield<=0){P.barrier=false;pfStatus('SCUDO ESAURITO')}pfBurst(P.x,P.y-28,'#51e6ff',6,.7);sfx('shield');return}
+ if(!piercing&&P.barrier&&P.shield>0){P.vx=(Math.sign(dir)||1)*310;P.vy=Math.min(P.vy,P.ground?-160:-75);P.shieldPush=.24;P.shieldDelay=1.2;P.shield=Math.max(0,P.shield-n*1.6/pfShieldEff());if(P.shield<=0){P.barrier=false;pfStatus('SCUDO ESAURITO')}pfBurst(P.x,P.y-28,'#51e6ff',6,.7);sfx('shield');return}
  if(!piercing&&P.inv>0)return;
  P.hp-=n;P.inv=.9;pf.flash=.35;P.vx=dir*230;if(P.ground)P.vy=-220;
  pfBurst(P.x,P.y-28,'#ffb36b',10,.8);sfx('hit');
@@ -607,14 +613,18 @@ function pfUpdateHostages(dt){
   h.t+=dt;
   if(h.state==='legato'&&P.visible&&P.hp>0&&Math.abs(P.x-h.x)<30&&Math.abs(P.y-h.y)<60){
    h.state='libero';h.t=0;pf.rescued++;pf.checkpoint=h.x;
-   pfText(h.x,h.y-70,'GRAZIE!','#ffe1a8');
    pfStatus('COLONO SALVATO · '+pf.rescued+'/'+pf.hostages.length,2400);pfText(h.x,h.y-88,'PUNTO DI CONTROLLO','#8ce9ec');
    tone(523,.14,'sine',.03);tone(659,.14,'sine',.03,0,.12);tone(784,.28,'sine',.03,0,.24);
    const kinds=P.hp<70?['salute','granate']:['granate','scudo'];pfDrop(h.x+20,h.y-40,kinds[pf.rescued%2]);
-  }else if(h.state==='libero'&&h.t>.9){h.state='fuga';h.t=0;if(!h.crowd)pfText(h.x,h.y-70,'CORRO ALLA NAVE!','#ffe1a8')}
+  }else if(h.state==='libero'){
+   if(!h.crowd&&h.t>=.45&&h.t-dt<.45)pfText(h.x,h.y-72,'GRAZIE!','#ffe1a8');
+   if(h.t>.9){h.state='fuga';h.t=0}
+  }
   else if(h.state==='fuga'){
    // il colono liberato corre indietro verso la nave atterrata; i burroni li supera con un salto
-   const sp=250+(h.id%3)*25;h.x-=sp*dt;const g=pfGroundAt(h.x);
+   const kind=Math.floor(((h.variant??h.id)%8)/2);
+   const sp=h.crowd?[230,220,194,160][kind]+(h.id%3)*12:250+(h.id%3)*25;
+   h.x-=sp*dt;h.stride=(h.stride||0)+sp*dt;const g=pfGroundAt(h.x);
    if(g!==null&&!h.air){h.y=g;h.hop=0}else{h.air=true;h.hop=(h.hop||0)+dt;h.y=(h.jy??(h.jy=h.y))-Math.sin(Math.min(1,h.hop/.7)*Math.PI)*90;if(h.hop>=.7&&g!==null){h.air=false;h.jy=undefined;h.y=g}else if(h.hop>=.7){h.hop=.35}}
    if(h.x<=360){h.state='evacuato';h.t=0;h.x=360;noise(.6,.02,4000);tone(880,.5,'sine',.02,1760)}
    else if(h.x<pf.cam.x-160)h.state='salvo';
@@ -680,7 +690,7 @@ function pfHitBoss(n,x,y){
  const B=pf.boss;if(!B||B.hp<=0)return;
  const mult=B.state==='stordito'?2:1;B.hp-=n*mult;B.hit=.09;
  pfBurst(x??B.x,y??B.y-120,mult>1?'#ff8a96':'#ffd29a',mult>1?6:3,.6);
- if(B.hp<=0){B.hp=0;pfBossSet(B,'distrutto');B.vx=0;pf.kills++;pf.phase='vittoria';pf.endT=0;pf.waves=[];pf.missiles=[];pf.shots=pf.shots.filter(s=>s.friendly);pfStatus(pfBossInfo(pf.p).name+' DISTRUTTO',3000)}
+ if(B.hp<=0){B.hp=0;pfBossSet(B,'distrutto');B.vx=0;pf.kills++;pf.phase='vittoria';pf.endT=0;pf.waves=[];pf.missiles=[];pf.shots=[];pf.grenades=[];pfStatus(pfBossInfo(pf.p).name+' DISTRUTTO',3000)}
 }
 function pfUpdateWaves(dt){
  const P=pf.pilot,VW=pfViewW();
@@ -740,7 +750,8 @@ function drawPlatform(){
  for(const pl of pf.plats)if(pl.x<cx+VW+20&&pl.x+pl.w>cx-20)pfDrawPlatformBeam(pl,now);
  pfDrawFlora(now);
  pfDrawShipOnPad(now);
- for(const h of [...pf.hostages,...pf.crowd])if(h.state!=='salvo'&&pfOnScreen(h.x,60))pfDrawColonist(h,now);
+ for(const f of pf.fx)if(f.jetSmoke)pfDrawJetSmoke(f);
+ for(const h of [...pf.hostages,...pf.crowd])if(h.state!=='salvo'&&(!h.crowd||h.t>=0)&&pfOnScreen(h.x,60))pfDrawColonist(h,now);
  for(const k of pf.pickups)pfDrawPickup(k,now);
  for(const w of pf.waves)pfDrawWave(w);
  if(pf.boss&&!pf.boss.gone)pfDrawBoss(pf.boss,now);
@@ -750,7 +761,7 @@ function drawPlatform(){
  for(const m of pf.missiles)pfDrawBossMissile(m);
  for(const g of pf.grenades)pfDrawGrenade(g);
  for(const b of pf.shots)drawBullet(b);
- for(const f of pf.fx)drawParticle(f);
+ for(const f of pf.fx)if(!f.jetSmoke)drawParticle(f);
  ctx.font='600 13px "Chakra Petch",sans-serif';ctx.textAlign='center';
  for(const t of pf.texts){ctx.globalAlpha=Math.max(0,1-t.t/1.6);ctx.fillStyle=t.color;ctx.fillText(t.text,t.x,t.y)}ctx.globalAlpha=1;
  ctx.restore();
@@ -871,7 +882,9 @@ function pfDrawTrooper(o,pal,now){
  ctx.restore();
  ctx.restore();
 }
-function pfDrawBarrier(P,now){const pulse=.5+.5*Math.sin(now*10);ctx.save();ctx.translate(P.x,P.y-(P.crouch?20:26));ctx.shadowBlur=18;ctx.shadowColor='#51e6ff';ctx.strokeStyle=`rgba(120,239,255,${.55+pulse*.25})`;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,0,30,P.crouch?28:36,0,0,6.28);ctx.stroke();ctx.fillStyle='rgba(81,230,255,.07)';ctx.fill();ctx.restore()}
+function pfDrawBarrier(P,now){
+ drawEnergyBubble(P.x,P.y-(P.crouch?28:38),38,P.crouch?36:50,P.shield,now,(P.shieldPush||0)/.24);
+}
 function pfDrawEnemy(e,now){
  if(e.type==='drone'){
   ctx.save();ctx.translate(e.x,e.y);
@@ -890,6 +903,7 @@ function pfDrawEnemy(e,now){
  ctx.fillStyle='#ffffff22';ctx.fillRect(e.x-14,top,28,3);ctx.fillStyle=hpColor(e.hp/e.max);ctx.fillRect(e.x-14,top,28*Math.max(0,e.hp/e.max),3);
 }
 function pfDrawColonist(h,now){
+ if(typeof pfColonistSprite==='function'&&pfColonistSprite(h,now))return;
  ctx.save();ctx.translate(h.x,h.y);
  if(h.state==='evacuato'){const k=h.t;ctx.save();ctx.globalCompositeOperation='screen';const g=ctx.createLinearGradient(-20,0,20,0);g.addColorStop(0,'rgba(81,230,255,0)');g.addColorStop(.5,`rgba(160,245,255,${.55*(1-k*.6)})`);g.addColorStop(1,'rgba(81,230,255,0)');ctx.fillStyle=g;ctx.fillRect(-20,-PF_VH,40,PF_VH);ctx.restore();ctx.globalAlpha=Math.max(0,1-k);ctx.translate(0,-k*60)}
  const suit=h.suit||'#d98a3a',dark=h.suitD||'#8a5222',skin='#e7b48f';
@@ -1017,6 +1031,50 @@ function pfBossInfo(p){return PF_BOSS[p&&p.boss]||PF_BOSS[(p&&p.theme)||'lava']|
 // Si scalda: al 100% si spegne e deve raffreddarsi del tutto. Consuma carburante (crediti).
 const PF_JET={heat:36,coolGround:45,coolAir:14,fuel:2.5,minBurn:.6};
 function pfJetReady(P){return!P.jetLock&&(P.jetHeat||0)<96}
+function pfEmitJetSmoke(o,dt,x,y){
+ o.smokeAcc=(o.smokeAcc||0)+dt*44;
+ while(o.smokeAcc>=1){
+  o.smokeAcc--;
+  const life=.55+Math.random()*.45,drift=(Math.random()-.5)*58;
+  pf.fx.push({jetSmoke:true,x:x+(Math.random()-.5)*5,y,
+   vx:-o.face*60+drift+(o.vx||0)*.1,vy:130+Math.random()*100,
+   life,max:life,r:4+Math.random()*6,drift});
+ }
+}
+function pfDrawJetSmoke(f){
+ const age=1-f.life/f.max,r=f.r*(.62+age*1.95),alpha=(1-age)**1.4;
+ const x=f.x+f.drift*age*.15,y=f.y;
+ const g=ctx.createRadialGradient(x-r*.22,y-r*.3,0,x,y,r);
+ g.addColorStop(0,`rgba(233,239,249,${alpha*.7})`);
+ g.addColorStop(.35,`rgba(154,172,191,${alpha*.52})`);
+ g.addColorStop(.72,`rgba(88,109,132,${alpha*.38})`);
+ g.addColorStop(1,'rgba(77,94,112,0)');
+ ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);
+}
+function pfDrawJetFlame(x,y,face,now,power=1){
+ const pulse=Math.sin(now*46+x*.11),length=(36+pulse*5)*power,tip=Math.sin(now*31)*4;
+ ctx.save();ctx.translate(x,y);ctx.rotate(face*.26);ctx.globalCompositeOperation='lighter';
+ const glow=ctx.createRadialGradient(0,7,0,0,7,20);
+ glow.addColorStop(0,'rgba(118,209,255,.54)');glow.addColorStop(1,'rgba(88,157,255,0)');
+ ctx.fillStyle=glow;ctx.fillRect(-20,-13,40,40);
+ const plume=ctx.createLinearGradient(0,0,0,length);
+ plume.addColorStop(0,'rgba(195,236,255,.95)');
+ plume.addColorStop(.26,'rgba(60,160,255,.85)');
+ plume.addColorStop(.58,'rgba(255,152,72,.75)');
+ plume.addColorStop(1,'rgba(255,75,35,0)');
+ ctx.fillStyle=plume;ctx.beginPath();ctx.moveTo(-5,0);
+ ctx.bezierCurveTo(-11,9,-6,21,tip,length);
+ ctx.bezierCurveTo(9,24,11,9,5,0);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#f4fcff';ctx.beginPath();ctx.moveTo(-2.6,0);
+ ctx.quadraticCurveTo(-3.5,8,tip*.25,length*.48);
+ ctx.quadraticCurveTo(4,8,2.6,0);ctx.closePath();ctx.fill();
+ for(let i=1;i<=2;i++){
+  const yy=length*(.29+i*.18),w=(3.4-i*.7)*(1+pulse*.18);
+  ctx.strokeStyle=`rgba(255,205,145,${.58-i*.17})`;ctx.lineWidth=1.3;
+  ctx.beginPath();ctx.moveTo(-w,yy-3);ctx.lineTo(0,yy);ctx.lineTo(w,yy-3);ctx.stroke();
+ }
+ ctx.restore();
+}
 function pfUpdateJetpack(P,dt,hold){
  P.jetHeat=P.jetHeat||0;P.jetMin=Math.max(0,(P.jetMin||0)-dt);
  // senza tasto premuto: resta acceso durante la spinta minima o se sotto c'è il vuoto (volo stazionario)
@@ -1037,7 +1095,10 @@ function pfUpdateJetpack(P,dt,hold){
 function pfDrawJetpack(P,now){
  if(!P.visible)return;
  const heat=P.jetHeat||0;
- if(P.jetOn){ctx.save();ctx.globalCompositeOperation='lighter';const x=P.x-P.face*8,y=P.y-26,l=18+Math.random()*10;const g=ctx.createLinearGradient(x,y,x,y+l);g.addColorStop(0,'rgba(255,245,210,.95)');g.addColorStop(.4,'rgba(255,160,70,.8)');g.addColorStop(1,'rgba(255,80,30,0)');ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(x-4,y);ctx.lineTo(x+4,y);ctx.lineTo(x,y+l);ctx.closePath();ctx.fill();ctx.restore()}
+ if(P.jetOn){
+  const {x,y}=typeof soldJetNozzle==='function'?soldJetNozzle(P):{x:P.x-P.face*8,y:P.y-26};
+  pfDrawJetFlame(x,y,P.face,now);
+ }
  if(heat>0||P.jetLock){
   const x=P.x-P.face*24-2,y=P.y-56,h=30,k=heat/100;
   ctx.fillStyle='rgba(4,12,20,.75)';ctx.fillRect(x-1,y-1,6,h+2);
@@ -1057,12 +1118,38 @@ function pfShotObstacle(b){
  return{x:b.px+(b.x-b.px)*bt,y:b.py+(b.y-b.py)*bt};
 }
 
-// Boss distrutto: tutti i coloni prigionieri escono e scappano verso la nave.
+function pfUpdateRetreat(dt){
+ const right=pf.cam.lockX+pfViewW()+100;
+ for(const e of pf.enemies){
+  if(e.hp<=0)continue;
+  e.face=1;e.aim=0;e.crouch=false;
+  if(e.type==='drone'||e.jet){
+   e.vx+=Math.min(1,dt*6)*(290-e.vx);e.x+=e.vx*dt;e.y-=52*dt;
+   if(e.jet)pfEmitJetSmoke(e,dt,e.x-11,e.y-27);
+  }else{
+   e.vx=Math.min(235,Math.max(0,e.vx)+900*dt);
+   pfMoveBody(e,dt);
+   if(e.ground)e.run=(e.run||0)+e.vx*dt*.05;
+  }
+ }
+ pf.enemies=pf.enemies.filter(e=>e.hp>0&&e.x<right&&e.y<PF_VH+120);
+}
+
+// Boss distrutto: i coloni escono a sinistra, i ribelli ripiegano a destra.
 function pfFreeColony(){
- const VW=Math.min(pfViewW(),1500),n=10+pf.p.difficulty*2,suits=[['#d98a3a','#9a5a22'],['#3a8fd9','#22579a'],['#5fae4a','#356b28'],['#c9c2b0','#7f786a'],['#b0473f','#6e2722']];
+ const VW=Math.min(pfViewW(),1500),left=pf.cam.lockX,n=18+pf.p.difficulty*2;
+ const hostages=pf.sup?.hostages||pf.hostages;
+ for(const h of hostages){
+  if(h.state!=='legato')continue;
+  h.state='salvo';pf.rescued++;
+ }
  for(let i=0;i<n;i++){
-  const c=suits[i%suits.length];
-  pf.crowd.push({x:pf.cam.lockX+VW*.5+pf.rnd()*VW*.55+i*14,y:PF_FLOOR,state:'libero',t:-i*.16-pf.rnd()*.2,id:100+i,crowd:true,suit:c[0],suitD:c[1]});
+  const x=left+VW*(.35+pf.rnd()*.34);
+  pf.crowd.push({x,y:pfGroundAt(x)??PF_FLOOR,state:'libero',t:-i*.09-pf.rnd()*.15,id:100+i,crowd:true,variant:i%8,suit:'#e5e3d7',suitD:'#7f8790'});
+ }
+ for(let i=0;i<5;i++){
+  const x=left+VW*(.54+i*.07);
+  pfSpawnEnemy('soldato',x,pfGroundAt(x)??PF_FLOOR);
  }
  for(let i=0;i<4;i++)pfText(pf.cam.lockX+VW*(.45+i*.14),PF_FLOOR-90-i*12,'LIBERI!','#ffe1a8');
 }

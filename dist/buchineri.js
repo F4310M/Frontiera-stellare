@@ -16,16 +16,17 @@ const BH_CFG={
  core:58,coreMax:100,reach:1900,         // raggio dell'orizzonte e della zona d'influenza
  drift:[30,320],                         // senza post-bruciatore: velocità minima verso il centro (bordo → centro)
  pull:[110,780],pullBoost:[60,500],swirl:.42,
- fallSpeed:[40,620],planetGap:700,swallow:.95
+ fallSpeed:[40,620],planetGap:700,swallow:.95,
+ swallowEnemy:1.1,capture:.9            // navi nemiche: durata della spirale e raggio di cattura (in raggi dell'orizzonte)
 };
-const BH={hole:null,timer:0,on:false,inside:false,was:false,warned:false,hum:0,hint:0,eaten:0,motes:[],gfx:null};
+const BH={sw:[],hole:null,timer:0,on:false,inside:false,was:false,warned:false,hum:0,hint:0,eaten:0,motes:[],gfx:null};
 const bhFall=new WeakMap();
 function bhDiff(){return(world&&world.p&&world.p.difficulty)||1}
 function bhRand(a,b){return a+Math.random()*(b-a)}
 function bhReset(){
  const d=bhDiff();
  BH.hole=null;BH.on=Math.random()<BH_CFG.chance(d);BH.timer=bhRand(...BH_CFG.first(d));
- BH.inside=BH.was=BH.warned=false;BH.hum=BH.hint=0;BH.eaten=0;BH.motes=[];
+ BH.inside=BH.was=BH.warned=false;BH.hum=BH.hint=0;BH.eaten=0;BH.motes=[];BH.sw=[];
 }
 // metà diagonale dello schermo nel mondo, con lo zoom più largo possibile (post-bruciatore)
 function bhViewR(){
@@ -143,7 +144,7 @@ function bhUpdate(dt){
  h.spin+=dt*.55;
  bhPullPlayer(h,dt);
  if(state!=='play')return;
- for(const e of enemies)if(e.hp>0&&bhPullD(h,e,dt,e.r*.3)){e.hp=0;bhEat(h,e.x,e.y,'#ff6b5a',10)}
+ for(const e of enemies)if(e.hp>0&&bhPullD(h,e,dt,e.r*.3+h.core*h.grow*BH_CFG.capture)){e.hp=0;bhCapture(h,e)}
  for(const m of monsters)if(m.hp>0&&bhPullD(h,m,dt,m.r*.3)){m.hp=0;bhEat(h,m.x,m.y,'#a9ff78',8)}
  for(const w of wrecks)if(w.hp>0&&bhPullD(h,w,dt,w.r*.3)){w.hp=0;bhEat(h,w.x,w.y,'#8194a7',8)}
  for(const r of rocks)if(r.hp>0&&bhPullD(h,r,dt,r.r*.3)){r.hp=0;bhEat(h,r.x,r.y,'#b1bac2',6)}
@@ -160,6 +161,31 @@ function bhUpdate(dt){
  }
  for(const m of shower)if(m.life>0&&m.warning<=0)m.angle=Math.atan2(m.vy,m.vx);
  bhUpdateMotes(h,dt);
+}
+// Nave nemica catturata: come la tua, gira a spirale verso il centro e rimpicciolisce fino a sparire.
+function bhCapture(h,e){
+ if(BH.sw.length>12){bhEat(h,e.x,e.y,'#ff6b5a',10);return}
+ BH.sw.push({e,x:e.x,y:e.y,cx:h.x,cy:h.y,angle:e.angle||0,t:0,dir:Math.random()<.5?-1:1});
+}
+function bhUpdateSwirl(dt){
+ const h=BH.hole;
+ for(const S of BH.sw){
+  S.t+=dt;if(h){S.cx=h.x;S.cy=h.y}
+  if(S.t>=BH_CFG.swallowEnemy&&!S.gone){S.gone=true;if(h)bhEat(h,S.cx,S.cy,'#ff6b5a',6)}
+ }
+ BH.sw=BH.sw.filter(S=>!S.gone);
+}
+function bhDrawSwirl(){
+ for(const S of BH.sw){
+  const t=Math.min(1,S.t/BH_CFG.swallowEnemy),k=(1-t)**1.65,a=t*2.5*S.dir;
+  const dx=S.x-S.cx,dy=S.y-S.cy,x=S.cx+(dx*Math.cos(a)-dy*Math.sin(a))*k,y=S.cy+(dx*Math.sin(a)+dy*Math.cos(a))*k;
+  const sc=Math.max(0,1-t)**1.4;if(sc<=.01)continue;
+  ctx.save();ctx.translate(x,y);ctx.scale(sc,sc);ctx.globalAlpha=Math.min(1,sc*2.5);
+  const e=S.e,o={...e,x:0,y:0,angle:S.angle+a*1.6,vx:0,vy:0};
+  if(e.big&&typeof spDrawBig==='function')spDrawBig(o);
+  else drawShip({...o,boostState:'ready',forward:0,strafe:0,barrier:false},true);
+  ctx.restore();
+ }
 }
 
 // ---------------------------------------------------------------- grafica (sprite fatti una volta)
@@ -273,8 +299,8 @@ function bhDrawEdge(){
 // ---------------------------------------------------------------- aggancio a game.js
 const bhOrig={startGame,updateMissile,drawSupplies,drawMissile,updateDying,drawPlayer};
 startGame=function(...a){const r=bhOrig.startGame.apply(this,a);try{bhReset()}catch(e){console.error(e)}return r};
-updateMissile=function(dt){bhOrig.updateMissile(dt);try{bhUpdate(dt)}catch(e){console.error(e)}};
-drawSupplies=function(){try{bhDraw()}catch(e){console.error(e)}return bhOrig.drawSupplies()};
+updateMissile=function(dt){bhOrig.updateMissile(dt);try{bhUpdate(dt);if(state==='play'&&!paused)bhUpdateSwirl(dt)}catch(e){console.error(e)}};
+drawSupplies=function(){try{bhDraw();bhDrawSwirl()}catch(e){console.error(e)}return bhOrig.drawSupplies()};
 drawMissile=function(){bhOrig.drawMissile();try{bhDrawEdge()}catch(e){console.error(e)}};
 updateDying=function(dt){
  if(player.swallowed)return bhUpdateSwallowed(dt);

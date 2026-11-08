@@ -45,12 +45,14 @@ function boardBuild(){
  }
  if(!$('boardOverlay')){
   const o=document.createElement('section');o.id='boardOverlay';o.className='overlay hidden';o.setAttribute('aria-label','CLASSIFICA');
-  o.innerHTML='<div class="brief-card board-card"><div class="settings-head"><div><p class="eyebrow">CONEX</p><h2>CLASSIFICA</h2></div><button id="closeBoardX" class="close-btn" aria-label="Chiudi classifica">'+ico('close')+'</button></div>'+
-   '<p id="boardSub" class="board-sub">I PRIMI 100 PILOTI</p><div id="boardTabs" class="board-tabs hidden"><button data-view="mondo">'+ico('globe')+' MONDO</button><button data-view="locale">QUESTO BROWSER</button></div><div id="boardList" class="board-list"></div>'+
+  o.innerHTML='<div class="brief-card board-card"><div class="settings-head"><div><p class="eyebrow">CONEX</p><div class="board-title"><h2>CLASSIFICA</h2><button id="boardReload" type="button" class="settings-btn" aria-label="AGGIORNA CLASSIFICA" title="AGGIORNA CLASSIFICA">↻</button></div></div><button id="closeBoardX" class="close-btn" aria-label="Chiudi classifica">'+ico('close')+'</button></div>'+
+   '<p id="boardSub" class="board-sub">I PRIMI 100 PILOTI</p><div id="boardTabs" class="board-tabs hidden"><button data-view="mondo">'+ico('globe')+' MONDO</button><button data-view="locale">QUESTO BROWSER</button></div>'+
+   '<div class="board-results"><div id="boardList" class="board-list"></div><div id="boardRefresh" class="board-refresh hidden" role="progressbar" aria-label="AGGIORNA CLASSIFICA" aria-valuemin="0" aria-valuemax="100" aria-valuenow="1"><span>CARICAMENTO…</span><strong id="boardRefreshValue">1%</strong><div class="board-refresh-track"><i id="boardRefreshFill"></i></div></div></div>'+
    '<p class="board-note">Punti: nemici abbattuti, coloni salvati, orbite conquistate e colonie liberate. Più alta la minaccia, più punti.</p><p id="boardWhere" class="board-note">La classifica è salvata in questo browser.</p>'+
    '<button id="closeBoard" class="launch-btn"><span>CHIUDI</span><b>'+ico('check')+'</b></button></div>';
   document.body.appendChild(o);
   $('closeBoard').onclick=$('closeBoardX').onclick=()=>show('boardOverlay',false);
+  $('boardReload').onclick=boardReload;
   for(const b of o.querySelectorAll('#boardTabs button'))b.onclick=()=>{coView=b.dataset.view;boardRender()};
  }
  const card=document.querySelector('.result-card'),land=$('landBtn');
@@ -66,18 +68,31 @@ function boardBuild(){
   $('scoreSaveBtn').onclick=()=>scoreSubmit();
  }
 }
-let boardHighlight=-1;
+let boardHighlight=null;
+function boardMedal(rank){
+ return rank<=10?`<b class="board-medal" data-rank="${rank}" aria-label="Posizione ${rank}">${rank}</b>`:'';
+}
+function boardName(r,name,rank,avatarClass=''){
+ const avatar=typeof profAva==='function'?profAva(r.a,avatarClass,r.n):'';
+ return avatar+`<span class="board-player-name">${name}</span>`+(rank?boardMedal(rank):'');
+}
 function boardRows(b,hi){
  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  return '<div class="board-row head"><span>POS.</span><span>NOME</span><span>PUNTI</span><span>DATA</span></div>'+
-  b.map((r,i)=>`<div class="board-row${hi(r,i)?' me':''}${i<3?' podium':''}"><span>${i+1}</span><span>${esc(r.n)}</span><span>${scoreFmt(r.s)}</span><span>${esc(r.d||'')}</span></div>`).join('');
+  b.map((r,i)=>{
+   const mine=hi(r,i);
+   return `<div class="board-row${mine?' me':''}${i<3?' podium':''}"><span>${i+1}</span><span class="board-name">${boardName(r,esc(r.n),mine?i+1:0)}</span><span>${scoreFmt(r.s)}</span><span>${esc(r.d||'')}</span></div>`;
+  }).join('');
 }
 function boardShow(list,b,hi,emptyMsg){
  if(!b.length){list.innerHTML='<p class="board-empty">'+(emptyMsg||'Nessun punteggio ancora: completa una partita per entrare in classifica.')+'</p>';return}
  list.innerHTML=boardRows(b,hi);
  const me=list.querySelector('.me');if(me&&me.scrollIntoView)me.scrollIntoView({block:'center'});
 }
-function boardRenderLocal(list){boardShow(list,boardLoad(),(r,i)=>i+1===boardHighlight)}
+function boardRenderLocal(list){
+ const rows=boardLoad(),mine=rows.find(r=>r.n===boardHighlight?.n&&r.s===boardHighlight.s);
+ boardShow(list,rows,r=>r===mine||boardIsMe(r));
+}
 
 // ---- classifica MONDIALE (Firebase Firestore, senza librerie: API REST)
 // La configurazione è in firebase-config.js. Se manca, o se la rete non risponde, si usa la classifica di questo browser.
@@ -105,13 +120,18 @@ async function coPage(after){
  const j=await coReq(':runQuery',{structuredQuery:q});
  return (Array.isArray(j)?j:[]).filter(x=>x&&x.document).map(x=>coRow(x.document)).filter(r=>r.n&&Number.isFinite(r.s));
 }
+let coTopPending=null;
 async function coTop(force){
  if(!force&&coCache&&Date.now()-coCacheT<60000)return coCache;
- coCache=await coPage(null);coCacheT=Date.now();coMore=coCache.length>=BOARD_SIZE;return coCache;
+ if(!coTopPending)coTopPending=coPage(null).then(rows=>{
+  coCache=rows;coCacheT=Date.now();coMore=rows.length>=BOARD_SIZE;return rows;
+ }).finally(()=>{coTopPending=null});
+ return coTopPending;
 }
 async function coNext(){
  if(!coCache||!coCache.length||coCache.length>=WORLD_SIZE)return coCache;
- const more=await coPage(coCache[coCache.length-1]);
+ const before=coCache,more=await coPage(before[before.length-1]);
+ if(coCache!==before)return coCache;
  coMore=more.length>=BOARD_SIZE&&coCache.length+more.length<WORLD_SIZE;
  coCache=coCache.concat(more).slice(0,WORLD_SIZE);return coCache;
 }
@@ -141,25 +161,68 @@ function boardTabs(){
  const sub=$('boardSub');if(sub)sub.textContent=coView==='mondo'?'I PRIMI 10.000 PILOTI':'I PRIMI 100 PILOTI';
  const note=$('boardWhere');if(note)note.textContent=coView==='mondo'?'La classifica mondiale è condivisa da tutti i giocatori.':'La classifica è salvata in questo browser.';
 }
-async function boardRender(){
+let boardRenderId=0;
+async function boardReload(){
+ const button=$('boardReload'),loader=$('boardRefresh'),value=$('boardRefreshValue'),fill=$('boardRefreshFill');
+ if(button.disabled)return;
+ button.disabled=true;
+ show('boardRefresh');
+ let current=1,frame=0;
+ const start=performance.now();
+ const draw=amount=>{
+  current=Math.round(amount);
+  value.textContent=current+'%';
+  fill.style.width=current+'%';
+  loader.setAttribute('aria-valuenow',current);
+ };
+ const pending=now=>{
+  draw(1+94*(1-Math.exp(-(now-start)/450)));
+  frame=requestAnimationFrame(pending);
+ };
+ draw(1);frame=requestAnimationFrame(pending);
+ try{await boardRender(true)}
+ finally{
+  cancelAnimationFrame(frame);
+  const from=current,finish=performance.now(),duration=Math.max(180,520-(finish-start));
+  await new Promise(resolve=>{
+   function complete(now){
+    const progress=Math.min(1,(now-finish)/duration);
+    draw(from+(100-from)*progress);
+    if(progress<1)requestAnimationFrame(complete);else resolve();
+   }
+   requestAnimationFrame(complete);
+  });
+  await new Promise(resolve=>setTimeout(resolve,160));
+  show('boardRefresh',false);
+  button.disabled=false;
+ }
+}
+async function boardRender(force=false){
  const list=$('boardList');if(!list)return;
+ const renderId=++boardRenderId;
  boardTabs();
  if(coView!=='mondo'){boardRenderLocal(list);return}
- if(!coCache)list.innerHTML='<p class="board-empty board-loading">CARICAMENTO…</p>';
+ if(!coCache&&!force)list.innerHTML='<p class="board-empty board-loading">CARICAMENTO…</p>';
  try{
   await coFlush();
-  const b=await coTop(false);
-  if(coView!=='mondo')return;
+  if(renderId!==boardRenderId)return;
+  const b=await coTop(force);
+  if(renderId!==boardRenderId)return;
   boardShow(list,b,r=>(coMyId&&r.id===coMyId)||boardIsMe(r),'Nessun punteggio ancora: completa una partita per entrare in classifica.');
   if(coMore&&list.appendChild&&document.createElement){
    const m=document.createElement('button');m.className='board-more';m.textContent='ALTRI 100';
-   m.onclick=async()=>{m.disabled=true;const top=list.scrollTop;try{await coNext()}catch(e){}await boardRender();list.scrollTop=top};
+   m.onclick=async()=>{m.disabled=true;const top=list.scrollTop;try{await coNext()}catch(e){}if(renderId===boardRenderId){await boardRender();list.scrollTop=top}};
    list.appendChild(m);
   }
  }catch(e){
-  if(coView!=='mondo')return;
-  boardRenderLocal(list);
-  list.insertAdjacentHTML('afterbegin','<p class="board-offline">OFFLINE · CLASSIFICA DI QUESTO BROWSER</p>');
+  if(renderId!==boardRenderId)return;
+  if(coCache){
+   boardShow(list,coCache,r=>(coMyId&&r.id===coMyId)||boardIsMe(r));
+   list.insertAdjacentHTML('afterbegin','<p class="board-offline">OFFLINE · ULTIMI DATI DISPONIBILI</p>');
+  }else{
+   boardRenderLocal(list);
+   list.insertAdjacentHTML('afterbegin','<p class="board-offline">OFFLINE · CLASSIFICA DI QUESTO BROWSER</p>');
+  }
  }
 }
 function boardOpen(){boardRender();show('boardOverlay',true)}
@@ -178,7 +241,7 @@ async function scoreSubmit(){
  if(!name){$('scoreMsg').textContent='Scrivi un nome';return}
  const pts=Math.round(scorePending),pos=boardAdd(name,pts);localStorage.setItem('stellarUltimoNome',name);
  scorePending=0;$('scoreName').disabled=true;$('scoreSaveBtn').disabled=true;
- boardHighlight=pos;coMyId='';
+ boardHighlight=pos>0?{n:name,s:pts}:null;coMyId='';
  if(coOn){
   $('scoreMsg').textContent='INVIO ALLA CLASSIFICA MONDIALE…';
   const row={n:name,s:pts,d:new Date().toISOString().slice(0,10)};
@@ -212,6 +275,14 @@ finish=function(win){
 };
 pfHitEnemy=function(e,n){const was=e.hp;sOrig.pfHitEnemy(e,n);if(was>0&&e.hp<=0)scoreAdd(SCORE_PTS.ribelle*scoreDiff(pf&&pf.p))};
 pfUpdateHostages=function(dt){const r=pf?pf.rescued:0;sOrig.pfUpdateHostages(dt);if(pf&&pf.rescued>r)scoreAdd((pf.rescued-r)*SCORE_PTS.colono*scoreDiff(pf.p))};
+if(typeof pfFreeColony==='function'){
+ const free=pfFreeColony;
+ pfFreeColony=function(){
+  const before=pf.rescued;
+  free();
+  scoreAdd((pf.rescued-before)*SCORE_PTS.colono*scoreDiff(pf.p));
+ };
+}
 pfFinish=function(win){
  const before=state,p=pf&&pf.p;if($('scoreEntry'))show('scoreEntry',false);
  sOrig.pfFinish(win);
@@ -243,8 +314,10 @@ async function mapBoardRender(){
  mapBoardMe(offline);
  rows=(rows||[]).slice(0,MAP_BOARD_ROWS);
  if(!rows.length){list.innerHTML='<p class="board-empty">Nessun punteggio ancora: completa una partita per entrare in classifica.</p>';return}
- list.innerHTML=(offline?'<p class="board-offline">OFFLINE</p>':'')+rows.map((r,i)=>
-  `<div class="map-board-row${i<3?' top'+(i+1):''}${(coMyId&&r.id===coMyId)||boardIsMe(r)?' me':''}"><span class="pos">${i+1}</span><span class="name">${esc(r.n)}</span><span class="pts">${scoreFmt(r.s)}</span></div>`).join('');
+ list.innerHTML=(offline?'<p class="board-offline">OFFLINE</p>':'')+rows.map((r,i)=>{
+  const mine=(coMyId&&r.id===coMyId)||boardIsMe(r);
+  return `<div class="map-board-row${i<3?' top'+(i+1):''}${mine?' me':''}"><span class="pos">${i+1}</span><span class="name board-name">${boardName(r,esc(r.n),mine?i+1:0,'map-ava')}</span><span class="pts">${scoreFmt(r.s)}</span></div>`;
+ }).join('');
 }
 // Accanto al titolo: "TU N° 42", la posizione mondiale del miglior punteggio del pilota (solo nei primi 10.000).
 let mapMeCache={s:-1,rank:0,t:0};
