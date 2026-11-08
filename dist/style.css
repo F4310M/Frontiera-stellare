@@ -197,7 +197,7 @@ button:focus-visible{outline:2px solid #e5ffff;outline-offset:5px}.planet-node:f
 .mi-detail,.mi-beam{fill:none;stroke-linecap:round;stroke-width:2}
 .mi-detail{stroke:#b9d2e3}
 .mi-beam{stroke:var(--mi-glow);stroke-width:3;filter:drop-shadow(0 0 4px var(--mi-glow))}
-.market-preview{display:grid;grid-template-columns:minmax(100px,220px) 1fr;align-items:stretch;overflow:hidden;margin-bottom:14px;border:1px solid #83e9cd88;border-radius:10px;background:linear-gradient(105deg,#142f3f,#102232);box-shadow:0 0 20px #61eed81c;scroll-margin-block:12px}
+.market-preview{display:grid;grid-template-columns:minmax(100px,220px) 1fr;align-items:stretch;overflow:hidden;margin:16px 0 14px;border:1px solid #83e9cd88;border-radius:10px;background:linear-gradient(105deg,#142f3f,#102232);box-shadow:0 0 20px #61eed81c;scroll-margin-block:12px}
 .market-preview:focus-visible{outline:2px solid #8ce9ec;outline-offset:2px}
 .market-preview .mi-art{height:auto;min-height:126px;border-bottom:0;border-right:1px solid var(--line)}
 .market-preview .mi-art svg{height:auto;max-height:145px}

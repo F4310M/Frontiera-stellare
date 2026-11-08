@@ -1,0 +1,104 @@
+/* Conex — impostazioni in una pagina intera e joypad (2026-11-08). Vedi impostazioni.js e joypad.js. */
+
+/* ---- la pagina: occupa tutto lo schermo, niente finestra al centro */
+#settingsOverlay.settings-page{display:block;padding:0;z-index:14;backdrop-filter:none;
+ background:radial-gradient(1200px 700px at 85% -10%,#12385a55,transparent 70%),radial-gradient(900px 600px at -10% 110%,#0f2d4a55,transparent 70%),#030912}
+#settingsOverlay.settings-page.hidden{display:none}
+#settingsOverlay.settings-page>.settings-card{width:100%!important;max-width:none!important;height:100%;max-height:none!important;margin:0;padding:0!important;
+ display:flex;flex-direction:column;overflow:hidden!important;text-align:left;border:0;border-radius:0;box-shadow:none;background:transparent;clip-path:none;zoom:1!important;
+ animation:sp-in .32s cubic-bezier(.16,1,.3,1)}
+@keyframes sp-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.settings-page .settings-head{flex:none;display:flex;align-items:center;gap:20px;margin:0;padding:16px clamp(16px,4vw,48px);border-bottom:1px solid var(--line);background:#050f1ccc}
+.settings-page .settings-head>div{flex:1 1 auto;min-width:0}
+.settings-page .settings-head>.sp-back,.settings-page .settings-head>.close-btn{flex:0 0 auto;width:auto;margin:0}
+.settings-page .settings-head>.close-btn{width:42px;height:42px}
+.settings-page .settings-head h2{margin:2px 0 0;font-size:clamp(20px,2.4vw,30px)}
+.settings-page .settings-head .eyebrow{margin:0}
+.sp-back{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid rgba(140,233,236,.28);border-radius:8px;background:rgba(81,230,255,.06);
+ color:#cfefff;font:600 11px 'Chakra Petch',sans-serif;letter-spacing:1.6px;cursor:pointer;white-space:nowrap}
+.sp-back:hover{border-color:var(--cyan);background:rgba(81,230,255,.14)}
+.sp-back .ico{width:16px;height:16px}
+
+.sp-wrap{flex:1;min-height:0;display:grid;grid-template-columns:clamp(210px,20vw,280px) minmax(0,1fr)}
+.sp-nav{display:flex;flex-direction:column;gap:6px;padding:22px 14px;border-right:1px solid var(--line);overflow:auto;background:#040c18aa}
+.sp-tab{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:1px solid transparent;border-radius:10px;background:none;color:var(--muted);text-align:left;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.sp-tab:hover{color:#e4f6ff;background:rgba(81,230,255,.05)}
+.sp-tab.active{color:#f0fbff;background:linear-gradient(100deg,rgba(81,230,255,.16),rgba(81,230,255,.04));border-color:rgba(140,233,236,.38)}
+.sp-tab .ico{flex:none;width:22px;height:22px}
+.sp-tab.active .ico{color:var(--cyan)}
+.sp-tab span{min-width:0}
+.sp-tab b{display:block;font:700 12px 'Chakra Petch',sans-serif;letter-spacing:2px}
+.sp-tab small{display:block;margin-top:2px;font-size:10px;letter-spacing:.3px;opacity:.85}
+.sp-body{overflow-y:auto;overflow-x:hidden;padding:24px clamp(16px,4vw,48px) 28px;scrollbar-width:thin;scrollbar-color:#41647e #0a1627}
+.sp-panel{max-width:1180px}
+.sp-panel[hidden]{display:none!important}
+.sp-panel-head{margin-bottom:16px}
+.sp-panel-head h3{margin:0 0 4px;font:700 17px 'Chakra Petch',sans-serif;letter-spacing:3px;color:#f0f8ff}
+.sp-panel-head p{margin:0;color:#9fb6c9;font-size:12px;line-height:1.6}
+.settings-page .sp-stack,.settings-page .settings-side.sp-stack,body.touch .settings-page .settings-side.sp-stack{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(440px,100%),1fr));gap:14px;align-items:start}
+.settings-page .sp-stack>.setting-block{margin:0}
+.settings-page .sp-panel[data-tab="joypad"] .sp-stack{grid-template-columns:1fr}
+.settings-page .settings-main{margin:0}
+.settings-page .settings-main .control-grid{grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr))}
+.settings-page .settings-main>p{font-size:12px}
+.settings-page #closeSettings{flex:none;align-self:flex-end;width:auto;min-width:240px;margin:12px clamp(16px,4vw,48px) 16px}
+body.touch .settings-page .sp-tab[data-tab="comandi"]{display:none}
+
+@media (max-width:760px){
+ .sp-wrap{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+ .sp-nav{flex-direction:row;padding:8px 10px;gap:6px;border-right:0;border-bottom:1px solid var(--line);overflow-x:auto;overflow-y:hidden}
+ .sp-tab{width:auto;flex:none;padding:8px 12px;gap:8px}
+ .sp-tab small{display:none}
+ .sp-back span{display:none}
+ .settings-page .settings-head{gap:12px}
+ .settings-page #closeSettings{align-self:stretch;min-width:0}
+}
+@media (max-height:540px){
+ .settings-page .settings-head{padding:8px clamp(12px,3vw,32px)}
+ .settings-page .settings-head .eyebrow{display:none}
+ .settings-page .settings-head h2{font-size:18px}
+ .sp-nav{padding:10px 8px}
+ .sp-tab{padding:8px 10px}
+ .sp-tab small{display:none}
+ .sp-body{padding:14px clamp(12px,3vw,32px) 16px}
+ .settings-page #closeSettings{margin:6px clamp(12px,3vw,32px) 8px;height:42px}
+}
+
+/* ---- joypad: sezione delle impostazioni */
+.gp-status{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid rgba(140,233,236,.2);border-radius:10px;background:#061221}
+.gp-status .ico{flex:none;width:30px;height:30px;color:var(--muted)}
+.gp-status b{display:block;font:700 11px 'Chakra Petch',sans-serif;letter-spacing:1.8px;color:#d9eef9}
+.gp-status small{display:block;margin-top:2px;color:#93abc0;font-size:11px;overflow-wrap:anywhere}
+.gp-status.on{border-color:rgba(98,255,179,.4);background:#06201a}
+.gp-status.on .ico{color:#62ffb3}
+.gp-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:10px;align-items:stretch}
+.gp-opts{display:contents}
+.gp-top .gp-status{min-height:100%}
+.gp-top .sound-row{padding:10px 12px;border:1px solid #a2dbfb1f;border-radius:8px;background:#071322a6;gap:12px}
+.gp-top .sound-row p{margin:2px 0 0;font-size:11px}
+.gp-fixed{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));gap:6px;margin-top:12px}
+.gp-fixed>div{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;padding:7px 10px;border-radius:6px;background:#0a1828}
+.gp-fixed kbd,.gp-key{font:600 9px 'Chakra Petch',sans-serif;letter-spacing:.6px}
+.gp-fixed b{font:600 10px 'Chakra Petch',sans-serif;letter-spacing:1.2px;color:#cfe6f5}
+.gp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:6px;margin-top:10px}
+.gp-row{display:grid;grid-template-columns:150px 1fr;gap:4px 12px;align-items:center;padding:8px 10px;border-radius:6px;background:#0a1828}
+.gp-row>span{grid-row:span 2;display:flex;gap:4px;flex-wrap:wrap}
+.gp-row b{font:600 10px 'Chakra Petch',sans-serif;letter-spacing:1.2px;color:#e4f4ff}
+.gp-row small{font-size:10px;color:#93abc0;line-height:1.35}
+.gp-row em{font-style:normal;font-size:9px;letter-spacing:1px;color:#7fb4cf;margin-left:6px}
+.gp-key{display:inline-grid;place-items:center;min-width:44px;height:28px;padding:0 8px;border:1px solid rgba(160,210,240,.32);border-bottom-width:3px;border-radius:14px;background:#091624;color:#d8f5ff;cursor:pointer;transition:border-color .15s,background .15s,transform .08s}
+.gp-key:hover{border-color:var(--cyan);background:#0d2236}
+.gp-key.empty{color:var(--muted);border-style:dashed;border-bottom-width:1px;opacity:.75}
+.gp-key.wait{color:#03101a;background:var(--cyan);border-color:var(--cyan);animation:cmd-wait 1s ease-in-out infinite}
+.gp-key.down{background:#62ffb3;border-color:#62ffb3;color:#032015;transform:translateY(1px)}
+.gp-head-row{display:flex;align-items:center;gap:12px;margin-top:16px}
+.gp-head-row .setting-title{margin:0;flex:1}
+
+/* ---- joypad nei menu: l'elemento scelto con la croce o la levetta */
+.gp-focus{outline:3px solid #62ffb3!important;outline-offset:3px!important;box-shadow:0 0 0 6px #62ffb333,0 0 26px #62ffb355!important}
+.planet-node.gp-focus{border-radius:50%}
+body.gp-mode,body.gp-mode *{cursor:none}
+.gp-toast{position:fixed;left:50%;top:18px;z-index:60;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:10px 16px;border:1px solid rgba(98,255,179,.45);border-radius:10px;
+ background:#051a16ee;color:#dfffee;font:600 11px 'Chakra Petch',sans-serif;letter-spacing:1.4px;pointer-events:none;animation:gp-toast 3.2s ease forwards}
+.gp-toast .ico{width:22px;height:22px;color:#62ffb3}
+@keyframes gp-toast{0%{opacity:0;transform:translate(-50%,-8px)}8%,85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-8px)}}

@@ -1,0 +1,67 @@
+/* Conex — SFIDA ONLINE: menu, sala d'attesa e HUD dell'arena (arena.js) */
+.top-actions .arena-btn{color:#ffb340!important;border-color:rgba(255,179,64,.5)!important}
+.arena-btn:hover{background:rgba(255,179,64,.12)}
+.arena-btn svg{width:13px;height:13px;vertical-align:-2px}
+.arena{position:fixed;inset:0;z-index:11;pointer-events:none;color:var(--text);font-family:'Chakra Petch',sans-serif}
+.arena .brief-card{pointer-events:auto}
+.arena h2{margin:6px 0 10px;font:700 30px 'Chakra Petch',sans-serif;letter-spacing:3px}
+.ar-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-height:94vh;overflow:auto}
+.ar-desc{color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 14px}
+.ar-pilot{margin:0 0 4px;font-size:12px;letter-spacing:1.5px;color:var(--muted)}
+.ar-pilot b{color:var(--cyan);font-size:15px;margin-left:6px}
+.arena .launch-btn{margin-top:14px}
+.arena .launch-btn b svg{width:16px;height:16px}
+.arena .ar-alt{background:transparent;color:var(--cyan)}
+.ar-join{display:flex;gap:8px;margin-top:14px}
+.ar-join input{flex:1;min-width:0;height:44px;padding:0 14px;border:1px solid var(--line);background:rgba(4,12,22,.8);color:var(--text);font:700 18px 'Chakra Petch',sans-serif;letter-spacing:6px;text-transform:uppercase;text-align:center}
+.ar-join input:focus{outline:none;border-color:var(--cyan)}
+.ar-join .settings-btn{height:44px;padding:0 20px;font-size:11px}
+.ar-note{margin:12px 0 0;font-size:11px;line-height:1.5;color:var(--muted)}
+.ar-err{margin:8px 0 0;min-height:16px;font-size:12px;letter-spacing:1px;color:#ffb340}
+.arena .text-btn{margin-top:14px;display:inline-flex;align-items:center;gap:6px}
+.arena .text-btn svg{width:14px;height:14px}
+.ar-lobby{position:absolute;left:24px;top:50%;transform:translateY(-50%);width:min(330px,90vw)!important;padding:26px 22px!important}
+.ar-lobby h2{font-size:40px;letter-spacing:10px;color:#ffb340}
+.ar-list{list-style:none;margin:6px 0 0;padding:0;text-align:left}
+.ar-list li,.ar-board li{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--line);font-size:13px}
+.ar-list li.me,.ar-board li.me{background:rgba(81,230,255,.09)}
+.ar-list img,.ar-board img,.ar-list em,.ar-board em{width:24px;height:24px;border-radius:50%;object-fit:cover;flex:none}
+.ar-list em,.ar-board em{display:grid;place-items:center;font-style:normal;font-weight:700;font-size:12px;color:#02060c}
+.ar-pos{width:14px;color:var(--muted);font-size:11px}
+.ar-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.ar-list li b,.ar-board li b{min-width:22px;text-align:right;color:var(--text)}
+.ar-list li small,.ar-board li small{min-width:20px;text-align:right;color:var(--muted)}
+.ar-hud{position:absolute;inset:0}
+.ar-top{position:absolute;top:16px;left:50%;transform:translateX(-50%);display:flex;gap:10px}
+.ar-chip{display:flex;flex-direction:column;align-items:center;min-width:96px;padding:6px 14px;border:1px solid var(--line);background:rgba(4,12,22,.72)}
+.ar-chip small{font-size:9px;letter-spacing:1.5px;color:var(--muted)}
+.ar-chip b{font-size:18px;letter-spacing:2px}
+.ar-board{position:absolute;top:16px;right:16px;width:230px;list-style:none;margin:0;padding:4px;background:rgba(4,12,22,.66);border:1px solid var(--line)}
+.ar-board li{padding:4px 6px;font-size:12px}
+.ar-feed{position:absolute;top:84px;left:16px;width:300px;font-size:12px}
+.ar-feed p{margin:0 0 5px;padding:4px 8px;background:rgba(4,12,22,.6);border-left:2px solid var(--cyan)}
+.ar-feed p i{font-style:normal;color:var(--cyan)}
+.ar-feed svg{width:13px;height:13px;vertical-align:-2px;color:#ffb340}
+.ar-msg{position:absolute;left:50%;top:30%;transform:translateX(-50%);font:700 22px 'Chakra Petch',sans-serif;letter-spacing:3px;text-align:center;color:#fff;text-shadow:0 0 18px rgba(81,230,255,.6);white-space:nowrap}
+.ar-bars{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);display:flex;gap:14px;width:min(640px,92vw);padding:8px 14px;border:1px solid var(--line);background:rgba(4,12,22,.7)}
+.ar-bars .seg{flex:1}
+.ar-bars .seg-head{display:flex;justify-content:space-between;font-size:9px;letter-spacing:1.4px;color:var(--muted)}
+.ar-bars .seg-head b{color:var(--text)}
+.ar-bars .seg:nth-child(1){--c:#9dff6a}.ar-bars .seg:nth-child(2){--c:#ffb340}.ar-bars .seg:nth-child(3){--c:#51e6ff}
+.ar-tip{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:1px;color:var(--muted);white-space:nowrap}
+.ar-end{position:absolute;inset:0;display:grid;place-items:center;background:rgba(1,5,11,.6);pointer-events:auto}
+.ar-end h2{color:#ffb340}
+.ar-final li{font-size:15px;padding:9px 10px}
+body.arena-on .hud,body.arena-on #touchUi{display:none!important}
+@media (max-width:760px){
+ .ar-lobby{left:50%;top:auto;bottom:12px;transform:translateX(-50%)}
+ .ar-board{width:170px;top:70px}
+ .ar-feed{display:none}
+ .ar-tip{display:none}
+ .ar-bars{bottom:12px}
+ .ar-msg{font-size:16px}
+}
+/* pulsante OFFRIMI UN CAFFÈ (caffe.js): sotto i 1500 px resta solo la tazzina */
+.top-actions .caffe-btn{display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:#ffcf8a;border-color:rgba(255,179,64,.35)}
+.top-actions .caffe-btn:hover{background:rgba(255,179,64,.12)}
+@media (max-width:1500px){.top-actions .caffe-btn span{display:none}.top-actions .caffe-btn{padding:0 11px}}

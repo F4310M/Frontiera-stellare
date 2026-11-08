@@ -13,8 +13,11 @@
   <link rel="stylesheet" href="profilo.css">
   <link rel="stylesheet" href="caricamento.css">
   <link rel="stylesheet" href="rifiniture.css">
+  <link rel="stylesheet" href="arena.css">
+  <link rel="stylesheet" href="impostazioni.css">
 </head>
 <body>
+  <script src="sigillo.js"></script>
   <script src="caricamento.js"></script>
   <canvas id="game" aria-label="Area di gioco spaziale"></canvas>
 
@@ -157,7 +160,6 @@
     </header>
     <div class="market-content market-catalog">
       <p class="market-prices">COSTI IN MISSIONE · colpo 1 CR · missile 25 CR · granata 20 CR · carburante 2 CR/unità. Taglia: 10 CR per nemico nello spazio, 15 CR per ribelle a terra.</p>
-      <div id="marketPreview" class="market-preview hidden" tabindex="-1" role="region" aria-label="Anteprima acquisto"></div>
       <p id="marketMsg" class="market-msg" role="status"></p>
       <div class="market-rail-head">
         <h3 id="marketCatalogTitle">POTENZIAMENTI</h3>
@@ -167,6 +169,7 @@
         </div>
       </div>
       <div id="marketGrid" class="market-grid" tabindex="0" role="region" aria-labelledby="marketCatalogTitle"></div>
+      <div id="marketPreview" class="market-preview hidden" tabindex="-1" role="region" aria-label="Anteprima acquisto"></div>
       <section id="marketDemo" class="market-demo hidden" aria-labelledby="marketDemoTitle" tabindex="-1">
         <video id="marketDemoVideo" controls muted playsinline preload="none" aria-label="Video dimostrativo"></video>
         <div class="market-demo-copy">
@@ -251,6 +254,13 @@
   <script src="boss-robot.js"></script>
   <script src="boss-immagini.js"></script>
   <script src="coloni.js"></script>
+  <script src="camminata.js"></script>
+  <script src="zoom-terra.js"></script>
+  <script src="navi-in-fuga.js"></script>
+  <script src="impostazioni.js"></script>
+  <script src="joypad.js"></script>
   <script src="vetrina.js"></script>
+  <script src="arena.js"></script>
+  <script src="caffe.js"></script>
 </body>
 </html>
