@@ -6,5 +6,5 @@ const CLASSIFICA_ONLINE={
  apiKey:'AIzaSyA8X02k-GO4gSsTmtVuRtMzYlYru7S1-58',
  // SFIDA ONLINE (arena.js): indirizzo della Realtime Database, es. https://stellar-frontier-f6387-default-rtdb.europe-west1.firebasedatabase.app
  // Vuoto = la sfida funziona solo tra finestre dello stesso browser.
- databaseURL:''
+ databaseURL:'https://stellar-frontier-f6387-default-rtdb.europe-west1.firebasedatabase.app'
 };
