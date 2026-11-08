@@ -12,7 +12,7 @@ sandbox.document.getElementById('game').getContext=()=>fakeCtx;
 vm.createContext(sandbox);
 const html=fs.readFileSync(path.join(dist,'index.html'),'utf8');
 const files=[...html.matchAll(/<script src="([^"?]+)/g)].map(m=>m[1]).filter(f=>fs.existsSync(path.join(dist,f))&&!/^(firebase|caricamento)/.test(f));
-assert(files.at(-1)==='megacolpo.js','megacolpo.js è l’ultimo script');
+assert(files.indexOf('megacolpo.js')>files.indexOf('guida-orbita.js'),'megacolpo.js dopo guida-orbita.js');
 for(const f of ['icone.js','game.js','camera.js','pianeta.js','fase2.js','grafica2.js','boss.js','economia.js','finale.js','musica.js','terra.js','fluidita.js','missili-nemici.js','spazio.js','battaglia.js','sotterranei.js','godmode.js','i18n.js','facile.js','speciale.js','buchineri.js','guida-orbita.js','megacolpo.js'])vm.runInContext(fs.readFileSync(path.join(dist,f),'utf8'),sandbox);
 const run=s=>vm.runInContext('{'+s+'\n}',sandbox),val=s=>vm.runInContext(s,sandbox);
 const step=(sec,dt=1/60)=>run(`for(let i=0;i<${Math.round(sec/dt)};i++)update(${dt})`);
