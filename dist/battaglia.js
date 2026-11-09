@@ -367,3 +367,23 @@ updatePlatform=function(dt){
  bt.updatePlatform(dt*k);
  if(state==='platform'&&pf)battJetHints();
 };
+
+// ---------------------------------------------------------------- 5) ostacoli solidi (2026-11-09)
+// Muretti dei ribelli, barricate e casse non si attraversano più: il pilota deve saltarli (o superarli col jetpack)
+// e può anche fermarsi sopra. Le misure sono quelle del disegno (e dei colpi che ci si fermano).
+// Valgono solo per il pilota: i soldati nemici non sanno saltare e continuano a passarci.
+const BATT_OSTACOLI={muretto:{hw:BATT.coverW/2,h:BATT.coverH},barricata:{hw:30,h:22},cassa:{hw:16,h:28}};
+function battObstacleSolids(x){
+ const out=[];
+ for(const pr of pf.props){
+  const o=BATT_OSTACOLI[pr.kind];
+  if(o&&Math.abs(pr.x-x)<260)out.push({x:pr.x-o.hw,w:o.hw*2,y:pr.y-o.h,ostacolo:true});
+ }
+ return out;
+}
+{const prevMove=pfMoveBody;pfMoveBody=function(b,dt,drop){
+ if(!pf||b!==pf.pilot||!pf.props)return prevMove(b,dt,drop);
+ const extra=battObstacleSolids(b.x);if(!extra.length)return prevMove(b,dt,drop);
+ const base=pf.solids;pf.solids=base.concat(extra);
+ try{return prevMove(b,dt,drop)}finally{pf.solids=base}
+}}
