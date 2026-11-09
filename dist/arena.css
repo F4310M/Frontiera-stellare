@@ -134,3 +134,10 @@ body.arena-on .hud,body.arena-on #touchUi{display:none!important}
 .top-actions .caffe-btn{display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:#ffcf8a;border-color:rgba(255,179,64,.35)}
 .top-actions .caffe-btn:hover{background:rgba(255,179,64,.12)}
 @media (max-width:1500px){.top-actions .caffe-btn span{display:none}.top-actions .caffe-btn{padding:0 11px}}
+
+/* classifica arena (classifica-arena.js) */
+.board-arena .board-row{grid-template-columns:54px 1fr 100px 150px}
+.board-arena .board-row span:nth-child(4){font-size:11px;color:#ffb340}
+.board-arena .board-row.head span:nth-child(4){font-size:9px;color:var(--muted)}
+.ar-rank{color:#ffb340;font-weight:700;letter-spacing:1px}
+@media(max-width:850px){.board-arena .board-row{grid-template-columns:34px 1fr 64px 50px;gap:6px;padding:8px 10px}.board-arena .board-row span:nth-child(4){display:block;font-size:10px}.board-arena .board-row.head span:nth-child(4){font-size:0}.board-arena .board-row.head span:nth-child(4)::after{content:'V · A';font-size:9px;white-space:nowrap}}
