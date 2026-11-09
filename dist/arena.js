@@ -9,10 +9,10 @@
 // gli ultimi prendono i posti rimasti. Niente fuoco amico. Il nome di ogni pilota è sotto la sua nave.
 // In team battle la fazione scelta nel menu è la squadra preferita; la squadra decide la fazione (fa).
 const ARENA={R:5000,max:6,dur:300,win:10,respawn:3,hz:12,hp:100,dmg:10,bulletSpeed:1050,bulletLife:1.05,
- fireCd:.17,maxDmg:65,stale:7,rocks:46,inv:2,countdown:4,endTime:12,shipR:16,meteorR:74,meteorSpeed:1450,
+ fireCd:.17,maxDmg:65,stale:7,rocks:96,inv:2,countdown:4,endTime:12,shipR:16,meteorR:74,meteorSpeed:1450,
  // (2026-11-09) meteoriti come quelli intorno ai pianeti ma più resistenti: si rompono, i frammenti fanno danno,
- // e dopo un po' ricompaiono. Decide l'host (bit rb0..rb2), i frammenti li calcola ognuno uguale (seme).
- rockHp:[1,1.6,2.4],rockBack:35,fragN:10,fragDmg:14,fragLife:2.6,cometFirst:15,
+ // e dopo un po' ricompaiono. Decide l'host (bit rb0..rb5), i frammenti li calcola ognuno uguale (seme).
+ rockHp:[1,1.6,2.4],rockBack:35,fragN:10,fragDmg:14,fragLife:2.6,cometFirst:8,cometEvery:[14,24],rockBits:6,
  colors:['#51e6ff','#ffb340','#ff5268','#9dff6a','#c38bff','#ff7ad9'],
  quick:['ALFA','BETA','VEGA','NOVA','ORSA','LIRA','SOLE','LUNA'],
  // team battle: stanze veloci a parte, 3 posti per squadra, vince la prima squadra a 15 abbattimenti
@@ -42,9 +42,9 @@ function arCleanName(n){return String(n||'').replace(/[^\p{L}\p{N} ]/gu,'').trim
 const AR_ROCK_MAT=[{fill:'#584435',edge:'#d7ac78'},{fill:'#294e56',edge:'#87d4cf'},{fill:'#503756',edge:'#d3a0ee'}];
 function arRocks(code){
  const r=arRand(arHash('rocce'+code)),out=[];
- for(let tries=0;out.length<ARENA.rocks&&tries<1500;tries++){
-  const a=r()*Math.PI*2,d=ARENA.R*(.12+r()*.8),rad=45+r()*75,x=Math.cos(a)*d,y=Math.sin(a)*d;
-  if(out.some(o=>Math.hypot(o.x-x,o.y-y)<o.r+rad+160))continue;
+ for(let tries=0;out.length<ARENA.rocks&&tries<4000;tries++){
+  const a=r()*Math.PI*2,d=ARENA.R*(.1+r()*.84),rad=34+r()*86,x=Math.cos(a)*d,y=Math.sin(a)*d;
+  if(out.some(o=>Math.hypot(o.x-x,o.y-y)<o.r+rad+120))continue;
   const n=9+Math.floor(r()*4),pts=[];for(let i=0;i<n;i++)pts.push(.78+r()*.22);
   const mat=out.length%3,hp=Math.round((60+rad)*ARENA.rockHp[mat]);
   out.push({x,y,r:rad,pts,rot:r()*6.28,shade:r(),mat,v:Math.floor(r()*8),hp,dmg:0,br:0,bt:0,n:0,fade:0});
@@ -52,7 +52,7 @@ function arRocks(code){
  return out;
 }
 // meteoriti rotti in 3 numeri da 19 bit (le regole del database accettano solo numeri sotto il milione)
-function arRockMask(g){const m=[0,0,0];g.rocks.forEach((o,i)=>{if(o.br&&i<57)m[Math.floor(i/19)]+=2**(i%19)});return m}
+function arRockMask(g){const m=Array(ARENA.rockBits).fill(0);g.rocks.forEach((o,i)=>{if(o.br&&i<ARENA.rockBits*19)m[Math.floor(i/19)]+=2**(i%19)});return m}
 function arRockBroken(mask,i){return Math.floor((+mask[Math.floor(i/19)]||0)/2**(i%19))%2===1}
 function arRockBreak(g,i){
  const o=g.rocks[i];if(!o||o.br)return;
@@ -78,7 +78,7 @@ function arRockTick(g,dt){
     const busy=arActive(g).some(p=>p.s.al&&Math.hypot((+p.s.x||0)-o.x,(+p.s.y||0)-o.y)<o.r+80);if(!busy)arRockRestore(g,i)}}
  }else{
   const h=g.others[arHostPid(g)];
-  if(h&&typeof h.s.rb0==='number'){const mask=[h.s.rb0,h.s.rb1,h.s.rb2];
+  if(h&&typeof h.s.rb0==='number'){const mask=Array.from({length:ARENA.rockBits},(_,k)=>+h.s['rb'+k]||0);
    g.rocks.forEach((o,i)=>{const b=arRockBroken(mask,i);if(b&&!o.br)arRockBreak(g,i);else if(!b&&o.br)arRockRestore(g,i)})}
  }
  for(const o of g.rocks)if(o.fade>0)o.fade=Math.max(0,o.fade-dt*1.5);
@@ -244,7 +244,7 @@ function arTargets(g,n){
  list.sort((a,b)=>a.d-b.d);const out=[];for(let i=0;i<n;i++)out.push(list.length?list[i%list.length].pid:'');return out;
 }
 function arLaunch(g){
- const lv=g.up.salvo|0;if(!lv||g.misCd>0)return false;
+ const lv=g.up.salvo|0;if(g.misCd>0)return false;
  const m=g.me,n=lv+1,tgs=arTargets(g,n);
  for(let i=0;i<n;i++){g.shotSeq++;
   const a=m.r+(i-(n-1)/2)*.45,c=Math.cos(a),s=Math.sin(a),sp=ARENA.mis.speed*.6;
@@ -263,7 +263,45 @@ function arShoot(g,power=0){
   g.shots.push({t:g.time,sh});
   g.bullets.push({x:sh[1],y:sh[2],vx:sh[3],vy:sh[4],dmg,r:rad,power,o:g.pid,life:power?1.35:ARENA.bulletLife,c:arColor(g,g.pid),big:power>0||g.up.laser});
  }
- g.fireCd=ARENA.fireCd;g.events.push({type:'shot'});
+ if(power){m.vx-=c*(60+120*power);m.vy-=s*(60+120*power);arBlast(g,m.x+c*32,m.y+s*32,'#b8f6ff',6+Math.round(8*power),.6+power*.6)}
+ g.fireCd=ARENA.fireCd;g.events.push({type:'shot',power});
+}
+// ---- effetti della nave come nel gioco in singolo (game.js exhaust, megacolpo.js)
+const AR_FX={chargeStart:.28,chargeFull:1.25,orb:[9,22]};
+function arChargeLevel(ch){return Math.max(0,Math.min(1,(ch-AR_FX.chargeStart)/(AR_FX.chargeFull-AR_FX.chargeStart)))}
+// fiammate morbide dei motori: stesse quantità, velocità e colori di exhaust() in game.js
+function arExhaust(g,x,y,a,vx,vy,lx,ly,dx,dy,rate,color,dt){
+ const n=Math.floor(rate*dt+Math.random());if(!n)return;
+ const ca=Math.cos(a),sa=Math.sin(a),px=x+ca*lx-sa*ly,py=y+sa*lx+ca*ly,ex=ca*dx-sa*dy,ey=sa*dx+ca*dy;
+ for(let i=0;i<n;i++){const life=.34+Math.random()*.5,sp=48+Math.random()*115;
+  g.parts.push({x:px+(Math.random()-.5)*4,y:py+(Math.random()-.5)*4,vx:vx+ex*sp+(Math.random()-.5)*20,vy:vy+ey*sp+(Math.random()-.5)*20,life,max:life,color,r:1.6+Math.random()*3.8,soft:true})}
+}
+// particelle risucchiate verso la prua mentre si carica il mega colpo
+function arChargeFx(g,x,y,a,vx,vy,L,dt){
+ const nx=x+Math.cos(a)*30,ny=y+Math.sin(a)*30,n=Math.floor((10+30*L)*dt+Math.random());
+ for(let i=0;i<n;i++){const q=Math.random()*6.28,d=34+Math.random()*30+L*24,life=.22+Math.random()*.12;
+  g.parts.push({x:nx+Math.cos(q)*d,y:ny+Math.sin(q)*d,vx:-Math.cos(q)*d/life+vx,vy:-Math.sin(q)*d/life+vy,life,max:life,color:L>=1?'#e6d2ff':'#7cf2ff',r:1+Math.random()*1.6})}
+}
+function arShipFx(g,x,y,a,vx,vy,s,hostile,dt){
+ const f=+s.f||0,st=+s.s||0,bo=!!+s.bo,col=hostile?'#ff5268':'#51e6ff',hot=hostile?'#ffd0d6':'#bff8ff';
+ if(f>0)arExhaust(g,x,y,a,vx,vy,-15,0,-1,0,bo?145:42,bo?hot:col,dt);
+ if(f<0)arExhaust(g,x,y,a,vx,vy,20,0,1,0,35,col,dt);
+ if(st>0)arExhaust(g,x,y,a,vx,vy,0,-11,0,-1,34,col,dt);
+ if(st<0)arExhaust(g,x,y,a,vx,vy,0,11,0,1,34,col,dt);
+ if(+s.cg>0)arChargeFx(g,x,y,a,vx,vy,Math.min(1,+s.cg),dt);
+}
+function arShipsFx(g,dt){
+ const m=g.me,L=m.al&&g.fireHeld&&g.charge>AR_FX.chargeStart?arChargeLevel(g.charge):-1;
+ const prev=+m.cg||0;m.cg=L>=0?Math.max(.01,Math.round(L*100)/100):0;
+ if(L>=0){g.cgTick=(g.cgTick||0)-dt;if(L<1&&g.cgTick<=0){g.cgTick=.11;g.events.push({type:'charge',L})}if(L>=1&&prev<1)g.events.push({type:'charged'})}else g.cgTick=0;
+ if(m.al)arShipFx(g,m.x,m.y,m.r,m.vx,m.vy,m,arHostile(g,g.pid),dt);
+ for(const pid in g.others){const o=g.others[pid],s=o.s;if(s.al)arShipFx(g,o.x,o.y,o.r,+s.vx||0,+s.vy||0,s,arHostile(g,pid),dt)}
+}
+// colpo che va a segno: il mega colpo esplode come in megacolpo.js
+function arHitFx(g,b){
+ if(b.mis)arBlast(g,b.x,b.y,'#ffb340',16,.8);
+ else if(b.power>0){arBlast(g,b.x,b.y,'#d8f8ff',8,.8);arBlast(g,b.x,b.y,'#c9f7ff',16+Math.round(b.power*14),1+b.power*1.2);g.events.push({type:'mega',x:b.x,y:b.y,power:b.power})}
+ else arBlast(g,b.x,b.y,b.c,6,.4);
 }
 function arPhysics(g,dt,inp){
  const m=g.me;
@@ -303,14 +341,17 @@ function arPhysics(g,dt,inp){
  if(inp.missile&&!locked)arLaunch(g);
 }
 function arMeteorSpawn(g){
- const r=arRand(arHash(g.room+'-meteor-'+(++g.meteorSeq))),a=r()*Math.PI*2,nx=Math.cos(a),ny=Math.sin(a),off=(r()*1.2-.6)*ARENA.R;
- g.meteor={x:nx*(ARENA.R+700)-ny*off,y:ny*(ARENA.R+700)+nx*off,vx:-nx*ARENA.meteorSpeed,vy:-ny*ARENA.meteorSpeed,w:3,life:(ARENA.R*2+1800)/ARENA.meteorSpeed};
+ const r=arRand(arHash(g.room+'-meteor-'+(++g.meteorSeq))),a=r()*Math.PI*2,nx=Math.cos(a),ny=Math.sin(a);
+ // come nel singolo la cometa passa dove ci sono i piloti: la traiettoria sfiora uno di loro
+ const pil=[g.me,...Object.values(g.others).map(o=>o.s)].filter(p=>p&&+p.al),t=pil.length?pil[Math.floor(r()*pil.length)]:null;
+ const px=t?Math.max(-ARENA.R,Math.min(ARENA.R,+t.x||0)):0,py=t?Math.max(-ARENA.R,Math.min(ARENA.R,+t.y||0)):0,off=t?(r()-.5)*500:(r()*1.2-.6)*ARENA.R;
+ g.meteor={x:px+nx*(ARENA.R+700)-ny*off,y:py+ny*(ARENA.R+700)+nx*off,vx:-nx*ARENA.meteorSpeed,vy:-ny*ARENA.meteorSpeed,w:3,life:(ARENA.R*2+1800)/ARENA.meteorSpeed};
 }
 function arMeteorTick(g,dt,host){
- if(g.phase!=='P'){if(host){g.meteor=null;g.meteorT=ARENA.cometFirst}return}
+ if(g.phase!=='P'&&g.phase!=='L'){if(host){g.meteor=null;g.meteorT=ARENA.cometFirst}return}
  if(host){
   if(!g.meteor){g.meteorT-=dt;if(g.meteorT<=0)arMeteorSpawn(g)}
-  const m=g.meteor;if(m){if(m.w>0)m.w=Math.max(0,m.w-dt);else{m.x+=m.vx*dt;m.y+=m.vy*dt;m.life-=dt;if(m.life<=0){g.meteor=null;g.meteorT=22+(g.meteorSeq%4)*4}}
+  const m=g.meteor;if(m){if(m.w>0)m.w=Math.max(0,m.w-dt);else{m.x+=m.vx*dt;m.y+=m.vy*dt;m.life-=dt;if(m.life<=0){g.meteor=null;const E=ARENA.cometEvery;g.meteorT=E[0]+(g.meteorSeq%4)/3*(E[1]-E[0])}}
    // la cometa spazza via i meteoriti che incontra
    if(m&&m.w<=0)g.rocks.forEach((o,i)=>{if(!o.br&&Math.hypot(o.x-m.x,o.y-m.y)<ARENA.meteorR+o.r*.8)arRockBreak(g,i)})}
  }else{
@@ -345,6 +386,7 @@ function arTick(g,dt,inp){
  g.me.ph=g.phase;g.me.rt=Math.round(g.rt*10)/10;g.me.md=g.mode;
  arTeamFix(g);
  arPhysics(g,dt,inp);
+ arShipsFx(g,dt);
  arMeteorTick(g,dt,g.isHost);
  arRockTick(g,dt);
  g.me.iv=g.inv>0?1:0;
@@ -358,18 +400,21 @@ function arTick(g,dt,inp){
    if(Math.random()<.6)g.parts.push({x:b.x,y:b.y,vx:-b.vx*.1+(Math.random()-.5)*30,vy:-b.vy*.1+(Math.random()-.5)*30,life:.35,max:.5,color:'#ffb340',r:2+Math.random()*2});
   }
   b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
+  if(b.power>0&&!b.mis){(b.tr||(b.tr=[])).push({x:b.x,y:b.y});if(b.tr.length>9)b.tr.shift();b.spin=(b.spin||Math.random()*6.28)+dt*9;
+   if(Math.random()<.7)g.parts.push({x:b.x+(Math.random()-.5)*b.r*2,y:b.y+(Math.random()-.5)*b.r*2,vx:-b.vx*.08+(Math.random()-.5)*40,vy:-b.vy*.08+(Math.random()-.5)*40,life:.35,max:.35,color:'#9feaff',r:1.5+Math.random()*2});
+   if(b.life<=0){arBlast(g,b.x,b.y,'#c9f7ff',16+Math.round(b.power*14),1+b.power*1.2);g.events.push({type:'mega',x:b.x,y:b.y,power:b.power});continue}}
   const hr=ARENA.shipR+(b.mis?7:(b.r||3));
   const ri=g.rocks.findIndex(o=>!o.br&&Math.hypot(o.x-b.x,o.y-b.y)<o.r);
-  if(ri>=0){b.life=0;arBlast(g,b.x,b.y,'#9aa7b8',5,.4);arRockHit(g,ri,b.dmg||ARENA.dmg);continue}
+  if(ri>=0){b.life=0;if(b.power>0)arHitFx(g,b);else arBlast(g,b.x,b.y,'#9aa7b8',5,.4);arRockHit(g,ri,b.dmg||ARENA.dmg);continue}
   if(b.o!==g.pid&&!arAlly(g,b.o,g.pid)&&g.me.al&&Math.hypot(g.me.x-b.x,g.me.y-b.y)<hr){
-   b.life=0;arBlast(g,b.x,b.y,b.mis?'#ffb340':b.c,b.mis?16:6,b.mis?.8:.4);if(arHurt(g,b.dmg||ARENA.dmg,b.o))g.events.push({type:'hit'});continue;
+   b.life=0;arHitFx(g,b);if(arHurt(g,b.dmg||ARENA.dmg,b.o))g.events.push({type:'hit'});continue;
   }
   for(const pid in g.others){if(pid===b.o||arAlly(g,pid,b.o))continue;const o=g.others[pid];// niente fuoco amico
-   if(o.s.al&&!o.s.iv&&Math.hypot(o.x-b.x,o.y-b.y)<hr){b.life=0;arBlast(g,b.x,b.y,b.mis?'#ffb340':b.c,b.mis?16:6,b.mis?.8:.4);break}}
+   if(o.s.al&&!o.s.iv&&Math.hypot(o.x-b.x,o.y-b.y)<hr){b.life=0;arHitFx(g,b);break}}
  }
  g.bullets=g.bullets.filter(b=>b.life>0);
  for(const p of g.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=1-1.8*dt;p.vy*=1-1.8*dt;p.life-=dt}
- g.parts=g.parts.filter(p=>p.life>0);if(g.parts.length>700)g.parts.splice(0,g.parts.length-700);
+ g.parts=g.parts.filter(p=>p.life>0);if(g.parts.length>1200)g.parts.splice(0,g.parts.length-1200);
  // gli altri piloti: posizione prevista dall'ultimo stato, raggiunta con dolcezza
  for(const pid in g.others){const o=g.others[pid],s=o.s,age=Math.min(.3,g.time-o.seen),tx=s.x+(+s.vx||0)*age,ty=s.y+(+s.vy||0)*age;
   if(Math.hypot(tx-o.x,ty-o.y)>320){o.x=tx;o.y=ty}else{const k=Math.min(1,dt*12);o.x+=(tx-o.x)*k;o.y+=(ty-o.y)*k}
@@ -382,10 +427,10 @@ function arTick(g,dt,inp){
  const mt=g.isHost&&g.meteor?g.meteor:null;const rb=arRockMask(g);
  return {x:Math.round(m.x),y:Math.round(m.y),vx:Math.round(m.vx),vy:Math.round(m.vy),r:Math.round(m.r*100)/100,f:m.f,s:m.s,
   h:Math.round(m.h),sd:m.sd,bo:m.bo,iv:m.iv,al:m.al,k:m.k,d:m.d,dz:m.dz,by:m.by,sh:g.shots.map(s=>s.sh),ph:m.ph,rt:m.rt,
-  mx:mt?Math.round(mt.x):0,my:mt?Math.round(mt.y):0,mvx:mt?Math.round(mt.vx):0,mvy:mt?Math.round(mt.vy):0,mw:mt?Math.round(mt.w*10)/10:0,ml:mt?Math.round(mt.life*10)/10:0,ms:g.meteorSeq,rb0:rb[0],rb1:rb[1],rb2:rb[2],md:g.mode,tm:m.tm,tj:m.tj,ug:m.ug,fa:arFaNum(m.fa)};
+  mx:mt?Math.round(mt.x):0,my:mt?Math.round(mt.y):0,mvx:mt?Math.round(mt.vx):0,mvy:mt?Math.round(mt.vy):0,mw:mt?Math.round(mt.w*10)/10:0,ml:mt?Math.round(mt.life*10)/10:0,ms:g.meteorSeq,rb0:rb[0],rb1:rb[1],rb2:rb[2],rb3:rb[3],rb4:rb[4],rb5:rb[5],md:g.mode,tm:m.tm,tj:m.tj,ug:m.ug,fa:arFaNum(m.fa),cg:m.cg||0};
 }
 function arFull(g){const m=g.me,p=arTickSnapshot(g);return Object.assign({n:m.n,j:m.j,fa:arFaNum(m.fa)},m.a?{a:m.a}:{},p)}
-function arTickSnapshot(g){const m=g.me;return {x:Math.round(m.x),y:Math.round(m.y),vx:0,vy:0,r:Math.round(m.r*100)/100,f:0,s:0,h:Math.round(m.h),sd:0,bo:0,iv:1,al:m.al,k:m.k,d:m.d,dz:m.dz,by:m.by,ph:m.ph,rt:m.rt,mx:0,my:0,mvx:0,mvy:0,mw:0,ml:0,ms:0,rb0:0,rb1:0,rb2:0,md:g.mode,tm:m.tm,tj:m.tj,ug:m.ug}}
+function arTickSnapshot(g){const m=g.me;return {x:Math.round(m.x),y:Math.round(m.y),vx:0,vy:0,r:Math.round(m.r*100)/100,f:0,s:0,h:Math.round(m.h),sd:0,bo:0,iv:1,al:m.al,k:m.k,d:m.d,dz:m.dz,by:m.by,ph:m.ph,rt:m.rt,mx:0,my:0,mvx:0,mvy:0,mw:0,ml:0,ms:0,rb0:0,rb1:0,rb2:0,rb3:0,rb4:0,rb5:0,cg:0,md:g.mode,tm:m.tm,tj:m.tj,ug:m.ug}}
 
 // ---------------------------------------------------------------- rete
 function arDbUrl(){
@@ -681,7 +726,11 @@ function arHandleEvents(g){
   else if(e.type==='rock'){if(typeof sfx==='function'&&Math.hypot(e.x-g.me.x,e.y-g.me.y)<1400)try{sfx('boom')}catch(x){}}
   else if(e.type==='comet'){arMessage(AR_T('COMETA IN ARRIVO!'),2.4);if(typeof sfx==='function')try{sfx('ui')}catch(x){}}
   else if(e.type==='missile'){if(typeof sfx==='function')try{sfx('missile')}catch(x){}}
-  else if(e.type==='shot'){if(typeof sfx==='function')try{sfx('shoot')}catch(x){}}
+  else if(e.type==='shot'){if(typeof sfx==='function')try{sfx('shoot')}catch(x){}
+   if(e.power>0)try{const L=e.power;if(typeof tone==='function')tone(180,.35+L*.2,'sawtooth',.03+L*.02,60);if(typeof noise==='function')noise(.3+L*.25,.03+L*.03,700+L*800)}catch(x){}}
+  else if(e.type==='charge'){try{if(typeof tone==='function')tone(320+e.L*900,.09,'triangle',.012+e.L*.01,380+e.L*980)}catch(x){}}
+  else if(e.type==='charged'){try{if(typeof tone==='function')tone(1240,.12,'sine',.03,1860)}catch(x){}}
+  else if(e.type==='mega'){if(typeof sfx==='function'&&Math.hypot(e.x-g.me.x,e.y-g.me.y)<1400)try{sfx('boom',1+e.power)}catch(x){}}
   else if(e.type==='hit'){if(typeof sfx==='function')try{sfx('hit')}catch(x){}}
  }
  g.events=[];
@@ -692,7 +741,8 @@ function arInput(g){
  const k=typeof keys!=='undefined'&&keys?keys:{},z=arZoom();
  const sx=W/2+(g.me.x-arUI.cam.x)*z,sy=H/2+(g.me.y-arUI.cam.y)*z;
  const inp={ax:(k.KeyD||k.ArrowRight?1:0)-(k.KeyA||k.ArrowLeft?1:0),ay:(k.KeyW||k.ArrowUp?1:0)-(k.KeyS||k.ArrowDown?1:0),
-  aim:Math.atan2(arUI.my-sy,arUI.mx-sx),fire:arUI.fire||!!k.Space,missile:arUI.missile||!!k.KeyQ,boost:!!(k.ShiftLeft||k.ShiftRight),shield:arUI.shield||!!k.KeyE,brake:!!k.KeyF};
+  aim:Math.atan2(arUI.my-sy,arUI.mx-sx),fire:arUI.fire||!!k.Space,missile:arUI.missile||arUI.misOnce||!!k.KeyQ,boost:!!(k.ShiftLeft||k.ShiftRight),shield:arUI.shield||!!k.KeyE,brake:!!k.KeyF};
+ arUI.misOnce=false;
  inp.world=true;inp.wx=inp.ax;inp.wy=-inp.ay;
  if(Math.hypot(arUI.mx-sx,arUI.my-sy)<8)inp.aim=g.me.r;
  // touch: le frecce del pad muovono nella direzione indicata, la mira cerca il pilota più vicino
@@ -719,7 +769,7 @@ function arUpdate(dt){
  set('arPhaseLbl',AR_T(g.phase==='P'?'TEMPO':g.phase==='C'?'VIA TRA':g.phase==='E'?'NUOVA SFIDA TRA':'ALLENAMENTO'));
  set('arTime',g.phase==='L'?'--:--':arFmt(g.rt));set('arKills',String(m.k));
  if(g.mode===1){const ts=arTeamScore(g);set('arT1',String(ts[1]));set('arT2',String(ts[2]))}
- arShow('arMisChip',!!g.up.salvo);if(g.up.salvo)set('arMis',g.misCd>0?Math.ceil(g.misCd)+' s':AR_T('PRONTI'));
+ arShow('arMisChip',true);set('arMis',g.misCd>0?Math.ceil(g.misCd)+' s':AR_T('PRONTI'));
  set('arHp',Math.round(m.h)+'%');bar('arHpBar',m.h);set('arBo',Math.round(ar.boost)+'%');bar('arBoBar',ar.boost);set('arSh',Math.round(ar.shield)+'%');bar('arShBar',ar.shield);
  const hb=arEl('arHpBar');if(hb&&typeof hpColor==='function')try{hb.style.background=hpColor(m.h)}catch(e){}
  if(g.phase==='E')set('arNext',AR_T('NUOVA SFIDA TRA')+' '+Math.ceil(g.rt)+' s');
@@ -791,6 +841,36 @@ function arDrawFrags(g){
   else{ctx.fillStyle='#725342';ctx.strokeStyle='#ffbf7e';ctx.beginPath();ctx.moveTo(f.r,0);ctx.lineTo(0,-f.r*.7);ctx.lineTo(-f.r*.8,0);ctx.lineTo(0,f.r*.7);ctx.closePath();ctx.fill();ctx.stroke()}
   ctx.restore()}
 }
+// laser come drawBullet() del gioco in singolo, nel colore del pilota
+function arRgb(hex){const h=String(hex||'#51e6ff').replace('#','');const n=parseInt(h.length===3?h.replace(/./g,'$&$&'):h,16)||0x51e6ff;return ((n>>16)&255)+','+((n>>8)&255)+','+(n&255)}
+function arDrawLaser(b){
+ const sp=Math.hypot(b.vx,b.vy)||1,ux=b.vx/sp,uy=b.vy/sp,r=(b.r||3)*(b.big?1.15:1),len=Math.min(24,sp*.026)+r*3,glow=arRgb(b.c);
+ ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineCap='round';ctx.globalAlpha=Math.min(1,b.life*3);
+ ctx.beginPath();ctx.moveTo(b.x-ux*len,b.y-uy*len);ctx.lineTo(b.x,b.y);
+ ctx.strokeStyle=`rgba(${glow},.22)`;ctx.lineWidth=r*4;ctx.stroke();ctx.strokeStyle=`rgba(${glow},.8)`;ctx.lineWidth=r*1.5;ctx.stroke();ctx.strokeStyle='#effdff';ctx.lineWidth=r*.65;ctx.stroke();ctx.restore();
+}
+// sfera di plasma del mega colpo (megacolpo.js): alone, archi elettrici che girano
+function arOrb(x,y,r,L,t){
+ if(typeof mcOrb==='function'){try{mcOrb(x,y,r,L,t);return}catch(e){}}
+ const gr=ctx.createRadialGradient(x,y,0,x,y,r*2.4),c=L>=1?'214,190,255':'120,236,255';
+ gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.22,`rgba(${c},.95)`);gr.addColorStop(.5,`rgba(${c},.35)`);gr.addColorStop(1,`rgba(${c},0)`);
+ ctx.fillStyle=gr;ctx.beginPath();ctx.arc(x,y,r*2.4,0,6.283);ctx.fill();
+ ctx.strokeStyle=`rgba(${c},.85)`;ctx.lineWidth=1.3;for(let i=0;i<3;i++){const a=t+i*2.094;ctx.beginPath();ctx.arc(x,y,r*1.15,a,a+1.1);ctx.stroke()}
+}
+function arDrawMega(b,now){
+ const L=b.power,r=AR_FX.orb[0]+(AR_FX.orb[1]-AR_FX.orb[0])*(.35+.65*L);
+ ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=1;
+ const tr=b.tr||[];for(let i=0;i<tr.length;i++){const p=tr[i],k=(i+1)/tr.length;ctx.fillStyle=`rgba(110,225,255,${.12*k})`;ctx.beginPath();ctx.arc(p.x,p.y,r*(.4+.6*k),0,6.283);ctx.fill()}
+ arOrb(b.x,b.y,r,L,b.spin||now*9);ctx.restore();
+}
+// carica sulla prua: sfera che cresce e anello che si stringe
+function arDrawCharge(x,y,a,L,now){
+ const nx=x+Math.cos(a)*34,ny=y+Math.sin(a)*34,pulse=.85+.15*Math.sin(now*(18+L*14)),r=(4+14*L)*pulse;
+ ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineCap='round';arOrb(nx,ny,r,L,now*7);
+ const ring=r+20*(1-((now*2.2)%1));ctx.strokeStyle=L>=1?'rgba(225,205,255,.7)':`rgba(124,242,255,${.25+.4*L})`;ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(nx,ny,ring,0,6.283);ctx.stroke();
+ if(L>=1){ctx.strokeStyle=`rgba(255,255,255,${.35+.3*Math.sin(now*20)})`;ctx.beginPath();ctx.arc(nx,ny,r*2.6,0,6.283);ctx.stroke()}
+ ctx.restore();
+}
 // cometa come quella del gioco in singolo: bagliore, coda di fuoco e nucleo di roccia
 function arDrawMeteor(g,now){
  const m=g.meteor;if(!m)return;
@@ -816,8 +896,11 @@ function arDraw(){
  try{drawStarfield(cam.x*.012,cam.y*.012)}catch(e){}
  try{drawNebula(cam.x*.004,cam.y*.004)}catch(e){}
  if(!g){try{if(typeof drawHomeSpace==='function')drawHomeSpace(performance.now()/1000)}catch(e){}try{drawVignette()}catch(e){}return}
- const z=arZoom(),now=performance.now()/1000;
- ctx.save();ctx.translate(W/2,H/2);ctx.scale(z,z);ctx.translate(-cam.x,-cam.y);
+ const z=arZoom(),now=performance.now()/1000,me=g.me;
+ try{if(typeof drawNearDust==='function')drawNearDust(cam.x*.82,cam.y*.82,me.vx||0,me.vy||0)}catch(e){}
+ ctx.save();
+ if(me.al&&me.bo){const ratio=Math.hypot(me.vx,me.vy)/590;if(ratio>.8){const k=.35+(ratio-.8)*2.6;ctx.translate((Math.random()-.5)*k,(Math.random()-.5)*k)}}
+ ctx.translate(W/2,H/2);ctx.scale(z,z);ctx.translate(-cam.x,-cam.y);
  // bordo dell'arena
  ctx.lineWidth=600;ctx.strokeStyle='rgba(255,60,90,.07)';ctx.beginPath();ctx.arc(0,0,ARENA.R+300,0,6.283);ctx.stroke();
  ctx.lineWidth=5;ctx.strokeStyle=`rgba(81,230,255,${.35+.15*Math.sin(now*3)})`;ctx.setLineDash([46,26]);ctx.lineDashOffset=-now*40;ctx.beginPath();ctx.arc(0,0,ARENA.R,0,6.283);ctx.stroke();ctx.setLineDash([]);
@@ -828,9 +911,9 @@ function arDraw(){
  arDrawMeteor(g,now);
  // colpi
  ctx.lineCap='round';
- for(const b of g.bullets){const l=Math.hypot(b.vx,b.vy)||1;
+ for(const b of g.bullets){
   if(b.mis){ctx.globalAlpha=1;ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Math.atan2(b.vy,b.vx));ctx.fillStyle='#dfe9ef';ctx.fillRect(-9,-2.2,15,4.4);ctx.fillStyle=b.c;ctx.beginPath();ctx.moveTo(6,-2.2);ctx.lineTo(11,0);ctx.lineTo(6,2.2);ctx.closePath();ctx.fill();ctx.fillRect(-9,-4,4,8);ctx.fillStyle='#ffd27a';ctx.beginPath();ctx.arc(-10,0,2.6+Math.random()*1.5,0,6.283);ctx.fill();ctx.restore();continue}
-   ctx.strokeStyle=b.c;ctx.globalAlpha=Math.min(1,b.life*3);ctx.lineWidth=b.big?5+(b.power||0)*7:3.2;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x-b.vx/l*(22+(b.power||0)*26),b.y-b.vy/l*(22+(b.power||0)*26));ctx.stroke();ctx.strokeStyle='#fff';ctx.lineWidth=1.2+(b.power||0)*2;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x-b.vx/l*12,b.y-b.vy/l*12);ctx.stroke();if(b.power){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(b.x,b.y,b.r*.55,0,6.283);ctx.fill()}}
+  if(b.power>0)arDrawMega(b,now);else arDrawLaser(b)}
  ctx.globalAlpha=1;
  // altri piloti
  ctx.textAlign='center';ctx.font="600 12px 'Chakra Petch',sans-serif";
@@ -839,6 +922,7 @@ function arDraw(){
   ctx.strokeStyle=c;ctx.globalAlpha*=.5;ctx.lineWidth=2;ctx.beginPath();ctx.arc(o.x,o.y,27,0,6.283);ctx.stroke();ctx.globalAlpha=s.iv&&Math.floor(now*10)%2?.4:1;
   arDrawPilot(g,pid,arShipObj(o.x,o.y,o.r,s),s,c);ctx.globalAlpha=1;
   if(s.sd)arDrawBarrier(o.x,o.y,0,now);
+  if(+s.cg>0)arDrawCharge(o.x,o.y,o.r,Math.min(1,+s.cg),now);
   arDrawName(arCleanName(s.n),o.x,o.y,c,arAlly(g,pid,g.pid));
   ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(o.x-20,o.y-38,40,4);ctx.fillStyle=typeof hpColor==='function'?hpColor(+s.h||0):'#9dff6a';ctx.fillRect(o.x-20,o.y-38,40*Math.max(0,Math.min(1,(+s.h||0)/100)),4);
  }
@@ -847,10 +931,11 @@ function arDraw(){
  if(m.al){if(g.inv>0&&Math.floor(now*10)%2)ctx.globalAlpha=.45;arDrawPilot(g,g.pid,arShipObj(m.x,m.y,m.r,m),m,arColor(g,g.pid));ctx.globalAlpha=1;
   if(m.sd)arDrawBarrier(m.x,m.y,g.shieldHit/.55,now);
   arDrawName(m.n,m.x,m.y,arColor(g,g.pid),false);
-  if(g.fireHeld&&g.charge>=.18){const q=Math.min(1,g.charge/1.25),nx=m.x+Math.cos(m.r)*27,ny=m.y+Math.sin(m.r)*27;ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=arColor(g,g.pid);ctx.globalAlpha=.55+.35*Math.sin(now*18);ctx.beginPath();ctx.arc(nx,ny,4+q*10,0,6.283);ctx.fill();ctx.fillStyle='#fff';ctx.globalAlpha=.9;ctx.beginPath();ctx.arc(nx,ny,2+q*3,0,6.283);ctx.fill();ctx.restore()}}
+  if(m.cg>0)arDrawCharge(m.x,m.y,m.r,Math.min(1,m.cg),now)}
  // particelle
+ const dp=typeof drawParticle==='function'?drawParticle:null;
  ctx.globalCompositeOperation='lighter';
- for(const p of g.parts){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.283);ctx.fill()}
+ for(const p of g.parts){if(dp){try{dp(p);continue}catch(e){}}ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.283);ctx.fill()}
  ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
  ctx.restore();
  // indicatori ai bordi per i piloti fuori schermo
@@ -885,6 +970,8 @@ if(typeof musTheme==='function'){const o=musTheme;musTheme=function(l){return ar
 if(typeof addEventListener==='function'&&typeof document!=='undefined'){
  addEventListener('mousemove',e=>{arUI.mx=e.clientX;arUI.my=e.clientY});
  addEventListener('mousedown',e=>{if(!arUI.on||!ar)return;const t=e.target;if(t&&t.closest&&t.closest('button,input,a,select'))return;if(e.button===0)arUI.fire=true;if(e.button===1){arUI.missile=true;e.preventDefault()}if(e.button===2)arUI.shield=true});
+ // anche girare la rotella lancia i missili
+ addEventListener('wheel',e=>{if(!arUI.on||!ar)return;if(typeof canvas!=='undefined'&&e.target!==canvas)return;arUI.misOnce=true},{passive:true});
  addEventListener('mouseup',e=>{if(e.button===0)arUI.fire=false;if(e.button===1)arUI.missile=false;if(e.button===2)arUI.shield=false});
  addEventListener('blur',()=>{arUI.fire=false;arUI.shield=false;arUI.missile=false});
  addEventListener('keydown',e=>{if(!arUI.on)return;

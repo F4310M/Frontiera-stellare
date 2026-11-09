@@ -26,6 +26,18 @@ run(quiet+'capture=0');step(.05);assert(!capBox.classList.contains('capturing'))
 run('capture=40;rfCapture()');assert(capBox.classList.contains('capturing'),'barra evidenziata durante la conquista');
 console.log('PASS: barra della conquista evidenziata');
 
+// 1b) dentro l'anello la freccia sparisce e la barra sale al suo posto
+{const hud=doc.getElementById('hud');
+ run('player.x=world.x-world.r-600;player.y=world.y;rfCapture()');assert(!hud.classList.contains('in-anello'),'fuori dall’anello la freccia resta');
+ run('player.x=world.x-world.r-100;rfCapture()');assert(hud.classList.contains('in-anello'),'dentro l’anello la freccia sparisce');
+ run('player.x=world.x-world.r-190;rfCapture()');assert(hud.classList.contains('in-anello'),'margine: niente sfarfallio sul bordo');
+ run('player.x=world.x-world.r-300;rfCapture()');assert(!hud.classList.contains('in-anello'),'uscito dall’anello la freccia ritorna');
+ run('player.x=world.x-world.r-100;rfCapture();state="map";rfCapture();state="play"');assert(!hud.classList.contains('in-anello'),'fuori dal gioco nessuno stato residuo');
+ const css=fs.readFileSync(path.join(dist,'rifiniture.css'),'utf8');
+ assert(/#hud\.in-anello \.hud-top>\.distance-box\{display:none\}/.test(css),'css nasconde la freccia');
+ assert(/#hud\.in-anello \.capture-status\{top:22px\}/.test(css),'css sposta la barra in alto');
+ console.log('PASS: dentro l’anello niente freccia, barra in alto');}
+
 // 2) mirino dei missili solo con crediti
 run(quiet+'enemies=[{x:player.x+200,y:player.y,vx:0,vy:0,hp:5,r:20,type:"fighter",fire:99}]');step(.5);
 assert(val('lockTarget')!==null,'con i crediti il nemico viene agganciato');
