@@ -112,9 +112,20 @@ const A=sb.A;
  A.arTick(g,1/60,input(true));const first=g.shotSeq;
  for(let i=0;i<40;i++)A.arTick(g,1/60,input(true));
  assert.strictEqual(g.shotSeq,first,'tenere premuto non produce una raffica automatica');
+ assert.ok(g.me.cg>0&&g.me.cg<=1,'la carica viaggia in rete come numero (gli altri vedono la sfera)');
+ assert.ok(g.events.some(e=>e.type==='charge'),'fischio della carica come nel singolo');
+ const vx0=g.me.vx;
  A.arTick(g,1/60,input(false));
+ assert.strictEqual(g.me.cg,0,'carica finita');assert.ok(g.me.vx<vx0-40,'rinculo del mega colpo');
  assert.strictEqual(g.shotSeq,first+1,'al rilascio parte un solo colpo caricato');
  const mega=g.bullets[g.bullets.length-1];assert.ok(mega.power>0&&mega.r>3&&mega.dmg>A.arDamage(g.up),'colpo più grande e potente');
+ // il mega colpo esplode in fondo alla corsa
+ g.events=[];for(let i=0;i<120&&g.bullets.includes(mega);i++)A.arTick(g,1/60,input(false));
+ assert.ok(!g.bullets.includes(mega)&&g.events.some(e=>e.type==='mega'),'scoppio del mega colpo');
+ // fiammate morbide dei motori come exhaust() del singolo, più forti col post-bruciatore
+ g.parts=[];for(let i=0;i<30;i++)A.arTick(g,1/60,{...input(false),ax:1});const slow=g.parts.filter(p=>p.soft).length;
+ g.parts=[];g.boost=100;for(let i=0;i<30;i++)A.arTick(g,1/60,{...input(false),ax:1,boost:true});const fast=g.parts.filter(p=>p.soft).length;
+ assert.ok(slow>5&&fast>slow*2,'fumo dei motori e del post-bruciatore '+slow+' '+fast);
  // F frena sensibilmente la nave
  Object.assign(g.me,{vx:200,vy:0});for(let i=0;i<30;i++)A.arTick(g,1/60,{...input(false),brake:true});assert.ok(Math.abs(g.me.vx)<25);
  console.log('PASS: comandi single-player e colpo caricato');
@@ -130,7 +141,15 @@ const A=sb.A;
 }
 {
  // meteoriti distruttibili: l'host decide, gli altri seguono; i frammenti fanno danno
- const rocks=A.arRocks('NOVA');assert.ok(rocks.length>=40,'campo di meteoriti più fitto');assert.ok(rocks.every(o=>o.hp>=100),'più resistenti');
+ const rocks=A.arRocks('NOVA');assert.ok(rocks.length>=90,'campo di meteoriti più fitto');
+ {const g=A.arNew('qqqqqqqqqq','Maschera');g.rocks=A.arRocks('NOVA');g.rocks.forEach(o=>o.br=1);const mk=A.arRockMask(g);assert.ok(mk.length*19>=g.rocks.length&&mk.every(v=>v<1e6),'tutti i meteoriti stanno nei bit di rete')}
+ {// la cometa passa anche in sala d'attesa e sfiora un pilota
+  const g=A.arNew('rrrrrrrrrr','Cometa');g.phase='L';Object.assign(g.me,{x:2500,y:-1000,al:1});g.meteorT=.01;A.arMeteorTick(g,.02,true);
+  const m=g.meteor;assert.ok(m,'cometa in sala d’attesa');const sp=Math.hypot(m.vx,m.vy);
+  assert.ok(Math.abs((g.me.x-m.x)*m.vy/sp-(g.me.y-m.y)*m.vx/sp)<400,'la traiettoria passa vicino al pilota');
+  assert.ok(A.ARENA.cometFirst<=10&&A.ARENA.cometEvery[1]<=25,'comete frequenti')}
+ {// missili per tutti: uno senza gadget
+  const g=A.arNew('ssssssssss','Base','',{});g.rocks=[];assert.ok(A.arLaunch(g)&&g.bullets.filter(b=>b.mis).length===1,'un missile anche senza lanciamissili')}assert.ok(rocks.every(o=>o.hp>=100),'più resistenti');
  assert.ok(A.ARENA.R>=5000,'arena più grande');
  const mk=[];for(let i=0;i<57;i++)if(i%3===0)mk.push(i);
  const fake={rocks:Array.from({length:57},(_,i)=>({br:mk.includes(i)?1:0}))},mask=A.arRockMask(fake);
