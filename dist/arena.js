@@ -871,6 +871,37 @@ function arDrawCharge(x,y,a,L,now){
  if(L>=1){ctx.strokeStyle=`rgba(255,255,255,${.35+.3*Math.sin(now*20)})`;ctx.beginPath();ctx.arc(nx,ny,r*2.6,0,6.283);ctx.stroke()}
  ctx.restore();
 }
+// radar dell'arena: tutti i piloti, puntini azzurri (ribelli, nave del gioco) o rossi (imperiali, nave nemica)
+function arRadarBox(){
+ const touch=typeof document!=='undefined'&&document.body&&document.body.classList.contains('touch'),r=touch||Math.min(W,H)<620?50:74;
+ return touch?{x:W/2,y:96+r,r}:{x:W-24-r,y:H-118-r,r};
+}
+function arDrawRadar(g,now){
+ const {x:cx,y:cy,r}=arRadarBox(),k=r/(ARENA.R+300),me=g.me;
+ const P=(x,y)=>{const d=Math.hypot(x,y),m=d*k>r-3?(r-3)/(d*k):1;return [cx+x*k*m,cy+y*k*m]};
+ ctx.save();
+ // fondo, anelli e bordo dell'arena
+ ctx.fillStyle='rgba(3,10,20,.72)';ctx.beginPath();ctx.arc(cx,cy,r,0,6.283);ctx.fill();
+ ctx.strokeStyle='rgba(81,230,255,.28)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,r,0,6.283);ctx.stroke();
+ ctx.strokeStyle='rgba(81,230,255,.1)';for(const q of [.33,.66]){ctx.beginPath();ctx.arc(cx,cy,r*q,0,6.283);ctx.stroke()}
+ ctx.beginPath();ctx.moveTo(cx-r,cy);ctx.lineTo(cx+r,cy);ctx.moveTo(cx,cy-r);ctx.lineTo(cx,cy+r);ctx.stroke();
+ ctx.setLineDash([4,3]);ctx.strokeStyle='rgba(81,230,255,.45)';ctx.beginPath();ctx.arc(cx,cy,ARENA.R*k,0,6.283);ctx.stroke();ctx.setLineDash([]);
+ // fascio che gira
+ const a=(now*1.6)%6.283,sw=ctx.createLinearGradient(cx,cy,cx+Math.cos(a)*r,cy+Math.sin(a)*r);sw.addColorStop(0,'rgba(81,230,255,.0)');sw.addColorStop(1,'rgba(81,230,255,.16)');
+ ctx.fillStyle=sw;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a-.5,a);ctx.closePath();ctx.fill();
+ // meteoriti e cometa
+ ctx.fillStyle='rgba(190,160,120,.35)';for(const o of g.rocks){if(o.br)continue;const [x,y]=P(o.x,o.y);ctx.fillRect(x-.8,y-.8,1.6,1.6)}
+ const m=g.meteor;if(m){const [x,y]=P(m.x,m.y);ctx.fillStyle=m.w>0?`rgba(255,120,60,${.4+.4*Math.sin(now*10)})`:'#ffb35a';ctx.beginPath();ctx.arc(x,y,m.w>0?3:4,0,6.283);ctx.fill()}
+ // piloti
+ const dot=(pid,s,x0,y0,mine)=>{const [x,y]=P(x0,y0),c=arHostile(g,pid)?'#ff5268':'#51e6ff';
+  ctx.fillStyle=c;ctx.shadowColor=c;ctx.shadowBlur=6;ctx.beginPath();ctx.arc(x,y,mine?3.6:3,0,6.283);ctx.fill();ctx.shadowBlur=0;
+  if(mine){ctx.strokeStyle='#fff';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(x,y,6+Math.sin(now*5),0,6.283);ctx.stroke();
+   const h=+s.r||0;ctx.beginPath();ctx.moveTo(x+Math.cos(h)*11,y+Math.sin(h)*11);ctx.lineTo(x+Math.cos(h+2.5)*6,y+Math.sin(h+2.5)*6);ctx.lineTo(x+Math.cos(h-2.5)*6,y+Math.sin(h-2.5)*6);ctx.closePath();ctx.fillStyle='#fff';ctx.fill()}};
+ for(const pid in g.others){const o=g.others[pid];if(o.s.al)dot(pid,o.s,o.x,o.y,false)}
+ if(me.al)dot(g.pid,me,me.x,me.y,true);
+ ctx.font="600 9px 'Chakra Petch',sans-serif";ctx.textAlign='center';ctx.fillStyle='rgba(81,230,255,.7)';ctx.fillText('RADAR',cx,cy+r+12);
+ ctx.restore();
+}
 // cometa come quella del gioco in singolo: bagliore, coda di fuoco e nucleo di roccia
 function arDrawMeteor(g,now){
  const m=g.meteor;if(!m)return;
@@ -943,6 +974,7 @@ function arDraw(){
   const a=Math.atan2(sy-H/2,sx-W/2),ex=Math.max(26,Math.min(W-26,W/2+Math.cos(a)*W)),ey=Math.max(26,Math.min(H-26,H/2+Math.sin(a)*H));
   const k=Math.min((W/2-26)/Math.abs(Math.cos(a)||1e-6),(H/2-26)/Math.abs(Math.sin(a)||1e-6)),px=W/2+Math.cos(a)*k,py=H/2+Math.sin(a)*k;
   ctx.save();ctx.translate(isFinite(px)?px:ex,isFinite(py)?py:ey);ctx.rotate(a);ctx.fillStyle=arColor(g,pid);ctx.globalAlpha=.85;ctx.beginPath();ctx.moveTo(12,0);ctx.lineTo(-8,-8);ctx.lineTo(-4,0);ctx.lineTo(-8,8);ctx.closePath();ctx.fill();ctx.restore()}
+ try{arDrawRadar(g,now)}catch(e){}
  if(g.edge>0){ctx.fillStyle=`rgba(255,40,70,${g.edge*.5})`;ctx.fillRect(0,0,W,H)}
  try{drawVignette()}catch(e){}
 }
