@@ -21,6 +21,8 @@ run('missile=null;keys={KeyD:true};for(let i=0;i<60;i++)update(1/60);keys={}');
 assert(val('eco.run.count.fuel')>.9,'Il carburante viene contato');assert(val('eco.run.spent.fuel')>=1,'Il carburante costa crediti');
 const before=val('eco.balance');run('kills=4');run('finish(false)');
 const r1=JSON.parse(val('JSON.stringify(eco.last)'));
+assert.equal(val('eco.earned'),16,'si accumulano le entrate prima delle spese');
+assert.equal(store.frontieraGuadagni,'16','guadagni persistenti');
 assert.equal(r1.rows[0].qty,1);assert.equal(r1.rows[1].qty,1);assert.equal(r1.rows[3].amount,16,'Taglia: 4 nemici × 4 CR');
 assert.equal(val('eco.balance'),before+16,'La taglia viene accreditata a fine fase');
 console.log('PASS: spese in tempo reale e riepilogo della fase 1');
@@ -47,13 +49,67 @@ run(`
  tone=freq=>pitches.push(freq);
  requestAnimationFrame=cb=>{nextFrame=cb;return 1};
  ecoShowReward({missionStart:1300,balance:2200,missionIncome:900},450);
- nextFrame(300);nextFrame(850);nextFrame(1200);nextFrame(1700);
+ nextFrame(300);nextFrame(850);nextFrame(1200);nextFrame(1700);nextFrame(2500);
  globalThis.rewardRises=pitches.length===3&&pitches.every((freq,i)=>!i||freq>pitches[i-1]);
  tone=originalTone;requestAnimationFrame=originalFrame;
 `);
 assert.equal(val('$("rewardScore").textContent'), '450');
 assert.equal(val('$("rewardCredits").textContent'), '900 CR');
 assert(val('rewardRises'),'Il suono sale durante il conteggio');
+
+// Dopo la liberazione il riepilogo parte sul pianeta, prima della navigazione.
+run(`
+ const originalFrame=requestAnimationFrame,originalDraw=drawPlatform;
+ const hidden={};
+ for(const id of ['resultOverlay','missionReward','rewardActions','marketScreen','rewardLandBtn']){
+  $(id).classList.toggle=(name,off)=>{if(name==='hidden')hidden[id]=off};
+ }
+ let nextFrame,openSummary,planetDrawn=false;
+ globalThis.queueMicrotask=fn=>{openSummary=fn};
+ requestAnimationFrame=cb=>{nextFrame=cb;return 1};
+ startPlatform();pf.kills=5;pfFinish(true);
+ drawPlatform=()=>{planetDrawn=true};
+ openSummary();
+ draw();
+ globalThis.rewardBeforeHome=state==='won'&&planetDrawn&&hidden.resultOverlay&&!hidden.missionReward&&hidden.rewardActions;
+ nextFrame(1750);nextFrame(2500);
+ globalThis.rewardReady=!hidden.rewardActions;
+ $('rewardMarketBtn').onclick({currentTarget:$('rewardMarketBtn')});
+ const enteredMarket=state==='won'&&hidden.missionReward&&!hidden.marketScreen;
+ ecoCloseMarket();
+ globalThis.rewardMarketReturn=enteredMarket&&hidden.marketScreen&&!hidden.missionReward;
+ $('rewardClose').onclick();
+ globalThis.rewardHome=state==='map'&&hidden.missionReward&&pf===null;
+ startGame();state='orbit';kills=5;finish(true);
+ openSummary();
+ const orbitReward=state==='won'&&!hidden.missionReward&&hidden.rewardActions&&eco.last.phase===1;
+ nextFrame(1750);nextFrame(2500);
+ globalThis.rewardOrbit=orbitReward&&!hidden.rewardActions&&!hidden.rewardLandBtn&&$('rewardCredits').textContent==='20 CR';
+ $('rewardLandBtn').onclick();
+ globalThis.rewardLanding=hidden.missionReward&&state==='platform'&&eco.run.earlierIncome===20;
+ abort();
+ delete globalThis.queueMicrotask;
+ drawPlatform=originalDraw;
+ requestAnimationFrame=originalFrame;
+`);
+assert(val('rewardBeforeHome'),'Il conteggio parte sul pianeta con le azioni nascoste');
+assert(val('rewardReady'),'Le azioni appaiono alla fine del conteggio');
+assert(val('rewardMarketReturn'),'Il mercato si apre dal risultato e torna al risultato');
+assert(val('rewardHome'),'La Home si apre solo dopo il riepilogo');
+assert(val('rewardOrbit'),'Il riepilogo spaziale mostra i crediti e le azioni dopo il conteggio');
+assert(val('rewardLanding'),'Dal riepilogo spaziale si atterra e si conservano le entrate della prima fase');
+run(`
+ startPlatform();pf.phase='missione';pf.pilot.visible=true;mouse.down=true;
+ const balance=eco.balance;
+ for(let i=0;i<90;i++)pfUpdateRifle(pf.pilot,1/60,true);
+ globalThis.rifleHeld=pf.shots.length===1&&pf.pilot.rifleCharge===PF_RIFLE_FULL;
+ mouse.down=false;pfUpdateRifle(pf.pilot,1/60,true);
+ globalThis.rifleRelease=pf.shots.length===2&&pf.shots[1].dmg>pf.shots[0].dmg&&balance-eco.balance===7;
+ abort();
+`);
+assert(val('rifleHeld'),'Premendo a lungo parte un colpo normale e si carica il fucile');
+assert(val('rifleRelease'),'Al rilascio parte un colpo piu potente e vengono addebitati i crediti');
+
 
 // Potenziamenti in gioco.
 run('eco.balance=5000;eco.upgrades={salvo:2,laser:2,speed:3,shield:2,grenades:2};startGame();enemies=[];missile=null;launchMissile()');

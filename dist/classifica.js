@@ -69,19 +69,28 @@ function boardBuild(){
  }
 }
 let boardHighlight=null;
-function boardMedal(rank){
- return rank<=10?`<b class="board-medal" data-rank="${rank}" aria-label="Posizione ${rank}">${rank}</b>`:'';
+function boardRank(rank){
+ if(rank>50)return `<b class="rank-number${rank>=100?' rank-number-compact':''}">${rank}</b>`;
+ const medal=rank<=10?'':rank<=20?' rank-white':rank<=30?' rank-blue':' rank-yellow';
+ const shape=rank<=3
+  ? '<path class="rank-wing rank-cup-wing" d="M8 8 1 2l1 7 3 1 1 4 5 2m16-8 7-6-1 7-3 1-1 4-5 2"/>'
+   +'<path class="rank-trim" d="M8 5H2v3c0 4 4 6 8 6m16-9h6v3c0 4-4 6-8 6M17 15v5m-6 2h12"/>'
+   +'<path class="rank-face" d="M7 2h20v6c0 6-4.5 10-10 10S7 14 7 8z"/>'
+  : (rank<=20?'<path class="rank-wing" d="M11 8 1 4l2 7 3 1 1 4 6 2m10-10 10-4-2 7-3 1-1 4-6 2"/>':rank<=30
+    ? '<path class="rank-wing rank-wing-small" d="m10 9-7-3 2 7 5 3m14-7 7-3-2 7-5 3"/>':'')
+   +'<circle class="rank-face" cx="17" cy="12" r="9"/><circle class="rank-ring" cx="17" cy="12" r="7"/>';
+ return `<b class="board-rank${medal}" data-rank="${rank}"><svg viewBox="0 0 34 24" aria-hidden="true" focusable="false">${shape}</svg><i>${rank}</i></b>`;
 }
-function boardName(r,name,rank,avatarClass=''){
+function boardName(r,name,avatarClass=''){
  const avatar=typeof profAva==='function'?profAva(r.a,avatarClass,r.n):'';
- return avatar+`<span class="board-player-name">${name}</span>`+(rank?boardMedal(rank):'');
+ return avatar+`<span class="board-player-name">${name}</span>`;
 }
 function boardRows(b,hi){
  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  return '<div class="board-row head"><span>POS.</span><span>NOME</span><span>PUNTI</span><span>DATA</span></div>'+
   b.map((r,i)=>{
    const mine=hi(r,i);
-   return `<div class="board-row${mine?' me':''}${i<3?' podium':''}"><span>${i+1}</span><span class="board-name">${boardName(r,esc(r.n),mine?i+1:0)}</span><span>${scoreFmt(r.s)}</span><span>${esc(r.d||'')}</span></div>`;
+   return `<div class="board-row${mine?' me':''}${i<3?' podium':''}"><span>${boardRank(i+1)}</span><span class="board-name">${boardName(r,esc(r.n))}</span><span>${scoreFmt(r.s)}</span><span>${esc(r.d||'')}</span></div>`;
   }).join('');
 }
 function boardShow(list,b,hi,emptyMsg){
@@ -288,7 +297,10 @@ pfFinish=function(win){
  sOrig.pfFinish(win);
  if(state===before||!win||!p)return;
  scoreAdd(SCORE_PTS.colonia*scoreDiff(p)+(p.final?SCORE_PTS.finale+vite*SCORE_PTS.vita:0));
- if(p.final)scoreEnd();
+ if(p.final){
+  if(typeof eco!=='undefined'&&eco.last?.phase===2)eco.last.finalScore=score;
+  scoreEnd();
+ }
 };
 viteGameOver=function(){sOrig.viteGameOver();scoreEnd()};
 
@@ -316,7 +328,7 @@ async function mapBoardRender(){
  if(!rows.length){list.innerHTML='<p class="board-empty">Nessun punteggio ancora: completa una partita per entrare in classifica.</p>';return}
  list.innerHTML=(offline?'<p class="board-offline">OFFLINE</p>':'')+rows.map((r,i)=>{
   const mine=(coMyId&&r.id===coMyId)||boardIsMe(r);
-  return `<div class="map-board-row${i<3?' top'+(i+1):''}${mine?' me':''}"><span class="pos">${i+1}</span><span class="name board-name">${boardName(r,esc(r.n),mine?i+1:0,'map-ava')}</span><span class="pts">${scoreFmt(r.s)}</span></div>`;
+  return `<div class="map-board-row${i<3?' top'+(i+1):''}${mine?' me':''}"><span class="pos">${boardRank(i+1)}</span><span class="name board-name">${boardName(r,esc(r.n),'map-ava')}</span><span class="pts">${scoreFmt(r.s)}</span></div>`;
  }).join('');
 }
 // Accanto al titolo: "TU N° 42", la posizione mondiale del miglior punteggio del pilota (solo nei primi 10.000).

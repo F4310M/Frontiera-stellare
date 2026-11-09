@@ -3,9 +3,9 @@
 // e riparte dal primo pianeta. Restano il pilota, le impostazioni, la classifica e i tuoi migliori record:
 // i punti della partita sono già in classifica, salvati alla fine dell'ultima missione.
 
-function gameRestart(){
+function gameRestart(balance){
  if(typeof state!=='undefined'&&state!=='map'&&typeof abort==='function')abort();
- if(typeof mapNewGame==='function')mapNewGame();
+ if(typeof mapNewGame==='function')mapNewGame(balance);
  localStorage.setItem('frontieraOmegaLibero','');
  if(typeof score!=='undefined'){score=0;scorePending=0;scoreSave()}
  if(typeof myRunEnd==='function')myRunEnd();
@@ -28,11 +28,11 @@ function restartBuild(){
  if(!$('restartOverlay')&&document.body){
   const o=document.createElement('section');o.id='restartOverlay';o.className='overlay hidden';o.setAttribute('aria-label','RICOMINCIA IL GIOCO');
   o.innerHTML='<div class="brief-card compact restart-card"><p class="eyebrow">NUOVA PARTITA</p><h2>RICOMINCIARE?</h2>'+
-   '<p>Perderai i pianeti liberati, le vite, i crediti e i potenziamenti di questa partita. Non si può annullare.</p>'+
+   '<p>Perderai i pianeti liberati, le vite, i crediti e i potenziamenti di questa partita. Recuperi solo il 20% dei crediti guadagnati in questa partita.</p>'+
    '<button id="restartYes" class="launch-btn restart-yes"><span>SÌ, RICOMINCIA</span><b>'+(typeof ico==='function'?ico('check'):'')+'</b></button>'+
    '<button id="restartNo" class="text-btn">ANNULLA</button></div>';
   document.body.appendChild(o);
-  $('restartYes').onclick=()=>{show('restartOverlay',false);gameRestart()};
+  $('restartYes').onclick=()=>{show('restartOverlay',false);gameRestart(typeof gameOverCarry==='function'?gameOverCarry():undefined)};
   $('restartNo').onclick=()=>show('restartOverlay',false);
  }
 }

@@ -81,13 +81,43 @@ gEnemy=function(e,now){
 // ---- 3) barriera: copre tutto il pilota (disegnato più grande dell'area di collisione)
 // ---- 4) pilota di riserva sganciato dalla navetta
 const DROP={come:1.1,release:1.35,leave:1.9,end:3.2,hover:200};
+function terraSafeGround(x){
+ const g=pfGroundAt(x),margin=40;
+ if(g===null||!pf.solids.some(s=>s.y===g&&s.x<=x-margin&&x+margin<s.x+s.w))return null;
+ const clear=solid=>solid.x<x+margin&&solid.x+solid.w>x-margin&&solid.y<g;
+ if(pf.plats.some(clear)||(typeof battObstacleSolids==='function'&&battObstacleSolids(x).some(clear)))return null;
+ const danger=r=>r.l<x+125&&r.r>x-125&&r.b>g-DROP.hover-55&&r.t<g+20;
+ if(pf.enemies.some(e=>e.hp>0&&danger(pfRect(e))))return null;
+ if(pf.boss?.hp>0&&danger(pfBossRect(pf.boss)))return null;
+ return g;
+}
+function terraFindDrop(preferred){
+ const left=pf.cam.lock?pf.cam.lockX+44:44;
+ const right=pf.cam.lock?pf.cam.lockX+Math.min(pfViewW(),1500)-44:pf.arenaX+96;
+ const start=pfClamp(preferred,left,right);
+ for(let distance=0;distance<=Math.max(start-left,right-start);distance+=12){
+  for(const x of distance?[start-distance,start+distance]:[start]){
+   if(x<left||x>right)continue;
+   const g=terraSafeGround(x);
+   if(g!==null)return {x,g};
+  }
+ }
+ return null;
+}
+function terraFrameDrop(x){
+ if(!pf.cam.lock&&!pfOnScreen(x,-75))pf.cam.x=Math.max(0,x-pfViewW()*.38);
+}
+function terraAimDrop(D,spot){
+ D.x=spot.x;D.g=spot.g;terraFrameDrop(spot.x);
+}
 pfLoseLife=function(...args){
  if(!pf||pf.lives<=0||(pf.drop&&!pf.drop.released))return;
  tOrig.pfLoseLife(...args);
  if(pf.lives<=0||pf.phase==='sconfitta'){pf.drop=null;return}
  const P=pf.pilot;
- const g=(pfGroundAt(P.x)??PF_FLOOR);
- pf.drop={t:0,x:P.x,g,released:false};
+ const D=pf.drop={t:0,x:null,preferred:P.x,released:false,retry:0};
+ const spot=terraFindDrop(P.x);
+ if(spot)terraAimDrop(D,spot);
  P.visible=false;P.barrier=false;P.vx=P.vy=0;P.inv=DROP.release+2.2;
  pfStatus('PILOTA DI RISERVA IN ARRIVO · VITE RIMASTE '+pf.lives,2600);
 };
@@ -99,8 +129,23 @@ function terraDropPose(D){
 }
 function terraUpdateDrop(dt){
  const D=pf.drop;if(!D)return;
- D.t+=dt;const P=pf.pilot;
+ const P=pf.pilot;
+ if(D.x===null){
+  D.retry-=dt;
+  if(D.retry>0)return;
+  const spot=terraFindDrop(D.preferred);
+  if(!spot){D.retry=.25;return}
+  terraAimDrop(D,spot);
+ }
+ D.t+=dt;
  if(!D.released&&D.t>=DROP.release){
+  if(terraSafeGround(D.x)===null){
+   const spot=terraFindDrop(D.preferred);
+   D.t=0;
+   if(spot)terraAimDrop(D,spot);
+   else{D.x=null;D.retry=.25}
+   return;
+  }
   D.released=true;const s=terraDropPose(D);
   Object.assign(P,{visible:true,x:s.x+40,y:s.y+36,vx:0,vy:60,ground:false,onPlat:false,
    hp:100,shield:100,shieldDelay:0,barrier:false,inv:2.4,fire:0,contactCd:0,jetOn:false,
@@ -113,7 +158,7 @@ function terraUpdateDrop(dt){
 }
 pfDrawShipOnPad=function(now){
  tOrig.pfDrawShipOnPad(now);
- const D=pf.drop;if(!D)return;
+ const D=pf.drop;if(!D||D.x===null)return;
  const pose=terraDropPose(D);if(!pfOnScreen(pose.x,160))return;
  ctx.save();
  for(const ox of [-26,22])drawPlume(pose.x+ox,pose.y+30,0,1,(40+Math.random()*16)*pose.thrust+8,6*pose.thrust+2,'#51e6ff');

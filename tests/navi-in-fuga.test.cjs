@@ -30,12 +30,12 @@ run('pf.pilot.x=pf.boss.x-500;pf.pilot.y=PF_FLOOR;pf.pilot.ground=true;pf.enemie
 run('pfHitBoss(1e9)');assert.equal(val('pf.phase'),'vittoria');
 step(4);
 assert(val('pf.boss.gone'),'il boss è esploso');
-assert(val('pf.crowd.length>0'),'i coloni escono come prima');
-assert(val('pf.crowd.length<=11'),'folla ridotta per mantenere fluida la scena');
+assert.equal(val('pf.crowd.length'),val('13+Math.ceil(pf.p.difficulty/2)'),'cinque coloni in piu');
+assert(val('pf.boom.smoke.length>0'),'fumo persistente dopo la distruzione');
 assert.equal(val("pf.enemies.filter(e=>e.hp>0&&e.type==='soldato').length"),0,'nessun soldato che scappa');
-assert(val('!!pf.naviFuga&&pf.naviFuga.ships.length>=4'),'la flotta nemica fugge');
+assert(val('!!pf.naviFuga&&pf.naviFuga.ships.length>=14'),'la flotta nemica fugge');
 assert(val('NF.trail<=8&&NF.smokeRate<=18'),'scie e fumo alleggeriti');
-run('drawPlatform()');
+step(.65);run('drawPlatform()');
 assert(val('pf.naviFuga.ships.some(S=>S.t>0&&S.x>-50&&S.y<520)'),'navi visibili in volo');
 console.log('PASS: flotta in fuga al posto dei soldati');
 

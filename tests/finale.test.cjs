@@ -14,10 +14,10 @@ const label=id=>nodes.get(id).querySelector('span');
 nodes.get('landBtn').querySelector=()=>{const n=nodes.get('landBtn');return n._span||(n._span={textContent:''})};
 nodes.get('returnBtn').querySelector=()=>{const n=nodes.get('returnBtn');return n._span||(n._span={textContent:''})};
 
-// Fine fase 1 vinta: solo "Abbandona" e "Libera la colonia"
+// Fine fase 1 vinta: il riepilogo si apre dopo gli aggiornamenti di fine fase
 run('selected=0;startGame();state="orbit";finish(true)');
 assert.equal(nodes.get('landBtn')._span.textContent,'LIBERA LA COLONIA · FASE 2');assert.equal(nodes.get('returnBtn')._span.textContent,'ABBANDONA');
-console.log('PASS: fine fase con due scelte');
+console.log('PASS: riepilogo dopo la fase spaziale');
 
 // Vite: 3 all'inizio, la nave distrutta ne toglie una
 run('abort();vite=3;viteSave();selected=0;startGame();arrivalRemaining=0;explodePlayer();for(let i=0;i<300;i++)update(1/60)');
@@ -64,7 +64,7 @@ assert.equal(names.size,5,'Cinque boss diversi');
 console.log('PASS: un boss per pianeta');
 
 // Pianeta finale: si sblocca liberando tutti i pianeti
-run('abort();localStorage.setItem("frontieraPianetiLiberati","");finalLock()');assert(!val('planets.includes(FINAL_PLANET)'),'Pianeta finale bloccato');
+run('abort();localStorage.setItem("frontieraPianetiLiberati","");finalLock()');assert.equal(val('eco.earned'),0);assert(!val('planets.includes(FINAL_PLANET)'),'Pianeta finale bloccato');
 for(let i=0;i<5;i++){run(`abort();vite=3;selected=${i};startPlatform()`);step(3.5);run('pf.phase="vittoria";pfFinish(true)')}
 assert(val('planets.includes(FINAL_PLANET)'),'Pianeta finale sbloccato');assert(nodes.get('resultText').textContent.includes('OMEGA'));
 const fi=val('planets.indexOf(FINAL_PLANET)');assert.equal(val('pfBossInfo(FINAL_PLANET).name'),'IMPERATORE OMEGA');
@@ -74,14 +74,13 @@ run(`abort();selected=${fi};startGame();drawWorld(world)`);
 console.log('PASS: pianeta finale e IMPERATORE OMEGA');
 
 // Game over: senza vite si riparte da capo
-run('abort();vite=1;viteSave();eco.balance=12000;selected=0;startPlatform()');step(3.5);const deathCredits=val('eco.balance');run('pf.lives=1;pfLoseLife()');step(2.5);
+run('abort();vite=1;viteSave();eco.balance=12000;eco.earned=5500;selected=0;startPlatform()');step(3.5);run('pf.lives=1;pfLoseLife()');step(2.5);
 assert.equal(val('state'),'lost');assert.equal(nodes.get('resultEyebrow').textContent,'GAME OVER');
-assert.equal(val('vite'),3);assert.equal(val('eco.balance'),Math.round(deathCredits*.25),'resta il 25% dei crediti');assert(!val('planets.includes(FINAL_PLANET)'),'Progressi azzerati');
+assert.equal(val('vite'),3);assert.equal(val('eco.balance'),1100,'resta il 20% dei guadagni della partita');assert.equal(val('eco.earned'),0);assert(!val('planets.includes(FINAL_PLANET)'),'Progressi azzerati');
 console.log('PASS: game over');
 
 // Niente scelta della fase dalla mappa: si parte sempre dallo spazio
-run('abort();phaseOneComplete=true;pfRefreshMapButton()');
-let shown=null;nodes.get('phase2Btn').classList.toggle=(n,hide)=>{shown=!hide};run('pfRefreshMapButton()');assert.equal(shown,false,'Il pulsante FASE 2 della mappa resta nascosto');
+assert(!fs.readFileSync('dist/index.html','utf8').includes('id="phase2Btn"'),'Scorciatoia FASE 2 rimossa');
 // Colonna sonora: intensità che segue il gioco
 run('abort()');assert.equal(val('musLevel()'),'calm','Mappa: musica calma');
 run('selected=0;startGame();arrivalRemaining=0');assert.equal(val('musLevel()'),'battle','In volo: battaglia');

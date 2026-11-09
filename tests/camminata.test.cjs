@@ -41,7 +41,7 @@ for(let k=0;k<4;k++)for(const lato of ['dietro','avanti']){
  assert(L.taglio<L.cav[1]&&L.cav[1]<768);
 }
 // durante la corsa il ginocchio si piega di più nel ritorno che nell'appoggio
-const ritorno=val('cammPosaColono(0,false,"avanti").b'),appoggio=val('cammPosaColono(Math.PI,false,"avanti").b');
+const ritorno=val('cammPosaColono(CAMM.coloni[0].avanti,.58,.27,1,false,"avanti").b'),appoggio=val('cammPosaColono(CAMM.coloni[0].avanti,.12,.27,1,false,"avanti").b');
 assert(ritorno>appoggio+.8,'ginocchio piegato nel ritorno');
 console.log('PASS: gambe dei coloni');
 assert.equal(val('pfColonistSize(4)'),.72,'il bambino con valigetta è più basso');

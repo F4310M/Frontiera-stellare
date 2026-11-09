@@ -12,7 +12,7 @@ const ARENA={R:5000,max:6,dur:300,win:10,respawn:3,hz:12,hp:100,dmg:10,bulletSpe
  fireCd:.17,maxDmg:65,stale:7,rocks:96,inv:2,countdown:4,endTime:12,shipR:16,meteorR:74,meteorSpeed:1450,
  // (2026-11-09) meteoriti come quelli intorno ai pianeti ma più resistenti: si rompono, i frammenti fanno danno,
  // e dopo un po' ricompaiono. Decide l'host (bit rb0..rb5), i frammenti li calcola ognuno uguale (seme).
- rockHp:[1,1.6,2.4],rockBack:35,fragN:10,fragDmg:14,fragLife:2.6,cometFirst:8,cometEvery:[14,24],rockBits:6,
+ rockHp:[1,1.6,2.4],rockBack:35,fragN:10,fragDmg:14,fragLife:2.6,cometFirst:8,cometNear:1100,cometEvery:[14,24],rockBits:6,
  colors:['#51e6ff','#ffb340','#ff5268','#9dff6a','#c38bff','#ff7ad9'],
  quick:['ALFA','BETA','VEGA','NOVA','ORSA','LIRA','SOLE','LUNA'],
  // team battle: stanze veloci a parte, 3 posti per squadra, vince la prima squadra a 15 abbattimenti
@@ -85,7 +85,7 @@ function arRockTick(g,dt){
  // frammenti: volano, rallentano e fanno male a chi colpiscono
  const m=g.me;
  for(const f of g.frags){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=1-.45*dt;f.vy*=1-.45*dt;f.rot+=f.spin*dt;f.life-=dt;
-  if(!f.hit&&m.al&&Math.hypot(m.x-f.x,m.y-f.y)<f.r+ARENA.shipR){f.hit=1;f.life=0;arBlast(g,f.x,f.y,'#ffbf7e',8,.5);if(arHurt(g,ARENA.fragDmg,''))g.events.push({type:'hit'})}}
+  if(!f.hit&&m.al&&Math.hypot(m.x-f.x,m.y-f.y)<f.r+ARENA.shipR){f.hit=1;f.life=0;arBlast(g,f.x,f.y,'#ffbf7e',8,.5);g.events.push({type:'bump',p:.55});if(arHurt(g,ARENA.fragDmg,''))g.events.push({type:'hit'})}}
  g.frags=g.frags.filter(f=>f.life>0);
 }
 // applica un evento della Realtime Database (put/patch) all'albero locale; dice quali piloti sono cambiati
@@ -267,7 +267,7 @@ function arShoot(g,power=0){
  g.fireCd=ARENA.fireCd;g.events.push({type:'shot',power});
 }
 // ---- effetti della nave come nel gioco in singolo (game.js exhaust, megacolpo.js)
-const AR_FX={chargeStart:.28,chargeFull:1.25,orb:[9,22]};
+const AR_FX={chargeStart:.28,chargeFull:1.25};
 function arChargeLevel(ch){return Math.max(0,Math.min(1,(ch-AR_FX.chargeStart)/(AR_FX.chargeFull-AR_FX.chargeStart)))}
 // fiammate morbide dei motori: stesse quantità, velocità e colori di exhaust() in game.js
 function arExhaust(g,x,y,a,vx,vy,lx,ly,dx,dy,rate,color,dt){
@@ -327,7 +327,7 @@ function arPhysics(g,dt,inp){
  g.shield=Math.max(0,Math.min(100,g.shield+(shieldOn?-32/(1+.35*(g.up.shield||0)):12)*dt));m.sd=shieldOn?1:0;
  // asteroidi: rimbalzo
  for(const o of g.rocks){if(o.br)continue;const dx=m.x-o.x,dy=m.y-o.y,d=Math.hypot(dx,dy),min=o.r+ARENA.shipR;
-  if(d<min&&d>0){const nx=dx/d,ny=dy/d;m.x=o.x+nx*min;m.y=o.y+ny*min;const vn=m.vx*nx+m.vy*ny;if(vn<0){m.vx-=1.6*vn*nx;m.vy-=1.6*vn*ny}}}
+  if(d<min&&d>0){const nx=dx/d,ny=dy/d;m.x=o.x+nx*min;m.y=o.y+ny*min;const vn=m.vx*nx+m.vy*ny;if(vn<0){m.vx-=1.6*vn*nx;m.vy-=1.6*vn*ny;if(vn<-25)g.events.push({type:'bump',p:Math.min(1,-vn/420)})}}}
  // bordo dell'arena: spinge dentro e brucia lo scafo
  const dist=Math.hypot(m.x,m.y);
  if(dist>ARENA.R){const nx=m.x/dist,ny=m.y/dist;m.vx-=nx*700*dt;m.vy-=ny*700*dt;if(dist>ARENA.R+300){m.x=nx*(ARENA.R+300);m.y=ny*(ARENA.R+300)}
@@ -527,7 +527,7 @@ function arBuildUI(){
     </div>
     <ul class="ar-feats">
      <li><b>METEORITI</b><span>Resistenti come quelli intorno ai pianeti: se li rompi, i frammenti colpiscono chi è vicino.</span></li>
-     <li><b>COMETE</b><span>Attraversano l’arena e spazzano via navi, colpi e meteoriti: segui la scia d’avviso.</span></li>
+     <li><b>COMETE</b><span>Attraversano l’arena e spazzano via navi, colpi e meteoriti: guarda l’avviso.</span></li>
      <li><b>MERCATO</b><span>I tuoi potenziamenti del mercato valgono anche qui: laser, barriera, motori, doppio laser, iniettori e lanciatore multiplo (missili guidati).</span></li>
     </ul>
    </section>
@@ -622,7 +622,7 @@ function arOpen(){
 function arExit(){
  if(ar)arLeaveRoom();
  arUI.on=false;if(typeof state!=='undefined'&&state==='arena')state='map';
- document.body.classList.remove('arena-on');arShow('arena',false);
+ document.body.classList.remove('arena-on');arAimOff();arShow('arena',false);
  if(typeof leaveGameFullscreen==='function')try{leaveGameFullscreen()}catch(e){}
  const map=arEl('mapScreen');if(map)map.classList.add('active');
 }
@@ -732,6 +732,7 @@ function arHandleEvents(g){
   else if(e.type==='charged'){try{if(typeof tone==='function')tone(1240,.12,'sine',.03,1860)}catch(x){}}
   else if(e.type==='mega'){if(typeof sfx==='function'&&Math.hypot(e.x-g.me.x,e.y-g.me.y)<1400)try{sfx('boom',1+e.power)}catch(x){}}
   else if(e.type==='hit'){if(typeof sfx==='function')try{sfx('hit')}catch(x){}}
+  else if(e.type==='bump'){if(typeof urtoSfx==='function')urtoSfx(e.p,'nave')}
  }
  g.events=[];
  for(const pid of g.drop)if(g.net)g.net.drop(pid);g.drop=[];
@@ -755,7 +756,8 @@ function arInput(g){
  return inp;
 }
 function arUpdate(dt){
- const g=ar;if(!g)return;
+ const g=ar;if(!g){arAimOff();return}
+ if(typeof document!=='undefined'&&document.body){const aim=arAimOn();if(document.body.classList.contains('ar-aim')!==aim){document.body.classList.toggle('ar-aim',aim);if(typeof canvas!=='undefined'&&canvas&&canvas.style)canvas.style.cursor=aim?'none':''}}
  const patch=arTick(g,dt,arInput(g));
  if(patch&&g.net)g.net.send(patch);
  arHandleEvents(g);
@@ -830,7 +832,8 @@ function arDrawRock(o,i,fallback,now){
  else{ctx.translate(o.x,o.y);ctx.fillStyle='#555a66';ctx.beginPath();ctx.arc(0,0,o.r,0,6.28);ctx.fill()}
  // crepe che crescono con i colpi
  const dmg=o.hp?Math.min(1,o.dmg/o.hp):0;
- if(dmg>.05){const r=arRand(arHash('crepe'+i)),n=Math.ceil(dmg*7);ctx.strokeStyle=`rgba(255,${190-dmg*90|0},120,${.35+dmg*.5})`;ctx.lineWidth=1.6+dmg*1.6;ctx.lineCap='round';
+ // crepe frastagliate con profondità e schegge (crepe.js); qui sotto le linee semplici di riserva
+ if(dmg>.05&&!(typeof crDraw==='function'&&crDraw(o,dmg,o.r,o.v*7+i))){const r=arRand(arHash('crepe'+i)),n=Math.ceil(dmg*7);ctx.strokeStyle=`rgba(255,${190-dmg*90|0},120,${.35+dmg*.5})`;ctx.lineWidth=1.6+dmg*1.6;ctx.lineCap='round';
   for(let k=0;k<n;k++){let a=r()*6.283,d=o.r*.12;ctx.beginPath();ctx.moveTo(Math.cos(a)*d,Math.sin(a)*d);for(let q=0;q<3;q++){a+=(r()-.5)*.9;d+=o.r*(.18+r()*.14)*Math.min(1,dmg*1.6);ctx.lineTo(Math.cos(a)*d,Math.sin(a)*d)}ctx.stroke()}}
  ctx.restore();
 }
@@ -849,27 +852,12 @@ function arDrawLaser(b){
  ctx.beginPath();ctx.moveTo(b.x-ux*len,b.y-uy*len);ctx.lineTo(b.x,b.y);
  ctx.strokeStyle=`rgba(${glow},.22)`;ctx.lineWidth=r*4;ctx.stroke();ctx.strokeStyle=`rgba(${glow},.8)`;ctx.lineWidth=r*1.5;ctx.stroke();ctx.strokeStyle='#effdff';ctx.lineWidth=r*.65;ctx.stroke();ctx.restore();
 }
-// sfera di plasma del mega colpo (megacolpo.js): alone, archi elettrici che girano
-function arOrb(x,y,r,L,t){
- if(typeof mcOrb==='function'){try{mcOrb(x,y,r,L,t);return}catch(e){}}
- const gr=ctx.createRadialGradient(x,y,0,x,y,r*2.4),c=L>=1?'214,190,255':'120,236,255';
- gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.22,`rgba(${c},.95)`);gr.addColorStop(.5,`rgba(${c},.35)`);gr.addColorStop(1,`rgba(${c},0)`);
- ctx.fillStyle=gr;ctx.beginPath();ctx.arc(x,y,r*2.4,0,6.283);ctx.fill();
- ctx.strokeStyle=`rgba(${c},.85)`;ctx.lineWidth=1.3;for(let i=0;i<3;i++){const a=t+i*2.094;ctx.beginPath();ctx.arc(x,y,r*1.15,a,a+1.1);ctx.stroke()}
-}
+// Stessa sfera di plasma e scia del laser caricato in singolo.
 function arDrawMega(b,now){
- const L=b.power,r=AR_FX.orb[0]+(AR_FX.orb[1]-AR_FX.orb[0])*(.35+.65*L);
- ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=1;
- const tr=b.tr||[];for(let i=0;i<tr.length;i++){const p=tr[i],k=(i+1)/tr.length;ctx.fillStyle=`rgba(110,225,255,${.12*k})`;ctx.beginPath();ctx.arc(p.x,p.y,r*(.4+.6*k),0,6.283);ctx.fill()}
- arOrb(b.x,b.y,r,L,b.spin||now*9);ctx.restore();
+ mcDrawProjectile(b,b.power,b.spin||now*9,b.tr||[]);
 }
-// carica sulla prua: sfera che cresce e anello che si stringe
 function arDrawCharge(x,y,a,L,now){
- const nx=x+Math.cos(a)*34,ny=y+Math.sin(a)*34,pulse=.85+.15*Math.sin(now*(18+L*14)),r=(4+14*L)*pulse;
- ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineCap='round';arOrb(nx,ny,r,L,now*7);
- const ring=r+20*(1-((now*2.2)%1));ctx.strokeStyle=L>=1?'rgba(225,205,255,.7)':`rgba(124,242,255,${.25+.4*L})`;ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(nx,ny,ring,0,6.283);ctx.stroke();
- if(L>=1){ctx.strokeStyle=`rgba(255,255,255,${.35+.3*Math.sin(now*20)})`;ctx.beginPath();ctx.arc(nx,ny,r*2.6,0,6.283);ctx.stroke()}
- ctx.restore();
+ mcDrawCharge(x+Math.cos(a)*34,y+Math.sin(a)*34,L,now);
 }
 // radar dell'arena: tutti i piloti, puntini azzurri (ribelli, nave del gioco) o rossi (imperiali, nave nemica)
 function arRadarBox(){
@@ -906,11 +894,17 @@ function arDrawRadar(g,now){
 function arDrawMeteor(g,now){
  const m=g.meteor;if(!m)return;
  const a=Math.atan2(m.vy,m.vx),R=ARENA.meteorR;
- if(m.w>0){const ex=m.x+Math.cos(a)*m.w*ARENA.meteorSpeed*2,ey=m.y+Math.sin(a)*m.w*ARENA.meteorSpeed*2;ctx.save();ctx.setLineDash([30,20]);ctx.lineDashOffset=-now*120;ctx.lineWidth=R*1.6;ctx.strokeStyle=`rgba(255,90,40,${.06+.05*Math.sin(now*9)})`;ctx.beginPath();ctx.moveTo(m.x,m.y);ctx.lineTo(ex,ey);ctx.stroke();ctx.lineWidth=4;ctx.strokeStyle=`rgba(255,120,60,${.4+.3*Math.sin(now*9)})`;ctx.stroke();ctx.setLineDash([]);ctx.restore();return}
+ if(m.w>0){// preavviso come nel gioco in singolo: cerchio con "!" dal lato da cui arriva, solo se passa vicino a te
+ const me=g.me;if(!me||!me.al)return;
+ const ux=Math.cos(a),uy=Math.sin(a),rx=me.x-m.x,ry=me.y-m.y,along=rx*ux+ry*uy,side=Math.abs(rx*uy-ry*ux);
+ if(along<0||side>ARENA.cometNear)return;
+ const dist=Math.min(W,H)*.33/arZoom(),x=me.x-ux*dist,y=me.y-uy*dist;
+ ctx.save();ctx.strokeStyle='#ff9d45';ctx.fillStyle='#ffbf80';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,30,0,Math.PI*2);ctx.moveTo(x,y-15);ctx.lineTo(x,y+6);ctx.stroke();
+ ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText('!',x,y+19);ctx.fillText(AR_T('COMETA')+' · '+Math.ceil(m.w)+' s',x,y-42);ctx.restore();return}
  ctx.save();ctx.translate(m.x,m.y);ctx.rotate(a);ctx.globalCompositeOperation='lighter';
  const k=R/24;// la cometa del gioco ha raggio 24
  const glow=ctx.createRadialGradient(-20*k,0,4*k,-20*k,0,95*k);glow.addColorStop(0,'rgba(255,196,100,.38)');glow.addColorStop(1,'rgba(255,75,10,0)');ctx.fillStyle=glow;ctx.fillRect(-115*k,-95*k,190*k,190*k);
- for(let i=0;i<5;i++){const length=(190-i*22)*k*1.6,width=(22-i*3)*k,tail=ctx.createLinearGradient(-length,0,10*k,0);tail.addColorStop(0,'rgba(255,65,15,0)');tail.addColorStop(.65,`rgba(255,105,28,${.1+i*.035})`);tail.addColorStop(1,'rgba(255,235,177,.8)');ctx.fillStyle=tail;ctx.beginPath();ctx.moveTo(10*k,-width);ctx.quadraticCurveTo(-length*.35,-width*.9,-length,Math.sin(now*12+i)*5*k);ctx.quadraticCurveTo(-length*.35,width*.8,10*k,width);ctx.closePath();ctx.fill()}
+ for(let i=0;i<5;i++){const length=(190-i*22)*k*1.6,width=(22-i*3)*k,tail=ctx.createLinearGradient(-length,0,10*k,0);tail.addColorStop(0,'rgba(255,65,15,0)');tail.addColorStop(.65,`rgba(255,105,28,${.1+i*.035})`);tail.addColorStop(1,'rgba(255,235,177,.8)');ctx.fillStyle=tail;ctx.beginPath();ctx.moveTo(0,-width);ctx.quadraticCurveTo(-length*.35,-width*.9,-length,Math.sin(now*12+i)*5*k);ctx.quadraticCurveTo(-length*.35,width*.8,0,width);ctx.arc(0,0,width,Math.PI/2,-Math.PI/2,true);ctx.closePath();ctx.fill()}
  ctx.globalCompositeOperation='source-over';ctx.restore();
  const core={x:m.x,y:m.y,r:R*.78,rot:now*1.8,mat:0,v:3,hp:1,dmg:0,fade:0};
  const sp=arMtSprite('r|#665042|#ffc78d|3',()=>mtBuild(MT_REF,4+'#665042'.length*31,'#665042','#ffc78d'));
@@ -977,6 +971,19 @@ function arDraw(){
  try{arDrawRadar(g,now)}catch(e){}
  if(g.edge>0){ctx.fillStyle=`rgba(255,40,70,${g.edge*.5})`;ctx.fillRect(0,0,W,H)}
  try{drawVignette()}catch(e){}
+ arDrawCrosshair();
+}
+// mirino come nel gioco in singolo (.crosshair di style.css), disegnato sulla posizione del mouse
+function arAimOn(){return !!(ar&&arUI.on&&!(typeof document!=='undefined'&&document.body&&document.body.classList.contains('touch')))}
+function arAimOff(){if(typeof document!=='undefined'&&document.body)document.body.classList.remove('ar-aim');if(typeof canvas!=='undefined'&&canvas&&canvas.style)canvas.style.cursor=''}
+function arDrawCrosshair(){
+ if(!arAimOn()||!arUI.over)return;
+ const x=Math.round(arUI.mx)+.5,y=Math.round(arUI.my)+.5;
+ ctx.save();ctx.lineWidth=1;
+ ctx.strokeStyle='rgba(81,230,255,.18)';ctx.beginPath();ctx.arc(x,y,23,0,6.283);ctx.stroke();
+ ctx.strokeStyle='rgba(81,230,255,.55)';ctx.beginPath();ctx.arc(x,y,16,0,6.283);ctx.stroke();
+ ctx.strokeStyle='#51e6ff';ctx.beginPath();ctx.moveTo(x-4,y);ctx.lineTo(x+4,y);ctx.moveTo(x,y-4);ctx.lineTo(x,y+4);ctx.stroke();
+ ctx.restore();
 }
 
 // pezzi dei potenziamenti sulle navi degli altri piloti: una coppia di immagini per ogni combinazione di livelli
@@ -1000,7 +1007,9 @@ if(typeof update==='function'&&typeof draw==='function'){
 if(typeof musLevel==='function'){const o=musLevel;musLevel=function(){return arUI.on&&ar?'battle':o()}}
 if(typeof musTheme==='function'){const o=musTheme;musTheme=function(l){return arUI.on&&ar?'spazio':o(l)}}
 if(typeof addEventListener==='function'&&typeof document!=='undefined'){
- addEventListener('mousemove',e=>{arUI.mx=e.clientX;arUI.my=e.clientY});
+ // il mirino del gioco al posto della freccia del mouse: si vede solo sopra la zona di gioco (non sui pannelli)
+ addEventListener('mousemove',e=>{arUI.mx=e.clientX;arUI.my=e.clientY;arUI.over=typeof canvas!=='undefined'&&e.target===canvas});
+ document.addEventListener('mouseleave',()=>{arUI.over=false});
  addEventListener('mousedown',e=>{if(!arUI.on||!ar)return;const t=e.target;if(t&&t.closest&&t.closest('button,input,a,select'))return;if(e.button===0)arUI.fire=true;if(e.button===1){arUI.missile=true;e.preventDefault()}if(e.button===2)arUI.shield=true});
  // anche girare la rotella lancia i missili
  addEventListener('wheel',e=>{if(!arUI.on||!ar)return;if(typeof canvas!=='undefined'&&e.target!==canvas)return;arUI.misOnce=true},{passive:true});
@@ -1016,6 +1025,7 @@ if(typeof addEventListener==='function'&&typeof document!=='undefined'){
 // traduzioni
 if(typeof I18N_ROWS!=='undefined'){
  const rows=[
+  ["COMETA","COMET","COMÈTE","COMETA","КОМЕТА","彗星","彗星"],
   ["SFIDA ONLINE","ONLINE BATTLE","DÉFI EN LIGNE","DESAFÍO ONLINE","ОНЛАЙН-БИТВА","在线对战","オンライン対戦"],
   ["Sfida online","Online battle","Défi en ligne","Desafío online","Онлайн-битва","在线对战","オンライン対戦"],
   ["SFIDA ONLINE · DEATHMATCH","ONLINE BATTLE · DEATHMATCH","DÉFI EN LIGNE · DEATHMATCH","DESAFÍO ONLINE · DEATHMATCH","ОНЛАЙН-БИТВА · ДЕЗМАТЧ","在线对战 · 死亡竞赛","オンライン対戦 · デスマッチ"],
@@ -1076,7 +1086,7 @@ if(typeof I18N_ROWS!=='undefined'){
   ["METEORITI","METEORS","MÉTÉORITES","METEORITOS","МЕТЕОРИТЫ","陨石","隕石"],
   ["Resistenti come quelli intorno ai pianeti: se li rompi, i frammenti colpiscono chi è vicino.","Tough like the ones around the planets: break them and the fragments hit anyone nearby.","Solides comme ceux autour des planètes : si tu les brises, les fragments frappent ceux qui sont proches.","Resistentes como los que rodean los planetas: si los rompes, los fragmentos golpean a quien esté cerca.","Прочные, как у планет: если разбить, осколки бьют всех рядом.","像行星周围的陨石一样坚固：击碎后，碎片会击中附近的人。","惑星の周りの隕石のように頑丈：壊すと破片が近くの機体に当たります。"],
   ["COMETE","COMETS","COMÈTES","COMETAS","КОМЕТЫ","彗星","彗星"],
-  ["Attraversano l’arena e spazzano via navi, colpi e meteoriti: segui la scia d’avviso.","They cross the arena sweeping away ships, shots and meteors: watch the warning trail.","Elles traversent l’arène et balaient vaisseaux, tirs et météorites : surveille la traînée d’alerte.","Cruzan la arena y barren naves, disparos y meteoritos: fíjate en la estela de aviso.","Пролетают через арену, сметая корабли, выстрелы и метеориты: следи за предупреждающим следом.","彗星会横穿竞技场，扫除飞船、子弹和陨石：注意预警轨迹。","アリーナを横切り、機体・弾・隕石を一掃します。警告の軌跡に注意。"],
+  ["Attraversano l’arena e spazzano via navi, colpi e meteoriti: guarda l’avviso.","They cross the arena sweeping away ships, shots and meteors: watch the warning.","Elles traversent l’arène et balaient vaisseaux, tirs et météorites : surveille l’alerte.","Cruzan la arena y barren naves, disparos y meteoritos: fíjate en el aviso.","Пролетают через арену, сметая корабли, выстрелы и метеориты: следи за предупреждением.","彗星会横穿竞技场，扫除飞船、子弹和陨石：注意预警。","アリーナを横切り、機体・弾・隕石を一掃します。警告に注意。"],
   ["MERCATO","MARKET","MARCHÉ","MERCADO","РЫНОК","商店","マーケット"],
   ["GIOCA","PLAY","JOUER","JUGAR","ИГРАТЬ","开始","プレイ"],
   ["HAI UN CODICE?","GOT A CODE?","TU AS UN CODE ?","¿TIENES UN CÓDIGO?","ЕСТЬ КОД?","有代码吗？","コードはある？"],

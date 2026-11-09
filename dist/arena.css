@@ -134,3 +134,43 @@ body.arena-on .hud,body.arena-on #touchUi{display:none!important}
 .top-actions .caffe-btn{display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:#ffcf8a;border-color:rgba(255,179,64,.35)}
 .top-actions .caffe-btn:hover{background:rgba(255,179,64,.12)}
 @media (max-width:1500px){.top-actions .caffe-btn span{display:none}.top-actions .caffe-btn{padding:0 11px}}
+
+/* classifica arena (classifica-arena.js) */
+.board-arena .board-row{grid-template-columns:54px 1fr 100px 150px}
+.board-arena .board-row span:nth-child(4){font-size:11px;color:#ffb340}
+.board-arena .board-row.head span:nth-child(4){font-size:9px;color:var(--muted)}
+.ar-rank{color:#ffb340;font-weight:700;letter-spacing:1px}
+@media(max-width:850px){.board-arena .board-row{grid-template-columns:34px 1fr 64px 50px;gap:6px;padding:8px 10px}.board-arena .board-row span:nth-child(4){display:block;font-size:10px}.board-arena .board-row.head span:nth-child(4){font-size:0}.board-arena .board-row.head span:nth-child(4)::after{content:'V · A';font-size:9px;white-space:nowrap}}
+
+/* finestra OFFRIMI UN CAFFÈ e sezione INFO delle impostazioni (caffe.js, 2026-11-09) */
+.caffe-overlay{z-index:30}
+#caffeOverlay .brief-card.caffe-card{width:min(620px,94vw)}
+.caffe-card .caffe-cup{width:58px;height:58px;margin:0 auto 10px;display:grid;place-items:center;border-radius:50%;color:#ffcf8a;background:rgba(255,179,64,.1);border:1px solid rgba(255,179,64,.35)}
+.caffe-card .caffe-cup .ico{width:30px;height:30px}
+.caffe-card h2{margin:4px 0 10px}
+.caffe-card>p:not(.eyebrow){color:#a9c1d4;font-size:13px;line-height:1.6;margin:0 0 20px}
+.caffe-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.caffe-actions .caffe-opt{text-decoration:none;box-sizing:border-box;gap:12px;margin:0}
+.caffe-actions .caffe-opt span{white-space:nowrap}
+.caffe-actions .caffe-opt b{display:flex}
+.caffe-actions .caffe-opt .ico{width:20px;height:20px}
+.caffe-actions .caffe-opt-cafe{background:#ffb340;border-color:#ffc56b}
+.caffe-actions .caffe-opt-cafe:hover{background:#ffd08a;box-shadow:0 0 24px rgba(255,179,64,.35)}
+.caffe-actions .caffe-close{grid-column:1/-1;justify-self:center;display:inline-flex;align-items:center;gap:8px;padding:0 24px;height:40px;border:1px solid var(--line);border-radius:6px;background:rgba(6,17,29,.6);color:var(--cyan);font:600 10px 'Chakra Petch',sans-serif;letter-spacing:2px;cursor:pointer}
+.caffe-actions .caffe-close:hover{border-color:var(--cyan);background:rgba(81,230,255,.12)}
+.caffe-actions .caffe-close span{display:inline}
+.caffe-actions .caffe-close .ico{width:14px;height:14px}
+@media (max-width:620px){.caffe-actions{grid-template-columns:1fr;gap:10px}}
+
+.settings-page .sp-panel[data-tab="info"] .sp-stack{grid-template-columns:1fr;max-width:640px}
+.info-ver{display:flex;align-items:baseline;gap:12px;margin:6px 0 0!important}
+.info-ver b{font:700 15px 'Chakra Petch',sans-serif;letter-spacing:3px;color:#cfefff}
+.info-ver span{font:700 30px 'Chakra Petch',sans-serif;letter-spacing:2px;color:var(--cyan)}
+.info-link{display:inline-flex;align-items:center;gap:12px;margin-top:10px;padding:10px 16px;border:1px solid rgba(140,233,236,.35);border-radius:8px;background:rgba(81,230,255,.07);color:#dff6ff;text-decoration:none;transition:background .15s,border-color .15s}
+.info-link:hover,.info-link:focus-visible{background:rgba(81,230,255,.16);border-color:var(--cyan)}
+.info-link .ico{flex:none;width:22px;height:22px;color:var(--cyan)}
+.info-link b{display:block;font:700 12px 'Chakra Petch',sans-serif;letter-spacing:2px}
+.info-link small{display:block;margin-top:2px;font-size:11px;color:#9fb6c9;letter-spacing:.3px}
+.info-link.info-cafe{border-color:rgba(255,179,64,.4);background:rgba(255,179,64,.08)}
+.info-link.info-cafe:hover,.info-link.info-cafe:focus-visible{background:rgba(255,179,64,.18);border-color:#ffb340}
+.info-link.info-cafe .ico{color:#ffcf8a}

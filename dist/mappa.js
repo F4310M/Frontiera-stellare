@@ -51,18 +51,18 @@ selectPlanet=function(i){
 };
 
 // Nuova partita a gioco finito: si azzerano progressi, vite, crediti e potenziamenti.
-function mapNewGame(){
+function mapNewGame(balance){
  for(const k of ['frontieraPhaseOneComplete','frontieraPhaseTwoComplete','frontieraPianetiLiberati','frontieraOmegaLibero'])localStorage.setItem(k,'');
  phaseOneComplete=false;phaseTwoComplete=false;
  vite=VITE_START;viteSave();
- if(typeof eco!=='undefined'){eco.balance=ECO_START;eco.upgrades={};ecoSave();ecoHud()}
+ if(typeof ecoReset==='function')ecoReset(balance??ECO_START);
  selected=0;finalLock();
 }
 
 // Missioni bloccate o già concluse non partono, nemmeno con scorciatoie.
 brief=function(){
  const p=planets[selected];
- if(mapAllDone()){mapNewGame();return}
+ if(mapAllDone()){if(typeof saveOpenNewGame==='function')saveOpenNewGame();else mapNewGame();return}
  if(!mapPlayable(p))return;
  mOrig.brief();
 };

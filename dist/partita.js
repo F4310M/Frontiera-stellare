@@ -26,7 +26,10 @@ function saveForLater(){
   const snap={};for(const k of SAVE_SNAP){try{const v=localStorage.getItem(k);if(v!==null)snap[k]=v}catch(e){}}
   const run=typeof eco!=='undefined'&&eco&&eco.run;
   let pts=Math.round(typeof score==='number'?score:0);
-  if(run&&Number.isFinite(run.missionStart))snap.frontieraCrediti=String(Math.round(run.missionStart));
+  if(run&&Number.isFinite(run.missionStart)){
+   snap.frontieraCrediti=String(Math.round(run.missionStart));
+   if(Number.isFinite(eco.earned))snap.frontieraGuadagni=String(Math.max(0,eco.earned-(run.earlierIncome||0)));
+  }
   if(run&&Number.isFinite(run.scoreStart)){pts=Math.round(run.scoreStart);snap.stellarPunti=String(pts)}
   const s={code:p.code,name:p.name,fase:inGround?2:1,s:pts,d:new Date().toISOString(),auto:true,snap,vite:saveVite()};
   try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}catch(e){}
@@ -55,8 +58,9 @@ function saveResume(){
 let closeBusy=false;
 async function closeRun(){
  if(closeBusy)return;closeBusy=true;
- show('abandonOverlay',false);show('newGameOverlay',false);
+ show('abandonOverlay',false);
  if(typeof state!=='undefined'&&state!=='map'&&typeof abort==='function')abort();
+ const carry=typeof gameOverCarry==='function'?gameOverCarry():undefined;
  const pending=saveLoad();if(pending)saveRestore(pending); // niente punti/crediti della missione interrotta
  const pts=Math.round(typeof score==='number'?score:0),n=typeof recName==='function'?recName():'';
  const god=typeof godMode!=='undefined'&&godMode;
@@ -81,13 +85,21 @@ async function closeRun(){
    }
   }
  }
- if(typeof gameRestart==='function')gameRestart();
- saveClear();
+ if(typeof gameRestart==='function')gameRestart(carry);
+ else saveClear();
+ show('newGameOverlay',false);
  if(typeof coCache!=='undefined')coCache=null;
  if(typeof mapMeCache!=='undefined')mapMeCache={s:-1,rank:0,t:0};
  if(typeof mapBoardTick==='function')setTimeout(mapBoardTick,300);
  if(typeof profToast==='function')setTimeout(()=>profToast(msg),400);
  closeBusy=false;
+}
+
+function saveOpenNewGame(){
+ if(closeBusy)return;
+ show('newGameOverlay',true);
+ $('newGameNo')?.focus?.();
+ if(typeof sfx==='function')sfx('ui');
 }
 
 // ---- finestre
@@ -108,12 +120,12 @@ function saveBuild(){
  if(!$('newGameOverlay')){
   const o=document.createElement('section');o.id='newGameOverlay';o.className='overlay hidden';o.setAttribute('aria-label','NUOVA PARTITA');
   o.innerHTML='<div class="brief-card compact restart-card"><p class="eyebrow">NUOVA PARTITA</p><h2>CHIUDERE LA PARTITA?</h2>'+
-   '<p>Tutti i progressi verranno persi e il punteggio attuale verrà salvato in classifica (se rientri nei primi 10.000).</p>'+
+   '<p>Tutti i progressi verranno persi. Recuperi solo il 20% dei crediti guadagnati in questa partita.</p>'+
    '<button id="newGameYes" class="launch-btn restart-yes"><span>SÌ, NUOVA PARTITA</span><b>'+I('check')+'</b></button>'+
    '<button id="newGameNo" class="text-btn">ANNULLA</button></div>';
   document.body.appendChild(o);
   $('newGameYes').onclick=()=>closeRun();
-  $('newGameNo').onclick=()=>show('newGameOverlay',false);
+  $('newGameNo').onclick=()=>{if(!closeBusy){show('newGameOverlay',false);$('saveNewBtn')?.focus?.()}};
  }
  // Pausa: solo RIPRENDI o ABBANDONA. L'abbandono torna alla home e conserva
  // esclusivamente il checkpoint di inizio fase; dalla home si potra riprendere o ricominciare.
@@ -124,12 +136,11 @@ function saveBuild(){
  if(launch&&launch.parentNode&&!$('saveBox')){
   const b=document.createElement('div');b.id='saveBox';b.className='save-box hidden';
   b.innerHTML='<p class="save-box-label">'+I('save')+' PARTITA SALVATA</p><p id="saveBoxInfo" class="save-box-info"></p>'+
-   '<button id="saveResumeBtn" class="launch-btn save-resume"><span>RIPRENDI PARTITA</span><b>'+I('play')+'</b></button>'+
-   '<button id="saveNewBtn" class="save-new" type="button">NUOVA PARTITA</button>';
+   '<button id="saveResumeBtn" class="launch-btn save-resume"><span>RIPRENDI PARTITA</span><b>'+I('play')+'</b></button>';
   launch.parentNode.insertBefore(b,launch);
   $('saveResumeBtn').onclick=saveResume;
-  $('saveNewBtn').onclick=()=>{show('newGameOverlay',true);if(typeof sfx==='function')try{sfx('ui')}catch(e){}};
  }
+ if($('saveNewBtn'))$('saveNewBtn').onclick=saveOpenNewGame;
  saveHome();
  // all'avvio la mappa mostra il pianeta della partita salvata
  const s=saveLoad(),i=savePlanetIndex(s);
@@ -138,6 +149,10 @@ function saveBuild(){
 function saveHome(){
  const b=typeof $==='function'?$('saveBox'):null;if(!b)return;
  const s=saveLoad(),on=!!s;
+ const hasProgress=on||['frontieraPhaseOneComplete','frontieraPhaseTwoComplete','frontieraPianetiLiberati','frontieraOmegaLibero'].some(k=>localStorage.getItem(k))||
+  (typeof vite==='number'&&typeof VITE_START==='number'&&vite<VITE_START)||
+  (typeof eco!=='undefined'&&(eco.earned>0||Object.keys(eco.upgrades).length>0));
+ if($('saveNewBtn'))show('saveNewBtn',!!hasProgress&&(on||typeof mapAllDone!=='function'||!mapAllDone()));
  b.classList.toggle('hidden',!on);
  if(typeof document!=='undefined'&&document.body&&document.body.classList)document.body.classList.toggle('has-save',on);
  if(on){
@@ -165,7 +180,7 @@ if(typeof beginWarp==='function'){
 // qualsiasi modo, RIPRENDI PARTITA riparte dall'inizio di quella fase con quei valori (le vite perse restano perse).
 // Finita la fase nello spazio il salvataggio passa all'inizio della fase a terra; liberato il pianeta si cancella.
 // Senza vite è GAME OVER e si riparte da zero: anche chiudendo la pagina mentre la nave esplode.
-const SAVE_SNAP=['frontieraCrediti','frontieraPotenziamenti','stellarPunti','stellarPartita'];
+const SAVE_SNAP=['frontieraCrediti','frontieraGuadagni','frontieraPotenziamenti','stellarPunti','stellarPartita'];
 const CORSA_KEY='stellarCorsa';
 function saveVite(){return typeof vite==='number'&&Number.isFinite(vite)?vite:null}
 function saveCheckpoint(fase){
@@ -173,12 +188,13 @@ function saveCheckpoint(fase){
  const snap={};for(const k of SAVE_SNAP){try{const v=localStorage.getItem(k);if(v!==null)snap[k]=v}catch(e){}}
  const s={code:p.code,name:p.name,fase,s:Math.round(typeof score==='number'?score:0),d:new Date().toISOString(),auto:true,snap,vite:saveVite()};
  try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}catch(e){}
+ saveHome();
 }
 // rimette crediti, potenziamenti e punti com'erano all'inizio della fase
 function saveRestore(s){
  if(!s||!s.snap||typeof s.snap!=='object')return;
  for(const k of SAVE_SNAP){try{const v=s.snap[k];if(typeof v==='string')localStorage.setItem(k,v);else localStorage.removeItem(k)}catch(e){}}
- if(typeof eco!=='undefined'&&eco&&typeof ecoLoad==='function'){const e=ecoLoad();eco.balance=e.balance;eco.upgrades=e.upgrades;if(typeof ecoHud==='function')try{ecoHud()}catch(e){}}
+ if(typeof eco!=='undefined'&&eco&&typeof ecoLoad==='function'){const e=ecoLoad();eco.balance=e.balance;eco.upgrades=e.upgrades;eco.earned=e.earned;if(typeof ecoHud==='function')try{ecoHud()}catch(e){}}
  if(typeof scoreLoad==='function'){score=scoreLoad();if(typeof scoreHud==='function')try{scoreHud()}catch(e){}}
  // le vite non tornano indietro: si tiene il valore più basso
  const v=saveVite();
@@ -202,8 +218,8 @@ if(typeof beginWarp==='function'){const bw=beginWarp;beginWarp=function(){const 
 if(typeof startPlatform==='function'){const sp=startPlatform;startPlatform=function(){const r=sp.apply(this,arguments);if(typeof state!=='undefined'&&state==='platform')saveCheckpoint(2);return r}}
 if(typeof finish==='function'){const fi=finish;finish=function(win){const st=typeof state!=='undefined'?state:'';const r=fi.apply(this,arguments);if(win&&st!=='won'&&state==='won')saveCheckpoint(2);return r}}
 if(typeof pfFinish==='function'){const pfi=pfFinish;pfFinish=function(win){const st=typeof state!=='undefined'?state:'';const r=pfi.apply(this,arguments);if(win&&st==='platform'&&state==='won')saveClear();return r}}
-if(typeof gameRestart==='function'){const gr=gameRestart;gameRestart=function(){const r=gr.apply(this,arguments);saveClear();corsaFinita();return r}}
-if(typeof viteGameOver==='function'){const vg=viteGameOver;viteGameOver=function(){saveClear();const r=vg.apply(this,arguments);corsaFinita();return r}}
+if(typeof gameRestart==='function'){const gr=gameRestart;gameRestart=function(){saveClear();const r=gr.apply(this,arguments);corsaFinita();saveHome();return r}}
+if(typeof viteGameOver==='function'){const vg=viteGameOver;viteGameOver=function(){saveClear();const r=vg.apply(this,arguments);corsaFinita();saveHome();return r}}
 
 // la pagina si chiude mentre la nave esplode o il pilota cade: la vita è persa lo stesso
 function saveOnHide(){
@@ -223,13 +239,10 @@ if(typeof addEventListener==='function')addEventListener('pagehide',saveOnHide);
 function saveBoot(){
  let raw=null;try{raw=localStorage.getItem('frontieraVite')}catch(e){}
  if(raw==='0'){
-  const oldBalance=typeof eco!=='undefined'&&eco&&Number.isFinite(eco.balance)?eco.balance:parseInt(localStorage.getItem('frontieraCrediti'),10);
-  const carry=typeof gameOverCarry==='function'?gameOverCarry(oldBalance):Math.max(0,Math.round((Number.isFinite(oldBalance)?oldBalance:0)*.25));
+  const carry=typeof gameOverCarry==='function'?gameOverCarry():0;
   if(typeof myAdd==='function'&&typeof score==='number'&&score>0&&!saveGod())try{myAdd(score)}catch(e){}
-  if(typeof gameRestart==='function')gameRestart();else{saveClear();corsaFinita()}
-  if(typeof eco!=='undefined'&&eco){eco.balance=carry;if(typeof ecoSave==='function')ecoSave();if(typeof ecoHud==='function')ecoHud()}
-  else try{localStorage.setItem('frontieraCrediti',String(carry))}catch(e){}
-  if(typeof profToast==='function')setTimeout(()=>profToast('GAME OVER · HAI PERSO TUTTE LE VITE · RESTA IL 25% DEI CREDITI'),1500);
+  if(typeof gameRestart==='function')gameRestart(carry);else{if(typeof ecoReset==='function')ecoReset(carry);saveClear();corsaFinita()}
+  if(typeof profToast==='function')setTimeout(()=>profToast('GAME OVER · RECUPERI IL 20% DEI CREDITI GUADAGNATI'),1500);
  }
  corsaId();
  const a=typeof sigillo!=='undefined'&&sigillo?sigillo.avviso():'';
@@ -246,7 +259,7 @@ if(typeof profApply==='function'){
   const r=pa.apply(this,arguments);
   let id=null;try{id=localStorage.getItem(CORSA_KEY)}catch(e){}
   if(id&&typeof sigillo!=='undefined'&&sigillo&&sigillo.morta(id)){
-   for(const k of ['frontieraCrediti','frontieraPotenziamenti','frontieraVite','frontieraPhaseOneComplete','frontieraPhaseTwoComplete','frontieraPianetiLiberati','frontieraOmegaLibero','stellarPunti','stellarPartita',SAVE_KEY,CORSA_KEY])
+   for(const k of ['frontieraCrediti','frontieraGuadagni','frontieraPotenziamenti','frontieraVite','frontieraPhaseOneComplete','frontieraPhaseTwoComplete','frontieraPianetiLiberati','frontieraOmegaLibero','stellarPunti','stellarPartita',SAVE_KEY,CORSA_KEY])
     try{localStorage.removeItem(k)}catch(e){}
    try{sessionStorage.setItem('stellarAvviso','morta')}catch(e){}
    if(typeof prof!=='undefined'&&prof&&typeof profSnapKey==='function'){prof.snap='';if(typeof profStore==='function')profStore()}
@@ -256,7 +269,7 @@ if(typeof profApply==='function'){
 }
 
 // ---- backup del profilo
-if(typeof PROF_PROGRESS!=='undefined'&&Array.isArray(PROF_PROGRESS))for(const k of [SAVE_KEY,CORSA_KEY])if(!PROF_PROGRESS.includes(k))PROF_PROGRESS.push(k);
+if(typeof PROF_PROGRESS!=='undefined'&&Array.isArray(PROF_PROGRESS))for(const k of [SAVE_KEY,CORSA_KEY,'frontieraGuadagni'])if(!PROF_PROGRESS.includes(k))PROF_PROGRESS.push(k);
 
 // ---- traduzioni
 if(typeof I18N_ROWS!=='undefined'){
@@ -278,7 +291,9 @@ if(typeof I18N_ROWS!=='undefined'){
   ["PARTITA CHIUSA · SI RIPARTE DAL PRIMO PIANETA","GAME CLOSED · STARTING AGAIN FROM THE FIRST PLANET","PARTIE FERMÉE · RETOUR AU PREMIER PLANÈTE","PARTIDA CERRADA · SE EMPIEZA DESDE EL PRIMER PLANETA","ИГРА ЗАВЕРШЕНА · СНОВА С ПЕРВОЙ ПЛАНЕТЫ","游戏已结束 · 从第一颗星球重新开始","ゲーム終了 · 最初の惑星から再スタート"],
   ["PARTITA CHIUSA · OFFLINE: IL PUNTEGGIO VERRÀ INVIATO PIÙ TARDI","GAME CLOSED · OFFLINE: THE SCORE WILL BE SENT LATER","PARTIE FERMÉE · HORS LIGNE : LE SCORE SERA ENVOYÉ PLUS TARD","PARTIDA CERRADA · SIN CONEXIÓN: LA PUNTUACIÓN SE ENVIARÁ MÁS TARDE","ИГРА ЗАВЕРШЕНА · ОФЛАЙН: СЧЁТ ОТПРАВИТСЯ ПОЗЖЕ","游戏已结束 · 离线：分数稍后发送","ゲーム終了 · オフライン：スコアは後で送信"],
   ["PARTITA CHIUSA","GAME CLOSED","PARTIE FERMÉE","PARTIDA CERRADA","ИГРА ЗАВЕРШЕНА","游戏已结束","ゲーム終了"],
-  ["GAME OVER · HAI PERSO TUTTE LE VITE · RESTA IL 25% DEI CREDITI","GAME OVER · YOU LOST ALL YOUR LIVES · 25% OF YOUR CREDITS REMAIN","GAME OVER · TU AS PERDU TOUTES TES VIES · IL RESTE 25 % DES CRÉDITS","GAME OVER · HAS PERDIDO TODAS LAS VIDAS · CONSERVAS EL 25 % DE LOS CRÉDITOS","GAME OVER · ВСЕ ЖИЗНИ ПОТЕРЯНЫ · ОСТАЛОСЬ 25% КРЕДИТОВ","GAME OVER · 生命已用尽 · 保留 25% 信用点","GAME OVER · ライフがすべてなくなった · クレジットの25%を保持"],
+  ["GAME OVER · RECUPERI IL 20% DEI CREDITI GUADAGNATI","GAME OVER · YOU KEEP 20% OF THE CREDITS YOU EARNED","GAME OVER · TU GARDES 20 % DES CRÉDITS GAGNÉS","GAME OVER · CONSERVAS EL 20 % DE LOS CRÉDITOS GANADOS","GAME OVER · СОХРАНЯЕТСЯ 20% ЗАРАБОТАННЫХ КРЕДИТОВ","GAME OVER · 保留已赚取信用点的 20%","GAME OVER · 獲得クレジットの20%を引き継ぎ"],
+  ["Tutti i progressi verranno persi.","All progress will be lost.","Toute la progression sera perdue.","Se perderá todo el progreso.","Весь прогресс будет потерян.","所有进度将丢失。","すべての進行状況が失われます。"],
+  ["Recuperi solo il 20% dei crediti guadagnati in questa partita.","You keep only 20% of the credits you earned in this run.","Tu gardes seulement 20 % des crédits gagnés dans cette partie.","Solo conservas el 20 % de los créditos ganados en esta partida.","Ты сохранишь только 20% заработанных кредитов.","仅保留本局赚取信用点的 20%。","このプレイで獲得したクレジットの20%だけを引き継ぎます。"],
   ["QUESTO BACKUP È DI UNA PARTITA GIÀ FINITA: PILOTA IMPORTATO, PROGRESSI DA ZERO","THIS BACKUP BELONGS TO A GAME THAT ALREADY ENDED: PILOT IMPORTED, PROGRESS FROM ZERO","CETTE SAUVEGARDE VIENT D’UNE PARTIE DÉJÀ TERMINÉE : PILOTE IMPORTÉ, PROGRESSION À ZÉRO","ESTA COPIA ES DE UNA PARTIDA YA TERMINADA: PILOTO IMPORTADO, PROGRESO DESDE CERO","ЭТА КОПИЯ ОТ УЖЕ ЗАВЕРШЁННОЙ ИГРЫ: ПИЛОТ ИМПОРТИРОВАН, ПРОГРЕСС С НУЛЯ","此备份属于已结束的游戏：已导入飞行员，进度从零开始","このバックアップは終了したゲームのもの：パイロットのみ読み込み、進行はゼロから"],
   ["SALVATAGGIO RIPRISTINATO DALLA COPIA PROTETTA","SAVE RESTORED FROM THE PROTECTED COPY","SAUVEGARDE RESTAURÉE DEPUIS LA COPIE PROTÉGÉE","PARTIDA RESTAURADA DESDE LA COPIA PROTEGIDA","СОХРАНЕНИЕ ВОССТАНОВЛЕНО ИЗ ЗАЩИЩЁННОЙ КОПИИ","已从受保护的副本恢复存档","保護されたコピーからセーブを復元"],
   ["SALVATAGGIO MANOMESSO · LA PARTITA RIPARTE DA ZERO","SAVE TAMPERED WITH · THE GAME STARTS FROM ZERO","SAUVEGARDE MODIFIÉE · LA PARTIE REPART DE ZÉRO","PARTIDA MANIPULADA · EL JUEGO EMPIEZA DE CERO","СОХРАНЕНИЕ ИЗМЕНЕНО · ИГРА НАЧИНАЕТСЯ С НУЛЯ","存档被篡改 · 游戏从零开始","セーブが改ざんされた · ゼロから再スタート"],

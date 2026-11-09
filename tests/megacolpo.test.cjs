@@ -82,3 +82,22 @@ assert(val("tr(document.querySelector('#hud .controls-tip').textContent)").inclu
 run("lang='ja';i18nBuild()");
 assert(val("tr(document.querySelector('#hud .controls-tip').textContent)").includes('クリック / スペース 射撃（長押し：メガショット） · ホイール'),'suggerimento in giapponese');
 console.log('PASS: traduzioni');
+
+// La carica e il proiettile del fucile disegnano la sfera condivisa.
+run(`
+ abort();selected=0;startPlatform();pf.phase='missione';
+ const P=pf.pilot,arcs=[],originalArc=ctx.arc;
+ P.visible=true;P.aim=0;P.rifleCharge=PF_RIFLE_FULL;
+ ctx.arc=(x,y,r)=>arcs.push({x,y,r});
+ const sh=pfShoulder(P);
+ pfDrawRifleCharge(P,0);
+ globalThis.rifleChargeOrb=arcs.some(a=>a.x===sh.x+30&&a.y===sh.y&&a.r>10);
+ arcs.length=0;pfShoot(1);
+ const shot=pf.shots.at(-1);
+ drawBullet(shot);
+ globalThis.rifleProjectileOrb=arcs.some(a=>a.x===shot.x&&a.y===shot.y&&a.r>10);
+ ctx.arc=originalArc;
+`);
+assert(val('rifleChargeOrb'),'sfera centrata sulla canna durante la carica');
+assert(val('rifleProjectileOrb'),'sfera sul proiettile dopo il rilascio');
+console.log('PASS: sfera di plasma del fucile a terra');

@@ -88,7 +88,8 @@ function game(ls,extra={}){
   function finish(win){state=win?'won':'lost';if(win){eco.balance+=1000;ecoSave()}}
   function pfFinish(win){state=win?'won':'lost'}
   function viteGameOver(){vite=3;viteSave();eco.balance=ECO_START;eco.upgrades={};ecoSave()}
-  function gameRestart(){vite=3;viteSave();eco.balance=ECO_START;ecoSave();score=0;scoreSave()}
+  function gameOverCarry(){return Math.round((Number(localStorage.getItem("frontieraGuadagni"))||0)*.2)}
+  function gameRestart(balance=ECO_START){vite=3;viteSave();eco.balance=balance;ecoSave();score=0;scoreSave()}
   function selectPlanet(i){selected=i}
   const PROF_PROGRESS=['frontieraCrediti','frontieraPotenziamenti','frontieraVite','stellarPunti'];
   let prof={snap:'x'};function profSnapKey(){return ''}function profStore(){}
@@ -132,12 +133,12 @@ function game(ls,extra={}){
 }
 {
  // la pagina si chiude mentre la nave esplode con l'ultima vita
- const ls=storage([['frontieraVite','1'],['frontieraCrediti','7000'],['stellarPunti','500']]);
+ const ls=storage([['frontieraVite','1'],['frontieraCrediti','7000'],['frontieraGuadagni','5000'],['stellarPunti','500']]);
  const S2=boot(ls).sigillo;let g=game(ls,{sig:S2});
  g.run("beginWarp();state='dying'");g.sb.listeners.pagehide.forEach(f=>f());
  assert.equal(ls.getItem('frontieraVite'),'0');
  g=game(ls,{sig:S2});
- assert.equal(ls.getItem('frontieraCrediti'),'1750','all\'avvio: GAME OVER, resta il 25% dei crediti');
+ assert.equal(ls.getItem('frontieraCrediti'),'1000','all\'avvio: GAME OVER, resta il 20% dei guadagni');
  assert.equal(ls.getItem('frontieraVite'),'3');assert.equal(ls.getItem('stellarPartitaSalvata'),null,'niente RIPRENDI');
  assert.match(g.sb.toast,/GAME OVER/);
  // a terra, pilota che cade con due vite

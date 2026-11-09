@@ -39,15 +39,41 @@ assert(val('pf.enemies.every(e=>e.x>pf.cam.lockX-10)'),'I rinforzi restano nell\
 console.log('PASS: rinforzi casuali durante il boss',[...seen].join(','));
 
 // Pilota di riserva: scende dalla navetta
-run('pf.boss.hp=1e9;pf.pilot.inv=0;pf.pilot.barrier=false;const l=pf.lives;pfLoseLife()');
+run('pf.enemies=[];pf.spawnTimer=999;pf.boss.hp=1e9;pf.pilot.inv=0;pf.pilot.barrier=false;const l=pf.lives;pfLoseLife()');
 assert.equal(val('pf.pilot.visible'),false,'Subito dopo la morte il pilota non c\'è');
 assert(val('pf.drop&&pf.drop.t===0'));
 run('pfDrawShipOnPad(1)');step(.6);run('pfDrawShipOnPad(1)');assert.equal(val('pf.pilot.visible'),false);
-step(1);assert(val('pf.pilot.visible'),'Il nuovo pilota viene sganciato');
+for(let i=0;i<30&&!val('pf.pilot.visible');i++)step(.15);
+assert(val('pf.pilot.visible'),'Il nuovo pilota viene sganciato in una zona libera');
 assert(val('pf.pilot.y<PF_FLOOR-60'),'Il pilota cade dalla navetta');
-step(2.5);assert.equal(val('pf.drop'),null);assert(val('pf.pilot.ground'),'Il pilota è a terra');
+for(let i=0;i<40&&val('pf.drop||!pf.pilot.ground');i++)step(.15);
+assert.equal(val('pf.drop'),null);assert(val('pf.pilot.ground'),'Il pilota è a terra');
 assert.equal(val('pf.pilot.hp'),100);
 console.log('PASS: pilota di riserva dalla navetta');
+run(`
+ const original={solids:pf.solids,plats:pf.plats,props:pf.props,arenaX:pf.arenaX,boss:pf.boss,enemies:pf.enemies};
+ pf.cam.lock=false;pf.phase='missione';
+ pf.solids=[{x:0,w:220,y:600},{x:310,w:600,y:600}];pf.plats=[];pf.props=[];pf.arenaX=870;pf.boss=null;
+ pf.enemies=[{x:440,y:600,w:30,h:50,hp:10}];
+ globalThis.safeRespawn=terraFindDrop(250);
+ globalThis.dangerRejected=terraSafeGround(440)===null&&terraSafeGround(225)===null;
+ Object.assign(pf,original);
+`);
+assert(val('safeRespawn&&safeRespawn.x<180&&safeRespawn.g===600'),'evita precipizio e zona occupata');
+assert(val('dangerRejected'),'scarta il punto occupato e il precipizio');
+console.log('PASS: scelta della zona di atterraggio sicura');
+
+run(`
+ let pixels=0;const old=ctx.fillRect;
+ ctx.fillRect=()=>{pixels++};
+ pfDrawHelp({id:1,x:300,y:600,state:'legato'},0);
+ const drawn=pixels;
+ pfDrawHelp({id:1,x:300,y:600,state:'fuga'},0);
+ ctx.fillRect=old;
+ globalThis.helpBubble=drawn>0&&pixels===drawn;
+`);
+assert(val('helpBubble'),'HELP si vede solo mentre il colono e prigioniero');
+
 
 // Barriera grande: si disegna senza errori
 run('pf.pilot.barrier=true;pfDrawBarrier(pf.pilot,1);pf.pilot.crouch=true;pfDrawBarrier(pf.pilot,1)');

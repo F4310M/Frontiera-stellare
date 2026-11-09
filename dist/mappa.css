@@ -113,3 +113,12 @@
  #mapScreen .mission-stats :is(#planetThreat,#planetReward){font-size:13px!important}
  #mapScreen #launchBtn:not(:disabled){min-height:42px}
 }
+
+/* OMEGA più grande sulla mappa (2026-11-09): tutto il nodo è ingrandito, le scritte restano della misura normale */
+.planet-node.omega,.planet-node.omega.distant{scale:1.6}
+.planet-node.omega.distant{opacity:.72;filter:saturate(.7)}
+.planet-node.omega.distant.selected{opacity:.9}
+.planet-node.omega .node-label,.planet-node.omega .risk,.planet-node.omega .free-tag,.planet-node.omega.distant .node-label,.planet-node.omega.distant .risk{scale:none;transform:translateX(-50%) scale(.625);transform-origin:50% 0}
+.planet-node.omega .node-label,.planet-node.omega.distant .node-label{top:calc(100% + 6px)!important}
+.planet-node.omega .risk,.planet-node.omega.distant .risk{top:calc(100% + 17px)!important}
+@media(max-width:850px){.planet-node.omega,.planet-node.omega.distant{scale:1.4}.planet-node.omega .node-label,.planet-node.omega .risk,.planet-node.omega .free-tag,.planet-node.omega.distant .node-label,.planet-node.omega.distant .risk{transform:translateX(-50%) scale(.714)}}

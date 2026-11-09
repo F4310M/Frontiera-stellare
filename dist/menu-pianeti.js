@@ -3,9 +3,10 @@
 //   una texture disegnata una volta sola scorre dentro il disco, l'ombra resta ferma sopra.
 // - Il pannello del pianeta selezionato ha l'ombra nel colore del pianeta.
 // - Nelle info del pannello c'è l'anteprima del boss finale (disegnato una volta e messo in cache).
-// - Lo spazio dietro è più scuro, con più stelle e pianeti lontani che pulsano.
+// - Lo spazio dietro è più scuro, con più stelle che pulsano. Niente pianeti disegnati nello sfondo:
+//   si confondevano con i pianeti da scegliere (2026-11-09). OMEGA sulla mappa è più grande (classe .omega).
 // Va caricato dopo boss.js, finale.js, home.js e mappa.js (usa BOSS_DRAW, PF_BOSS, bDrawBody, initMap, selectPlanet).
-// Prestazioni: niente shadowBlur né filter sulla tela principale; stelle e pianeti lontani sono sprite già pronti.
+// Prestazioni: niente shadowBlur né filter sulla tela principale; le stelle sono sprite già pronti.
 
 const MP={
  spin:[64,48,82,56,72,96],   // secondi per un giro della texture, uno per pianeta (OMEGA è l'ultimo)
@@ -86,7 +87,7 @@ function mpSpin(el,p,secs){
 
 initMap=function(){
  mpOrig.initMap();
- document.querySelectorAll('.planet-node').forEach((n,j)=>{const p=planets[j];if(p)mpSpin(n.querySelector('.planet'),p,MP.spin[j%MP.spin.length])});
+ document.querySelectorAll('.planet-node').forEach((n,j)=>{const p=planets[j];if(p&&n.classList)n.classList.toggle('omega',!!p.final);if(p)mpSpin(n.querySelector('.planet'),p,MP.spin[j%MP.spin.length])});
 };
 
 // ---------------------------------------------------------------- anteprima del boss finale
@@ -177,7 +178,7 @@ function mpSpace(){
   g.globalAlpha=1;
  }
  const twinkle=Array.from({length:Math.min(320,Math.floor(W*H/7000))},(_,i)=>({x:mpHash(i*7+101)*W,y:mpHash(i*7+102)*H,z:1+mpHash(i*7+103)*1.3,ph:mpHash(i*7+104)*6.283,sp:.6+mpHash(i*7+105)*1.8,c:mpHash(i*7+106)<.15?'#ffe2bf':'#e6f3ff'}));
- const far=MP_FAR.map(f=>({f,s:mpFarSprite(f,sc)}));
+ const far=[]; // niente pianeti decorativi nello sfondo della home
  return MP.space={W,H,PW,PH,sky:sky&&sky.c,twinkle,far,halo:mpHalo(),sc};
 }
 function mpHome(){return typeof state!=='undefined'&&(state==='map'||state==='brief')}

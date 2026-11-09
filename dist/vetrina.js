@@ -4,10 +4,12 @@
 // il PC lo decodifica in hardware, quindi costa molto meno di una seconda partita disegnata sul canvas.
 // Si ferma da solo quando si esce dalla mappa, quando la scheda è nascosta e mentre si guarda la classifica.
 // Va caricato dopo classifica.js (crea #mapBoard) e dopo i18n.js (righe di traduzione).
+// 2026-11-09: nella home si alternano le due classifiche, MONDO e ONLINE SCORE (classifica-arena.js),
+// poi il video: MONDO -> ONLINE SCORE -> AZIONE DI GIOCO -> MONDO ...
 
 const VET={
  src:[['vetrina/azione.webm','video/webm'],['vetrina/azione.mp4','video/mp4']],poster:'vetrina/azione.jpg',
- boardSec:14,     // secondi di classifica prima che parta il video
+ boardSec:14,     // secondi di ogni classifica prima di passare alla successiva
  firstSec:9,      // la prima volta il video parte un po' prima
  scenes:[         // da quale secondo del video inizia ogni scena
   {t:0,    label:'BATTAGLIA SPAZIALE'},
@@ -37,13 +39,23 @@ function vetBuild(){
  vet.el=board;
  const head=board.querySelector('.map-board-head');
  const tabs=document.createElement('div');tabs.className='vet-tabs';
- tabs.innerHTML='<button type="button" class="vet-tab on" data-vet="board">CLASSIFICA</button><button type="button" class="vet-tab" data-vet="video">AZIONE DI GIOCO</button>';
+ tabs.innerHTML='<button type="button" class="vet-tab on" data-vet="board">MONDO</button><button type="button" class="vet-tab" data-vet="online">ONLINE SCORE</button><button type="button" class="vet-tab" data-vet="video">AZIONE DI GIOCO</button>';
  if(head&&head.nextSibling)board.insertBefore(tabs,head.nextSibling);else board.appendChild(tabs);
  const box=document.createElement('div');box.id='vetrina';box.className='vet-box';box.setAttribute('aria-hidden','true');
  box.innerHTML='<div class="vet-screen"><video id="vetVideo" muted playsinline preload="none" disablepictureinpicture poster="'+VET.poster+'"></video>'+
   '<span class="vet-live"><i></i>AZIONE DI GIOCO</span><b id="vetLabel" class="vet-label"></b></div>'+
   '<ol class="vet-scenes">'+VET.scenes.map((s,i)=>'<li data-i="'+i+'"><span class="n">'+(i+1)+'</span><span class="t">'+s.label+'</span><em><i></i></em></li>').join('')+'</ol>';
  list.parentNode.insertBefore(box,list.nextSibling);
+ // seconda classifica: ONLINE SCORE, i primi 10 per punti sommati delle sfide online
+ const on=document.createElement('div');on.id='mapBoardOnline';on.className='map-board-list map-board-online';
+ on.innerHTML='<p class="board-empty board-loading">CARICAMENTO…</p>';
+ list.parentNode.insertBefore(on,list.nextSibling);
+ if(head){
+  const t=head.querySelector('b');if(t){t.classList.add('vet-title-world');const o=document.createElement('b');o.className='vet-title-online';o.textContent='ONLINE SCORE';t.parentNode.insertBefore(o,t.nextSibling)}
+  const me=document.createElement('em');me.id='mapBoardMeOn';me.className='map-board-me hidden';head.appendChild(me);
+ }
+ const all=document.getElementById('mapBoardAll');
+ if(all){const open=all.onclick;all.onclick=e=>{if(vet.mode==='online'&&vetOnlineOk()){coView='arena';boardOpen()}else if(open)open.call(all,e)}}
  const v=document.getElementById('vetVideo');vet.video=v;
  v.muted=true;v.defaultMuted=true;v.playsInline=true;
  v.addEventListener('ended',()=>vetShow('board'));
@@ -66,14 +78,19 @@ function vetLoad(){const v=vet.video;if(!v||v.dataset.loaded)return;v.dataset.lo
   if(vet.mode==='video'&&vetVisible())vetPlay();
  }).catch(direct);
 }
-function vetTabsOff(){const t=vet.el&&vet.el.querySelector('.vet-tabs');if(t)t.classList.add('hidden')}
+function vetTabsOff(){const t=vet.el&&vet.el.querySelector('.vet-tab[data-vet="video"]');if(t)t.classList.add('hidden')}
+// La scheda ONLINE SCORE c'è solo con la classifica online attiva (classifica-arena.js si carica dopo questo file).
+function vetTabsSync(){const t=vet.el&&vet.el.querySelector('.vet-tab[data-vet="online"]');if(t)t.classList.toggle('hidden',!vetOnlineOk())}
 function vetPlay(){const v=vet.video;if(!v||!vet.ok)return;vetLoad();if(!v.getAttribute('src'))return;const p=v.play&&v.play();if(p&&p.catch)p.catch(()=>{})}
 
 // Passa da classifica a video e viceversa. manual: scelto con i bottoni, ricomincia il conteggio.
 function vetShow(mode,manual){
  if(!vet.el||(mode==='video'&&!vet.ok))return;
+ if(mode==='online'&&!vetOnlineOk())mode='board';
  vet.mode=mode;vet.wait=VET.boardSec;
  vet.el.classList.toggle('vet-on',mode==='video');
+ vet.el.classList.toggle('vet-online',mode==='online');
+ if(mode==='online')vetOnlineRender();
  for(const b of vet.el.querySelectorAll('.vet-tab'))b.classList.toggle('on',b.dataset.vet===mode);
  const box=document.getElementById('vetrina');if(box)box.setAttribute('aria-hidden',mode==='video'?'false':'true');
  const v=vet.video;
@@ -97,14 +114,68 @@ function vetTick(){
 // Un controllo ogni mezzo secondo: conta il tempo della classifica, ferma o riprende il video.
 function vetStep(){
  if(!vet.el&&!vetBuild())return;
+ vetTabsSync();
+ vetLockCheck();
  const vis=vetVisible(),v=vet.video;
  if(vet.mode==='video'){
   if(!vis){if(v&&!v.paused)v.pause()}
   else if(v&&v.paused&&!v.ended)vetPlay();
  }else if(vis&&vet.ok&&!vetReduced()){
-  vet.wait-=.5;if(vet.wait<=0)vetShow('video');
+  vet.wait-=.5;if(vet.wait<=0)vetShow(vetNext());
  }
 }
+// Dopo MONDO viene ONLINE SCORE, poi il video (se si può), poi di nuovo MONDO.
+function vetNext(){
+ if(vet.mode==='board'&&vetOnlineOk())return 'online';
+ return vet.ok?'video':'board';
+}
+function vetOnlineOk(){return typeof arkTop==='function'&&typeof coOn!=='undefined'&&!!coOn}
+// I primi 10 dell'ONLINE SCORE nella home, con la posizione del pilota accanto al titolo.
+let vetOnlineBusy=false;
+async function vetOnlineRender(){
+ const list=document.getElementById('mapBoardOnline');if(!list||vetOnlineBusy||!vetOnlineOk())return;
+ vetOnlineBusy=true;
+ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ let rows=null,offline=false;
+ try{rows=await arkTop(false)}catch(e){rows=typeof arkCache!=='undefined'&&arkCache?arkCache:[];offline=true}
+ try{
+  rows=(rows||[]).slice(0,typeof MAP_BOARD_ROWS==='number'?MAP_BOARD_ROWS:10);
+  if(!rows.length)list.innerHTML=(offline?'<p class="board-offline">OFFLINE</p>':'')+'<p class="board-empty">Nessuna sfida ancora: gioca una SFIDA ONLINE per entrare nella classifica dell’arena.</p>';
+  else list.innerHTML=(offline?'<p class="board-offline">OFFLINE</p>':'')+rows.map((r,i)=>{
+   const mine=typeof arkIsMe==='function'&&arkIsMe(r);
+   return `<div class="map-board-row${i<3?' top'+(i+1):''}${mine?' me':''}"><span class="pos">${boardRank(i+1)}</span><span class="name board-name">${boardName(r,esc(r.n),'map-ava')}</span><span class="pts">${scoreFmt(r.p)}</span></div>`;
+  }).join('');
+  const me=document.getElementById('mapBoardMeOn'),mine=typeof arkLoad==='function'?arkLoad():null,pts=mine?arkPoints(mine):0;
+  let rank=0;
+  if(me&&pts>0&&!offline){
+   if(vetMeOn.p===pts&&Date.now()-vetMeOn.t<60000)rank=vetMeOn.rank;
+   else{try{rank=await arkRank(pts);vetMeOn={p:pts,rank,t:Date.now()}}catch(e){rank=0}}
+  }
+  if(me){me.classList.toggle('hidden',!rank);if(rank)me.textContent='TU N° '+scoreFmt(rank)}
+ }finally{vetOnlineBusy=false}
+}
+let vetMeOn={p:-1,rank:0,t:0};
+// Il riquadro ha sempre la stessa altezza (2026-11-09, chiesto da Fabio): si misura com'è con la classifica
+// e com'è con il video, si tiene la più alta e le liste riempiono lo spazio. Si rimisura se cambia la finestra
+// o il numero di righe della classifica.
+let vetLockKey='';
+function vetLockCheck(){
+ const b=vet.el;if(!b||!b.offsetParent||typeof innerWidth==='undefined')return;
+ const list=document.getElementById('mapBoardList');
+ const key=innerWidth+'x'+innerHeight+'|'+(list?list.childElementCount:0)+'|'+(document.documentElement&&document.documentElement.lang||'');
+ if(key!==vetLockKey){vetLockKey=key;vetLock()}
+}
+function vetLock(){
+ const b=vet.el;if(!b)return;
+ const on=b.classList.contains('vet-on'),onl=b.classList.contains('vet-online');
+ b.classList.remove('vet-fixed');b.style.height='';
+ b.classList.remove('vet-on','vet-online');const h1=b.offsetHeight;
+ b.classList.add('vet-on');const h2=b.offsetHeight;
+ b.classList.toggle('vet-on',on);b.classList.toggle('vet-online',onl);
+ const h=Math.max(h1,h2);
+ if(h>0){b.style.height=h+'px';b.classList.add('vet-fixed')}
+}
+if(typeof addEventListener==='function')addEventListener('resize',()=>{vetLockKey=''});
 function vetReduced(){try{return !!(typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches)}catch(e){return false}}
 
 function vetStyle(){
@@ -116,6 +187,13 @@ function vetStyle(){
  '.vet-tab:hover{color:#d7f6ff}.vet-tab.on{background:rgba(81,230,255,.16);color:#bff8ff;box-shadow:inset 0 0 0 1px rgba(81,230,255,.45)}'+
  '.vet-box{display:none}.map-board.vet-on .vet-box{display:block;animation:vet-in .35s ease-out}'+
  '.map-board.vet-on .map-board-list,.map-board.vet-on .map-board-all{display:none}'+
+ '@media (min-width:901px) and (min-height:561px){body:not(.touch) .map-board.vet-fixed{display:flex;flex-direction:column}}'+
+ '.map-board.vet-fixed>.map-board-list,.map-board.vet-fixed>.vet-box{flex:1 1 auto;min-height:0;overflow:hidden}'+
+ '.map-board.vet-fixed>*{flex-shrink:0}'+
+ '.map-board-online,.vet-title-online{display:none}.map-board.vet-online .map-board-list{display:none}'+
+ '.map-board.vet-online .map-board-online{display:block;animation:vet-in .35s ease-out}'+
+ '.map-board.vet-online .vet-title-world{display:none}.map-board.vet-online .vet-title-online{display:inline}'+
+ '.map-board.vet-online #mapBoardMe{display:none}.map-board:not(.vet-online) #mapBoardMeOn{display:none}'+
  '.vet-screen{position:relative;aspect-ratio:16/9;border-radius:9px;overflow:hidden;background:#02070d;box-shadow:0 0 0 1px rgba(140,233,236,.3),0 10px 26px #0009}'+
  '.vet-screen video{display:block;width:100%;height:100%;object-fit:cover}'+
  '.vet-live{position:absolute;left:7px;top:7px;display:flex;align-items:center;gap:5px;padding:2px 7px;border-radius:999px;background:rgba(2,8,14,.72);color:#ffd2d8;font:700 8.5px "Chakra Petch",sans-serif;letter-spacing:1.4px}'+
@@ -138,6 +216,7 @@ if(typeof I18N_ROWS!=='undefined'){
  const rows=[
   ["AZIONE DI GIOCO","GAMEPLAY","EN ACTION","EN ACCIÓN","ИГРОВОЙ ПРОЦЕСС","游戏实况","ゲームプレイ"],
   ["CLASSIFICA","LEADERBOARD","CLASSEMENT","CLASIFICACIÓN","РЕЙТИНГ","排行榜","ランキング"],
+  ["ONLINE SCORE","ONLINE SCORE","SCORE EN LIGNE","PUNTUACIÓN ONLINE","ОНЛАЙН-ОЧКИ","在线积分","オンラインスコア"],
   ["BATTAGLIA SPAZIALE","SPACE BATTLE","BATAILLE SPATIALE","BATALLA ESPACIAL","КОСМИЧЕСКИЙ БОЙ","太空战斗","宇宙戦"],
   ["RIENTRO IN ATMOSFERA","ATMOSPHERIC ENTRY","ENTRÉE ATMOSPHÉRIQUE","ENTRADA ATMOSFÉRICA","ВХОД В АТМОСФЕРУ","进入大气层","大気圏突入"],
   ["BATTAGLIA A TERRA","GROUND BATTLE","BATAILLE AU SOL","BATALLA EN TIERRA","НАЗЕМНЫЙ БОЙ","地面战斗","地上戦"],
