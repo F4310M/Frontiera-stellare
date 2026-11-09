@@ -824,11 +824,12 @@ drawPlatform=function(){
  if(pf.boss&&!pf.boss.gone)gBoss(pf.boss,now);
  for(const e of pf.enemies)if(pfOnScreen(e.x,60))gEnemy(e,now);
  const P=pf.pilot;
- if(P.visible){ctx.save();if(P.inv>0&&Math.floor(now*18)%2)ctx.globalAlpha=.4;gTrooper(P,PF_PILOT,now);ctx.restore();pfDrawJetpack(P,now);if(P.barrier)pfDrawBarrier(P,now)}
+ if(P.visible){ctx.save();if(P.inv>0&&Math.floor(now*18)%2)ctx.globalAlpha=.4;gTrooper(P,PF_PILOT,now);ctx.restore();pfDrawJetpack(P,now);pfDrawRifleCharge(P,now);if(P.barrier)pfDrawBarrier(P,now)}
  for(const m of pf.missiles)pfDrawBossMissile(m);
  for(const g of pf.grenades)pfDrawGrenade(g);
  gCollectLights(now);
  gApplyLighting(VW);
+ for(const h of pf.hostages)if(pfOnScreen(h.x,60))pfDrawHelp(h,now);
  for(const b of pf.shots)drawBullet(b);
  for(const f of pf.fx)if(!f.jetSmoke)drawParticle(f);
  ctx.font='600 13px "Chakra Petch",sans-serif';ctx.textAlign='center';

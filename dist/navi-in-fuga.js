@@ -1,14 +1,13 @@
 // Conex — LE NAVI NEMICHE SCAPPANO (2026-11-08).
 // Quando il boss del pianeta esplode non si vedono più i soldati nemici che corrono via a destra:
-// al loro posto la flotta nemica fugge. Tre o quattro navi rosse arrivano da dietro il pilota e
-// salgono verso destra accelerando, altre tre decollano dalla colonia sullo sfondo e spariscono in cielo.
+// al loro posto la flotta nemica fugge su due piani: passaggi ravvicinati e decolli dalla colonia.
 // Una delle navi vicine è colpita e lascia una scia di fumo.
 // Le navi sono lo stesso scafo nemico dello spazio (flHostileBody di fluidita.js), viste di tre quarti
 // come la nave del pilota (n3Slab di nave3d.js), disegnate una volta in una piccola immagine e poi copiate.
 // Niente shadowBlur né ctx.filter sul canvas principale (PC lenti). Va caricato dopo classifica.js.
 
 const NF={
- vicine:2,lontane:2,      // flotta più leggera: due passaggi vicini e due decolli lontani
+ vicine:6,lontane:8,      // passaggi a più quote e decolli dalla colonia
  px:4,                    // sprite meno grande in memoria, ancora nitido alla scala massima
  trail:8,smokeRate:18     // meno segmenti e particelle nella scena finale
 };
@@ -53,12 +52,12 @@ function nfLaunch(){
  const ships=[];
  const near=NF.vicine+(d>=4?1:0);
  for(let i=0;i<near;i++)ships.push({
-  near:true,x:-140-i*70,y:170+i*62+r()*30,vx:280+r()*60,vy:-20,ax:480+r()*100,ay:-60-r()*40,
-  s:1.5+r()*.3,delay:.5+i*.42,t:0,smoke:i===1,trail:[],puffs:[],a:1,sound:false
+  near:true,x:-140-(i%3)*45,y:125+(i%4)*56+r()*28,vx:280+r()*60,vy:-20,ax:480+r()*100,ay:-60-r()*40,
+  s:1.5+r()*.3,delay:.9+i*.31,t:0,smoke:i===1,trail:[],puffs:[],a:1,sound:false
  });
  for(let i=0;i<NF.lontane;i++)ships.push({
-  near:false,x:VW*(.42+i*.17+r()*.05),y:505+r()*20,vx:0,vy:-60,ax:260+r()*80,ay:-90,
-  s:.5+r()*.14,delay:.15+i*.38,t:0,smoke:false,trail:[],puffs:[],a:0,sound:false
+  near:false,x:VW*(.31+i*.068+r()*.045),y:472+(i%3)*19+r()*15,vx:0,vy:-60,ax:260+r()*80,ay:-90,
+  s:.5+r()*.14,delay:.95+i*.22,t:0,smoke:false,trail:[],puffs:[],a:0,sound:false
  });
  pf.naviFuga={ships,t:0};
 }
@@ -72,12 +71,14 @@ function nfUpdate(dt){
   if(F.t<S.delay)continue;
   S.t+=dt;
   if(!S.sound){S.sound=true;if(S.near){noise(1.3,.03,320);tone(70,1.4,'sawtooth',.014,240)}else noise(.8,.012,500)}
-  if(!S.near&&S.t<.9){S.vy=-60-S.t*40;S.vx=S.t*30}// decollo quasi verticale
-  else{S.vx+=S.ax*dt;S.vy+=S.ay*dt}
-  S.x+=S.vx*dt;S.y+=S.vy*dt;
-  if(!S.near)S.a=Math.min(1,S.a+dt*2.5);
-  S.trail.push({x:S.x,y:S.y});if(S.trail.length>NF.trail)S.trail.shift();
-  if(S.smoke&&Math.random()<dt*NF.smokeRate)S.puffs.push({x:S.x-22*S.s,y:S.y+(Math.random()-.5)*6,r:3+Math.random()*4,life:1.1,max:1.1});
+  if(!S.gone){
+   if(!S.near&&S.t<.9){S.vy=-60-S.t*40;S.vx=S.t*30}// decollo quasi verticale
+   else{S.vx+=S.ax*dt;S.vy+=S.ay*dt}
+   S.x+=S.vx*dt;S.y+=S.vy*dt;
+   if(!S.near)S.a=Math.min(1,S.a+dt*2.5);
+   S.trail.push({x:S.x,y:S.y});if(S.trail.length>NF.trail)S.trail.shift();
+   if(S.smoke&&Math.random()<dt*NF.smokeRate)S.puffs.push({x:S.x-22*S.s,y:S.y+(Math.random()-.5)*6,r:3+Math.random()*4,life:1.1,max:1.1});
+  }
   for(const p of S.puffs){p.life-=dt;p.r+=dt*22;p.y-=dt*12}
   S.puffs=S.puffs.filter(p=>p.life>0);
   if(S.x>VW+260||S.y<-200)S.gone=true;

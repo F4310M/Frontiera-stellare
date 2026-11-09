@@ -104,8 +104,6 @@ button:focus-visible{outline:2px solid #e5ffff;outline-offset:5px}.planet-node:f
 .pf-boss{position:absolute;top:96px;left:50%;transform:translateX(-50%);width:min(560px,80vw);text-align:center;font:600 10px 'Chakra Petch';letter-spacing:3px;color:#ff8a96;text-shadow:0 2px 6px #000}
 .pf-boss div{height:8px;margin-top:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,82,104,.45)}
 .pf-boss i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff3c4c,#ff9d3d);box-shadow:0 0 12px #ff3c4c;transition:width .15s}
-.phase2-btn{display:block;width:100%;margin:14px 0 0;padding:10px;border:1px solid rgba(255,157,61,.45);color:var(--orange);font-weight:600}
-.phase2-btn:hover{background:rgba(255,157,61,.08)}
 #landBtn{background:var(--orange);border-color:var(--orange)}
 #landBtn+#returnBtn{margin-top:12px}
 #landBrief .keyhint{color:var(--muted)}
@@ -165,16 +163,27 @@ button:focus-visible{outline:2px solid #e5ffff;outline-offset:5px}.planet-node:f
 .mi-demo-btn:focus-visible{outline:2px solid var(--cyan);outline-offset:-3px}
 .mi-watch{position:absolute;right:7px;bottom:7px;padding:4px 6px;border:1px solid #6c9ab6;border-radius:4px;background:#0a1828e8;font:700 9px 'Chakra Petch',sans-serif;letter-spacing:.05em}
 .mi-demo-btn:hover .mi-watch,.mi-demo-btn[aria-pressed="true"] .mi-watch{background:#9de8fc;color:#102233}
-.market-demo{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);align-items:center;gap:18px;overflow:hidden;margin:10px 0 14px;border:1px solid #467188;border-radius:10px;background:#0d1c2c;scroll-margin-block:8px}
-.market-demo video{display:block;width:100%;aspect-ratio:16/7;background:#071320}
-.market-demo-copy{padding:12px 16px 12px 0}
+.market-demo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);align-items:center;gap:clamp(8px,2vw,24px);width:100%;margin:12px 0 0;padding:clamp(10px,2vw,24px);overflow:hidden;border:1px solid #467188;border-radius:12px;background:#0d1c2c;scroll-margin-block:8px}
+.market-demo video{display:block;width:100%;min-width:0;aspect-ratio:16/9;max-height:280px;border:1px solid var(--line);border-radius:8px;background:#071320;object-fit:contain}
+.market-demo-copy{min-width:0}
 .market-demo-copy .eyebrow{margin:0 0 6px}
 .market-demo-copy h3{margin:0;color:#e5f6ff;font:700 clamp(15px,2.5vw,24px) 'Chakra Petch',sans-serif}
-.market-demo-copy p:last-child{margin:6px 0 0;font-size:12px;color:#b6c9d9;line-height:1.55}
+#marketDemoText{margin:6px 0 14px;font-size:13px;color:#b6c9d9;line-height:1.55}
+#marketDemoStatus,.mi-max{margin:10px 0 0;color:#ffda83;font:600 12px 'Chakra Petch',sans-serif}
+#marketDemoStatus:empty{display:none}
+.mi-levels{display:grid;gap:5px;padding:0;margin:0 0 12px;list-style:none}
+.mi-levels li{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:center;padding:6px 9px;border:1px solid var(--line);border-radius:6px;color:#bdd5e8;font:600 12px 'Chakra Petch',sans-serif}
+.mi-levels li b{display:grid;place-items:center;aspect-ratio:1;border-radius:4px;background:#1d354b}
+.mi-levels li small{white-space:nowrap;font-size:10px}
+.mi-levels li.next{border-color:#d0a756;color:#ffda83;background:#ffda830c}
+.mi-levels li.owned,.mi-max{color:#9cf0b6}
+.market-demo .mi-buy{width:100%}
 @media(max-width:580px){
- .market-demo{grid-template-columns:1fr;gap:0}
- .market-demo-copy{padding:10px 12px}
  .market-grid{grid-auto-columns:min(78vw,280px)}
+ .market-demo{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
+ .market-demo video{align-self:start}
+ .mi-levels li{grid-template-columns:16px minmax(0,1fr);gap:3px 5px;padding:4px 5px;font-size:10px}
+ .mi-levels li small{grid-column:2}
 }
 .market-item:hover,.market-item:focus-within{border-color:#69839b}
 .mi-body{flex:1;display:flex;flex-direction:column;padding:12px}
@@ -190,25 +199,16 @@ button:focus-visible{outline:2px solid #e5ffff;outline-offset:5px}.planet-node:f
 .mi-art svg{display:block;width:100%;height:100%;max-width:240px}
 .mi-module{filter:drop-shadow(0 7px 6px #0009);stroke-linejoin:round}
 .mi-orbit{fill:none;stroke:var(--mi-glow);stroke-dasharray:3 5;opacity:.35}
-.mi-metal{fill:#54718a;stroke:#bbd2e3;stroke-width:1.3}
-.mi-panel{fill:#9eb4c6;stroke:#d0e1ec}
-.mi-dark{fill:#132335;stroke:#67839c}
+.mi-metal{fill:var(--mi-metal);stroke:#bbd2e3;stroke-width:1.3}
+.mi-panel{fill:var(--mi-panel);stroke:#d0e1ec}
+.mi-dark{fill:var(--mi-dark);stroke:#67839c}
 .mi-light{fill:var(--mi-glow);stroke:#eaf7ff;filter:drop-shadow(0 0 4px var(--mi-glow))}
 .mi-detail,.mi-beam{fill:none;stroke-linecap:round;stroke-width:2}
-.mi-detail{stroke:#b9d2e3}
+.mi-detail{stroke:#b9d2e3;stroke-width:1.2}
+.mi-seam{fill:none;stroke:#080e19;stroke-width:1.4}
+.mi-hatch{fill:none;stroke:#acd4ef;stroke-width:1;opacity:.55}
 .mi-beam{stroke:var(--mi-glow);stroke-width:3;filter:drop-shadow(0 0 4px var(--mi-glow))}
-.market-preview{display:grid;grid-template-columns:minmax(100px,220px) 1fr;align-items:stretch;overflow:hidden;margin:16px 0 14px;border:1px solid #83e9cd88;border-radius:10px;background:linear-gradient(105deg,#142f3f,#102232);box-shadow:0 0 20px #61eed81c;scroll-margin-block:12px}
-.market-preview:focus-visible{outline:2px solid #8ce9ec;outline-offset:2px}
-.market-preview .mi-art{height:auto;min-height:126px;border-bottom:0;border-right:1px solid var(--line)}
-.market-preview .mi-art svg{height:auto;max-height:145px}
-.mi-preview-info{align-self:center;min-width:0;padding:12px 16px}
-.mi-preview-info h3{margin:3px 0;font:700 clamp(15px,2.2vw,23px) 'Chakra Petch',sans-serif;color:#f1f8ff}
-.mi-preview-info>p{margin:4px 0}
-.mi-preview-meta{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:8px;color:#a1f5dc;font:600 11px 'Chakra Petch',sans-serif}
-.mi-preview-meta span{color:#ffd36b}
 @media(max-width:480px){
- .market-preview{grid-template-columns:minmax(84px,34%) 1fr}
- .mi-preview-info{padding:10px}
  .market-screen{scroll-padding-top:130px}
  .market-heading{align-items:flex-start;flex-direction:column;gap:10px}
  .market-actions{width:100%;justify-content:space-between;gap:8px}
@@ -219,10 +219,19 @@ button:focus-visible{outline:2px solid #e5ffff;outline-offset:5px}.planet-node:f
  #closeMarket span{display:none}
 }
 .market-item.maxed{border-color:rgba(141,241,173,.35)}
+.market-item:has(.mi-demo-btn[aria-pressed="true"]){border-color:#7ee9ff;box-shadow:inset 0 0 0 1px #7ee9ff66,0 0 12px #51e6ff44}
+.market-item.affordable .mi-icon{border-color:#ffd36b;background:#503714;color:#ffe3a0;box-shadow:0 0 8px #ffd36b50}
+@media(prefers-reduced-motion:no-preference){
+ .market-item.affordable .mi-icon{animation:market-affordable-pulse 1.55s ease-in-out infinite}
+ @keyframes market-affordable-pulse{
+  50%{transform:scale(1.11);background:#704c16;box-shadow:0 0 15px #ffd36b99}
+ }
+}
 .mi-head{display:flex;gap:12px;align-items:center}
 .mi-icon{display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:8px;border:1px solid rgba(255,207,74,.35);color:#ffd36b;font-size:18px;background:rgba(40,30,8,.5)}
 .mi-head b{font:600 12px 'Chakra Petch';letter-spacing:1.4px}
 .mi-progress{display:grid;gap:5px;margin:3px 0 12px}
+.market-item .mi-progress{margin: auto 0 0;padding-top:8px}
 .mi-progress-label{display:flex;align-items:baseline;justify-content:space-between;gap:10px;color:#b6cede;font:600 11px 'Chakra Petch',sans-serif;letter-spacing:1px}
 .mi-progress-label strong{color:#ffda83;font-size:24px;line-height:1;font-variant-numeric:tabular-nums}
 .mi-progress-label small{font-size:13px;color:#b6cede}
@@ -231,22 +240,25 @@ button:focus-visible{outline:2px solid #e5ffff;outline-offset:5px}.planet-node:f
 .mi-progress-track::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent calc(100% - 2px),#0a192a 0);background-size:calc(100% / var(--mi-level-count)) 100%;background-repeat:repeat-x}
 .mi-progress.complete .mi-progress-label strong{color:#9cf0b6}
 .mi-progress.complete .mi-progress-track span{background:linear-gradient(90deg,#35a77c,#9cf0b6)}
-.market-preview .mi-progress{margin:10px 0 0}
-.market-preview .mi-progress-track{height:20px}
-.market-preview .mi-progress-label strong{font-size:30px}
+.mi-levels li.just-upgraded{border-color:#8df1ad}
 @media(prefers-reduced-motion:no-preference){
+ .mi-levels li.just-upgraded{animation:market-purchase-flash .85s ease-out}
+ @keyframes market-purchase-flash{
+  from{background:#8df1ad55;box-shadow:inset 0 0 16px #8df1ad66,0 0 14px #8df1ad55}
+  to{background:transparent;box-shadow:none}
+ }
  .mi-progress.upgraded .mi-progress-track span{animation:market-level-up .65s cubic-bezier(.2,.75,.22,1) both}
  @keyframes market-level-up{from{transform:scaleX(var(--mi-from))}to{transform:scaleX(var(--mi-fill))}}
 }
 .market-item p{font-size:11px;line-height:1.5;color:var(--muted);margin:10px 0 4px}
 .market-item p.mi-level{font:9px 'Chakra Petch';letter-spacing:1px;color:#8ce9ec;margin:0 0 10px}
-.mi-buy{margin-top:auto;min-height:38px;padding:5px 8px;border-radius:6px;border:1px solid #ffd36b;background:linear-gradient(110deg,#ffd36b,#e8a93a);color:#1a1204;font:700 10px 'Chakra Petch';letter-spacing:1px;cursor:pointer}
+.mi-buy{min-height:38px;padding:5px 8px;border-radius:6px;border:1px solid #ffd36b;background:linear-gradient(110deg,#ffd36b,#e8a93a);color:#1a1204;font:700 10px 'Chakra Petch';letter-spacing:1px;cursor:pointer}
 .mi-buy:hover:not(:disabled){filter:brightness(1.1)}
 .mi-buy:disabled{background:transparent;color:var(--muted);border-color:var(--line);cursor:not-allowed}
-.market-item.maxed .mi-buy{color:#8df1ad;border-color:rgba(141,241,173,.4)}
 .market-msg{min-height:16px;margin:12px 0 0;font:600 10px 'Chakra Petch';letter-spacing:1px;color:#ffd36b}
 .market-msg:empty{display:none}
-.mission-reward{z-index:16}
+.mission-reward{z-index:16;background:#03091366;backdrop-filter:none}
+body:has(#missionReward:not(.hidden)) #boardOverlay{z-index:17}
 .mission-reward-card{width:min(540px,94vw);max-height:94dvh;overflow:auto;padding:clamp(16px,4vw,34px);border-radius:14px;clip-path:none;border-color:#527d98;background:radial-gradient(ellipse at 50% 0,#18384e,#0a1424 70%)}
 .mission-reward-card h2{font-size:clamp(19px,4.6vw,30px);letter-spacing:.06em}
 .reward-totals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -254,9 +266,19 @@ button:focus-visible{outline:2px solid #e5ffff;outline-offset:5px}.planet-node:f
 .reward-totals span{color:#b6c8d7;font-size:10px;letter-spacing:.08em}
 .reward-totals strong{font-size:clamp(19px,5.2vw,36px);font-variant-numeric:tabular-nums;color:#a3efff}
 .reward-totals div+div strong{color:#ffd36b}
+.reward-running-totals div{padding-block:7px}
+.reward-running-totals strong{font-size:clamp(16px,3vw,26px)}
+.mission-reward-card{position:relative}
+#rewardDetail{margin:12px 0 0}
+#rewardStats{margin:10px 0 14px}
+.reward-flight{position:absolute;z-index:1;color:#b9f5ff;text-shadow:0 0 12px #51e6ff;pointer-events:none;white-space:nowrap;font:800 clamp(16px,4vw,28px) 'Chakra Petch',sans-serif}
+.reward-flight.credits{color:#ffe39a;text-shadow:0 0 12px #ffd36b}
 .reward-market{margin-top:12px;padding:9px 8px;border:1px solid #ffd36b66;border-radius:8px;background:#2a230f75;color:#ffde91;font:600 12px 'Chakra Petch',sans-serif}
 .reward-market p{margin:4px 0}
-.reward-market .text-btn{margin:6px 0 2px;color:#ffde91;text-decoration:underline}
+.reward-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
+.mission-reward-card .reward-actions .launch-btn{margin:0;padding-inline:clamp(8px,2vw,16px);letter-spacing:.06em}
+#rewardLandBtn,.reward-actions:has(#rewardMarketBtn.hidden) #rewardClose{grid-column:1/-1}
+#rewardMarketBtn{background:#ffd36b;border-color:#ffd36b}
 @media(prefers-reduced-motion:no-preference){
  .mission-reward:not(.hidden) .mission-reward-card{animation:reward-in .5s cubic-bezier(.2,.85,.3,1) both}
  .mission-reward:not(.hidden) .reward-totals div{animation:reward-in .55s .12s ease-out both}
@@ -308,19 +330,40 @@ button:focus-visible{outline:2px solid #e5ffff;outline-offset:5px}.planet-node:f
 #boardReload:disabled{opacity:.55;cursor:wait}
 .board-name{display:flex;align-items:center;min-width:0}
 .board-player-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.board-medal{display:inline-grid;flex:none;place-items:center;min-width:18px;height:18px;margin-inline-start:6px;padding-inline:3px;border:1px solid #b3cce0;border-radius:50%;background:#244158;color:#f0f8ff;font:700 10px/1 'Chakra Petch',sans-serif;letter-spacing:0}
-.board-medal[data-rank="1"]{border-color:#fff0a7;background:#deae3e;color:#291c06}
-.board-medal[data-rank="2"]{border-color:#f0f7ff;background:#bdccda;color:#192935}
-.board-medal[data-rank="3"]{border-color:#f5b989;background:#a8673e;color:#fff6e9}
-.map-board-row .board-medal{min-width:16px;height:16px;margin-inline-start:4px;font-size:9px}
+.board-rank{--rank-fill:#a36742;--rank-edge:#f2b98e;--rank-ink:#fff5ea;position:relative;display:inline-grid;place-items:center;vertical-align:middle;width:30px;height:21px;isolation:isolate;text-shadow:none}
+.board-rank svg{position:absolute;inset:0;width:100%;height:100%;z-index:-1;stroke:var(--rank-edge);stroke-linejoin:round}
+.board-rank i{color:var(--rank-ink);font:800 9px/1 'Chakra Petch',sans-serif;letter-spacing:0}
+.board-rank[data-rank="1"]{--rank-fill:#f6c75d;--rank-edge:#ffebaa;--rank-ink:#392006}
+.board-rank[data-rank="2"]{--rank-fill:#bbd2e4;--rank-edge:#f3faff;--rank-ink:#203144}
+.board-rank[data-rank="3"]{--rank-fill:#c98a62;--rank-edge:#ffd0a6;--rank-ink:#311b14}
+.board-rank[data-rank="1"] i,.board-rank[data-rank="2"] i,.board-rank[data-rank="3"] i{transform:translateY(-2px)}
+.rank-trim,.rank-ring{fill:none}
+.rank-trim{stroke-width:2;stroke-linecap:round}
+.rank-face,.rank-wing{fill:var(--rank-fill)}
+.rank-ring{opacity:.55}
+.board-rank.rank-white{--rank-fill:#fff;--rank-edge:#bbcbd9;--rank-ink:#1e3041}
+.board-rank.rank-blue{--rank-fill:#2562a7;--rank-edge:#9acaff;--rank-ink:#fff}
+.board-rank.rank-yellow{--rank-fill:#9a6b08;--rank-edge:#ffd454;--rank-ink:#fff}
+.rank-number{font-variant-numeric:tabular-nums}
+.rank-number-compact{font-size:.84em}
+.board-row>span:first-child{text-align:center}
+#boardOverlay.board-page .board-rank{width:42px;height:30px}
+#boardOverlay.board-page .board-rank i{font-size:12px}
+#boardOverlay.board-page .podium .board-rank i{transform:translateY(-3px)}
+@media(max-width:850px){
+ #boardOverlay.board-page .board-rank{width:34px;height:24px}
+ #boardOverlay.board-page .board-rank i{font-size:10px}
+}
+.map-board-row .board-rank{width:26px;height:18px}
+
 .board-results{position:relative;display:flex;flex-direction:column;flex:1 1 auto;min-height:58px}
 .board-list{flex:1 1 auto;min-height:0;overflow:auto;border:1px solid var(--line);border-radius:8px;background:rgba(2,9,17,.5)}
 .board-refresh{position:absolute;inset:0;display:grid;grid-template-columns:1fr auto;align-content:center;align-items:baseline;gap:8px;padding-inline:clamp(12px,5vw,100px);border:1px solid #567d96;border-radius:8px;background:#0b1a29;color:#a7d9ed;font:700 11px 'Chakra Petch',sans-serif;letter-spacing:.08em}
 .board-refresh strong{color:#e5fbff;font-size:clamp(18px,4vw,29px);font-variant-numeric:tabular-nums}
 .board-refresh-track{grid-column:1/-1;height:10px;overflow:hidden;border:1px solid #55738a;border-radius:5px;background:#050e19}
 .board-refresh-track i{display:block;width:1%;height:100%;background:linear-gradient(90deg,#3795be,#9af1ec)}
-.board-row{display:grid;grid-template-columns:54px 1fr 110px 96px;gap:8px;padding:8px 14px;font:500 12px 'Chakra Petch',sans-serif;letter-spacing:1px;border-bottom:1px solid rgba(100,170,220,.08)}
-.board-row span:nth-child(3){text-align:right;color:var(--cyan)}.board-row span:nth-child(4){text-align:right;color:var(--muted);font-size:10px}
+.board-row{display:grid;align-items:center;grid-template-columns:54px 1fr 110px 96px;gap:8px;padding:8px 14px;font:500 12px 'Chakra Petch',sans-serif;letter-spacing:1px;border-bottom:1px solid rgba(100,170,220,.08)}
+.board-row>span:nth-child(3){text-align:right;color:var(--cyan)}.board-row>span:nth-child(4){text-align:right;color:var(--muted);font-size:10px}
 .board-row.head{position:sticky;top:0;background:#071321;color:var(--muted);font-size:9px;letter-spacing:2px}
 .board-row.podium span:first-child{color:#ffd76a}
 .board-row.me{background:rgba(81,230,255,.14);box-shadow:inset 3px 0 0 var(--cyan)}
@@ -334,7 +377,7 @@ button:focus-visible{outline:2px solid #e5ffff;outline-offset:5px}.planet-node:f
 .score-row input{flex:1;min-width:0;height:46px;padding:0 12px;border:1px solid rgba(81,230,255,.45);border-radius:6px;background:#04101c;color:var(--text);font:600 18px 'Chakra Petch',sans-serif;letter-spacing:2px;cursor:text!important}
 .score-row .launch-btn{width:auto;height:46px;margin:0!important;gap:10px;flex:0 0 auto}
 .score-msg{min-height:14px;margin:8px 0 0;color:var(--cyan)!important;font:600 10px 'Chakra Petch'!important;letter-spacing:1.5px}
-@media(max-width:850px){.board-btn span{display:none}.lang-select{padding:0 4px}.board-row{grid-template-columns:40px 1fr 90px;}.board-row span:nth-child(4){display:none}.score-row{flex-direction:column}.map-score{display:none}}
+@media(max-width:850px){.board-btn span{display:none}.lang-select{padding:0 4px}.board-row{grid-template-columns:40px 1fr 90px;}.board-row>span:nth-child(4){display:none}.score-row{flex-direction:column}.map-score{display:none}}
 .result-card{max-height:96vh;overflow:auto}
 
 /* Modalità mobile: pad e pulsanti semitrasparenti */
@@ -578,7 +621,7 @@ kbd .ico{width:13px;height:13px;vertical-align:0}
 .settings-btn{display:inline-flex;align-items:center;gap:7px}.settings-btn .ico{width:15px;height:15px}
 .fullscreen-toggle b{display:inline-flex}.fullscreen-toggle b .ico{width:17px;height:17px;filter:drop-shadow(0 0 5px var(--cyan))}
 .text-btn .ico{width:13px;height:13px;margin:0 4px}
-.brief-back,.phase2-btn,.market-link{display:inline-flex!important;align-items:center;justify-content:center;gap:4px}
+.brief-back,.market-link{display:inline-flex!important;align-items:center;justify-content:center;gap:4px}
 .market-link{display:flex!important}
 .mi-icon .ico{width:21px;height:21px}
 .touch-btn b{display:inline-flex}.touch-btn b .ico{width:24px;height:24px}
@@ -641,11 +684,9 @@ body.touch .settings-side .setting-block{margin:0}
  .market-grid{grid-auto-columns:clamp(195px,30vw,265px);gap:10px}
  .mi-body{padding:10px}
  .mi-art{height:86px}
- .market-preview .mi-art{min-height:94px}
  .mi-head{gap:8px}.mi-icon{width:30px;height:30px}
  .market-item p{font-size:10px;margin:6px 0 2px}
  .market-item p.mi-level{margin:0 0 6px}
- .mi-buy{height:32px}
  .market-prices{margin:6px 0 8px}
  .market-balance{padding:6px 12px}
  .market-msg{min-height:0;margin-top:6px}
@@ -716,9 +757,9 @@ body.touch .spec-badge{top:64px;left:12px;padding:4px 9px 4px 6px;font-size:8px}
 .planet-panel .save-box .launch-btn{margin:0}
 .save-resume{background:#ffd27a;border-color:#ffd27a}
 .save-resume:hover{background:#ffe3a6;box-shadow:0 0 24px rgba(255,210,122,.35)}
-.save-new{display:block;width:100%;margin-top:8px;padding:9px;border:1px solid rgba(160,210,240,.3);border-radius:8px;background:transparent;color:#cfe3f2;font:600 10px 'Chakra Petch',sans-serif;letter-spacing:2px;cursor:pointer}
+.save-new{display:block;width:100%;margin:14px 0 0;padding:9px;border:1px solid rgba(160,210,240,.3);border-radius:8px;background:transparent;color:#cfe3f2;font:600 10px 'Chakra Petch',sans-serif;letter-spacing:2px;cursor:pointer}
 .save-new:hover{border-color:var(--cyan);color:#fff}
-body.has-save #launchBtn,body.has-save #mapScreen .planet-panel .keyhint,body.has-save #phase2Btn{display:none!important}
+body.has-save #launchBtn,body.has-save #mapScreen .planet-panel .keyhint{display:none!important}
 body.has-save .planet-node{pointer-events:none}
 body.has-save .planet-node:not(.selected){opacity:.35}
 #mapScreen .planet-panel .save-box .save-resume,.planet-panel .save-box .save-resume{background:linear-gradient(110deg,#ffe3a6,#ffc65c);border-color:#ffd27a;color:#1d1300}

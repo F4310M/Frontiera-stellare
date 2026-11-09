@@ -39,25 +39,35 @@ function storage(){const m=new Map();return{m,getItem:k=>m.has(k)?m.get(k):null,
 
 // ---- 2) partita salvata e chiusura
 (async()=>{
- const ls=storage();let aborted=0,restarted=0,warped=0,platform=0,toast='',written=null;
+ const ls=storage();let carry,aborted=0,restarted=0,warped=0,platform=0,toast='',written=null;
  const sb={localStorage:ls,$:()=>null,show(){},state:'platform',paused:false,score:4200,selected:0,phaseOneComplete:false,godMode:false,
   planets:[{code:'A1',name:'LYRA'},{code:'B2',name:'VESPER'}],pf:{p:{code:'B2',name:'VESPER'}},
-  abort(){aborted++;sb.state='map'},gameRestart(){restarted++;sb.score=0},selectPlanet(i){sb.selected=i},mapPlayable:()=>true,
+  abort(){aborted++;sb.state='map'},gameOverCarry:()=>180,gameRestart(balance){carry=balance;restarted++;sb.score=0},selectPlanet(i){sb.selected=i},mapPlayable:()=>true,
   beginWarp(){warped++},startPlatform(){platform++},profToast(s){toast=s},scoreFmt:n=>String(n),
   recName:()=>'Fabio',recLoad:()=>null,recWrite:async(n,s)=>{written={n,s};return 'run1'},coOn:true,coRank:async()=>42,WORLD_SIZE:10000,coMyId:'',
   myAdd(){},boardAdd(){},setTimeout:(f)=>f(),Date};
  vm.createContext(sb);
  vm.runInContext('var score=4200;'+fs.readFileSync(path.join(dist,'partita.js'),'utf8'),sb);
  const run=s=>vm.runInContext(s,sb);
+ const visible={};
+ const ui={saveBox:{classList:{toggle(_,hide){visible.saveBox=!hide}}},saveNewBtn:{}};
+ sb.$=id=>ui[id]||null;
+ sb.show=(id,on)=>{visible[id]=on};
+ run('saveHome()');assert.equal(visible.saveNewBtn,false,'NEW GAME nascosto senza partita');
  run('saveForLater()');
  const s=JSON.parse(ls.getItem('stellarPartitaSalvata'));
+ assert.equal(visible.saveNewBtn,true,'NEW GAME visibile con partita sospesa');
+ run('saveOpenNewGame()');assert.equal(visible.newGameOverlay,true,'si apre la conferma');
+ assert.equal(restarted,0,'la conferma non azzera la partita');
  assert.equal(s.code,'B2');assert.equal(s.fase,2,'salvata la fase a terra');assert.equal(aborted,1);assert.match(toast,/PARTITA SALVATA/);
  run('saveResume()');
  assert.equal(sb.selected,1);assert.equal(platform,1,'riprende a terra');assert.equal(ls.getItem('stellarPartitaSalvata'),null,'salvataggio usato');
  sb.state='play';run('saveForLater()');assert.equal(JSON.parse(ls.getItem('stellarPartitaSalvata')).fase,1);
  run('saveResume()');assert.equal(warped,1,'riprende nello spazio');
  sb.state='play';run('score=4200');await run('closeRun()');
- assert.deepEqual(written,{n:'Fabio',s:4200},'punteggio in classifica');assert.equal(restarted,1,'progressi azzerati');
+ assert.deepEqual(written,{n:'Fabio',s:4200},'punteggio in classifica');assert.equal(restarted,1,'progressi azzerati');assert.equal(carry,180,'nuova partita con il recupero dei crediti');
  assert.match(toast,/POSIZIONE 42/);
+ ls.setItem('frontieraPianetiLiberati','A1');
+ run('saveHome()');assert.equal(visible.saveNewBtn,true,'NEW GAME visibile fra due missioni');
  console.log('PASS: riprendi più tardi / chiudi partita');
 })().catch(e=>{console.error(e);process.exit(1)});

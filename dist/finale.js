@@ -17,17 +17,17 @@ function viteHud(){
  if(!m&&mc&&mc.parentNode&&document.createElement){m=document.createElement('span');m.id='mapVite';m.style.cssText='margin-left:14px;color:#ff7a8a;font-weight:700;letter-spacing:.1em';mc.parentNode.appendChild(m)}
  if(m)m.textContent='VITE '+txt;
 }
-// Fine delle vite: la partita ricomincia, ma resta il 25% dei crediti disponibili.
-function gameOverCarry(balance){return Math.max(0,Math.round((Number.isFinite(balance)?balance:0)*.25))}
+// Fine delle vite: si recupera il 20% dei guadagni della partita.
+function gameOverCarry(){return typeof eco!=='undefined'?Math.round(eco.earned*.2):0}
 function viteGameOver(){
- const carry=gameOverCarry(typeof eco!=='undefined'&&eco?eco.balance:0);
+ const carry=gameOverCarry();
  vite=VITE_START;viteSave();
- if(typeof eco!=='undefined'){eco.balance=carry;eco.upgrades={};ecoSave();ecoHud()}
+ if(typeof ecoReset==='function')ecoReset(carry);
  for(const k of ['frontieraPhaseOneComplete','frontieraPhaseTwoComplete','frontieraPianetiLiberati'])localStorage.setItem(k,'');
- phaseOneComplete=false;phaseTwoComplete=false;
- finalLock();if(typeof pfRefreshMapButton==='function')pfRefreshMapButton();
+ phaseOneComplete=false;phaseTwoComplete=false;selected=0;
+ finalLock();
  $('resultEyebrow').textContent='GAME OVER';$('resultTitle').textContent='HAI PERSO TUTTE LE VITE';
- $('resultText').textContent='Il Fronte Ombra ha vinto questa guerra. Hai perso il 75% dei crediti; il 25% rimasto sarà disponibile nella prossima partita. Potenziamenti e pianeti liberati sono azzerati e hai di nuovo 3 vite.';
+ $('resultText').textContent='Il Fronte Ombra ha vinto questa guerra. Recuperi solo il 20% dei crediti guadagnati in questa partita. Potenziamenti e pianeti liberati sono azzerati e hai di nuovo 3 vite.';
  show('landBtn',false);$('returnBtn').querySelector('span').textContent='RICOMINCIA DALLA MAPPA';
 }
 function viteLose(){vite=Math.max(0,vite-1);viteSave();return vite}

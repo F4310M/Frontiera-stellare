@@ -25,7 +25,7 @@
 /* mercato e crediti: oro */
 #marketBtnResult{--b1:#a8741b;--b2:#704a0d;--bc:#ffc75a;--bt:#fff6df}
 /* classifica, password, fase 2: viola */
-#scoreSeeBoard,#profPwForgot,#phase2Btn{--b1:#5b3a9e;--b2:#3b2470;--bc:#a585ff;--bt:#f3edff}
+#scoreSeeBoard,#profPwForgot,#saveNewBtn{--b1:#5b3a9e;--b2:#3b2470;--bc:#a585ff;--bt:#f3edff}
 .prof-card .text-btn,.prof-pw .text-btn{margin:12px 0 0}
 body.touch .text-btn{min-height:38px;font-size:9px}
 

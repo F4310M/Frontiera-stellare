@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="arena.css">
   <link rel="stylesheet" href="impostazioni.css">
   <link rel="stylesheet" href="gameover.css">
+  <link rel="stylesheet" href="gameover-immagini.css">
 </head>
 <body>
   <script src="sigillo.js"></script>
@@ -50,7 +51,7 @@
         </dl>
         <button id="launchBtn" class="launch-btn"><span>INIZIA LA MISSIONE</span><b><i data-ico="arrow-right"></i></b></button>
         <p class="keyhint">FRECCE / WASD per muoverti · MOUSE per puntare la prua</p>
-        <button id="phase2Btn" class="text-btn phase2-btn hidden"><span>FASE 2 · ATTERRA SUL PIANETA SELEZIONATO</span> <i data-ico="land"></i></button>
+        <button id="saveNewBtn" class="text-btn save-new hidden" type="button"><span>NUOVA PARTITA</span> <i data-ico="arrow-right"></i></button>
       </aside>
     </section>
   </main>
@@ -122,7 +123,7 @@
   </section>
 
   <section id="resultOverlay" class="overlay hidden">
-    <div class="brief-card result-card"><div class="result-main"><p class="eyebrow" id="resultEyebrow">ORBITA RAGGIUNTA</p><h2 id="resultTitle">MISSIONE COMPIUTA</h2><p id="resultText"></p><div class="result-stats"><span><small>NEMICI</small><b id="killsStat">0</b></span><span><small>TEMPO</small><b id="timeStat">0:00</b></span><span><small>SCAFO</small><b id="hullStat">100%</b></span></div></div><div class="result-side"><div id="ecoRecap" class="eco-recap hidden"></div><button id="landBtn" class="launch-btn hidden"><span>ATTERRA SUL PIANETA · FASE 2</span><b><i data-ico="land"></i></b></button><button id="returnBtn" class="launch-btn"><span>TORNA ALLA MAPPA</span><b><i data-ico="map"></i></b></button><button id="marketBtnResult" class="text-btn market-link"><i data-ico="coins"></i> <span>APRI IL MERCATO · POTENZIAMENTI</span></button></div></div>
+    <div class="brief-card result-card"><div class="result-main"><p class="eyebrow" id="resultEyebrow">ORBITA RAGGIUNTA</p><h2 id="resultTitle">MISSIONE COMPIUTA</h2><p id="resultText"></p><div id="resultStats" class="result-stats"><span><small>NEMICI</small><b id="killsStat">0</b></span><span><small>TEMPO</small><b id="timeStat">0:00</b></span><span><small>SCAFO</small><b id="hullStat">100%</b></span></div></div><div class="result-side"><div id="ecoRecap" class="eco-recap hidden"></div><button id="landBtn" class="launch-btn hidden"><span>ATTERRA SUL PIANETA · FASE 2</span><b><i data-ico="land"></i></b></button><button id="returnBtn" class="launch-btn"><span>TORNA ALLA MAPPA</span><b><i data-ico="map"></i></b></button><button id="marketBtnResult" class="text-btn market-link"><i data-ico="coins"></i> <span>APRI IL MERCATO · POTENZIAMENTI</span></button></div></div>
   </section>
 
   <section id="landBrief" class="overlay hidden">
@@ -130,7 +131,7 @@
       <p class="eyebrow">FASE 2 // DISCESA IN SUPERFICIE</p>
       <h2 id="landTitle">COLONIA DI LYRA</h2>
       <p id="landText"></p>
-      <p class="keyhint">A / D muovi · W / SPAZIO salta · S abbassati · MOUSE mira · CLIC spara · ROTELLA o E granata · MOUSE DX scudo</p>
+      <p class="keyhint">A / D muovi · W / SPAZIO salta · S abbassati · MOUSE mira · CLIC spara (tieni premuto: mega colpo) · ROTELLA o E granata · MOUSE DX scudo</p>
       <button id="landEngageBtn" class="launch-btn"><span>SCENDI IN SUPERFICIE</span><b><i data-ico="land"></i></b></button>
       <button id="landBackBtn" class="text-btn">TORNA ALLA MAPPA</button>
     </div>
@@ -149,7 +150,7 @@
       <div class="flight-systems"><div class="pf-counters"><span>VITE<b id="pfLives">3</b></span><span>COLONI<b id="pfRescued">0/4</b></span><span>GRANATE<b id="pfGrenades">3</b></span><span>RIBELLI<b id="pfKills">0</b></span></div><div class="status" id="pfStatus">SISTEMI NOMINALI</div></div>
       <div class="meter shield"><span>SCUDO · MOUSE DX</span><div><i id="pfShieldBar"></i></div><b id="pfShieldText">100%</b></div>
     </div>
-    <div class="controls-tip">A / D muovi · W / SPAZIO salta · S abbassati (S + SPAZIO scendi dalla piattaforma) · MOUSE mira · CLIC spara · ROTELLA o E granata · MOUSE DX scudo · P pausa</div>
+    <div class="controls-tip">A / D muovi · W / SPAZIO salta · S abbassati (S + SPAZIO scendi dalla piattaforma) · MOUSE mira · CLIC spara (tieni premuto: mega colpo) · ROTELLA o E granata · MOUSE DX scudo · P pausa</div>
   </section>
 
   <div id="ecoHud" class="eco-hud" aria-label="Crediti"><small>CREDITI</small><b id="ecoBalance">2.500 CR</b><em id="ecoSpent"></em><span id="ecoDelta" class="eco-delta"></span></div>
@@ -175,30 +176,41 @@
         </div>
       </div>
       <div id="marketGrid" class="market-grid" tabindex="0" role="region" aria-labelledby="marketCatalogTitle"></div>
-      <div id="marketPreview" class="market-preview hidden" tabindex="-1" role="region" aria-label="Anteprima acquisto"></div>
       <section id="marketDemo" class="market-demo hidden" aria-labelledby="marketDemoTitle" tabindex="-1">
-        <video id="marketDemoVideo" controls muted playsinline preload="none" aria-label="Video dimostrativo"></video>
         <div class="market-demo-copy">
           <p class="eyebrow">ANTEPRIMA EFFETTO</p>
           <h3 id="marketDemoTitle"></h3>
           <p id="marketDemoText"></p>
+          <div id="marketDemoLevels"></div>
+          <p id="marketDemoStatus" role="status"></p>
         </div>
+        <video id="marketDemoVideo" controls muted playsinline preload="none" aria-label="Video dimostrativo"></video>
       </section>
     </div>
   </section>
-  <section id="missionReward" class="overlay mission-reward hidden" role="dialog" aria-modal="true" aria-labelledby="rewardTitle">
+  <section id="missionReward" class="overlay mission-reward hidden" role="dialog" aria-modal="true" aria-labelledby="rewardTitle" tabindex="-1">
     <div class="brief-card mission-reward-card">
       <p class="eyebrow">RIEPILOGO MISSIONE</p>
       <h2 id="rewardTitle">RISULTATI DELLA MISSIONE</h2>
+      <div class="reward-totals reward-running-totals">
+        <div><span>PUNTI TOTALI</span><strong id="rewardScoreTotal">0</strong></div>
+        <div><span>SALDO ATTUALE</span><strong id="rewardCreditTotal">0 CR</strong></div>
+      </div>
+      <p id="rewardDetail"></p>
+      <div id="rewardStats" class="result-stats"></div>
       <div class="reward-totals">
         <div><span>PUNTI GUADAGNATI</span><strong id="rewardScore">0</strong></div>
         <div><span>CREDITI GUADAGNATI</span><strong id="rewardCredits">0 CR</strong></div>
       </div>
       <div id="rewardMarket" class="reward-market hidden">
         <p>ORA ACQUISTABILI NEL MERCATO</p><p id="rewardItems"></p>
-        <button id="rewardMarketBtn" class="text-btn" type="button">APRI IL MERCATO</button>
       </div>
-      <button id="rewardClose" class="launch-btn" type="button"><span>CONTINUA</span><b><i data-ico="check"></i></b></button>
+      <div id="rewardScoreEntry"></div>
+      <div id="rewardActions" class="reward-actions hidden">
+        <button id="rewardLandBtn" class="launch-btn hidden" type="button"><span>ATTERRA SUL PIANETA · FASE 2</span><b><i data-ico="land"></i></b></button>
+        <button id="rewardClose" class="launch-btn" type="button"><span>VAI ALLA HOME</span><b><i data-ico="map"></i></b></button>
+        <button id="rewardMarketBtn" class="launch-btn" type="button"><span>VAI AL MERCATO</span><b><i data-ico="coins"></i></b></button>
+      </div>
     </div>
   </section>
 
@@ -225,6 +237,7 @@
   <script src="terra.js"></script>
   <script src="fluidita.js"></script>
   <script src="meteoriti.js"></script>
+  <script src="crepe.js"></script>
   <script src="missili-nemici.js"></script>
   <script src="multi-aggancio.js"></script>
   <script src="spazio.js"></script>
@@ -257,9 +270,11 @@
   <script src="rifiniture.js"></script>
   <script src="vite.js"></script>
   <script src="barriere.js"></script>
+  <script src="ammiraglia.js"></script>
   <script src="boss-robot.js"></script>
   <script src="boss-immagini.js"></script>
   <script src="coloni.js"></script>
+  <script src="nuvola-aiuto.js"></script>
   <script src="camminata.js"></script>
   <script src="zoom-terra.js"></script>
   <script src="navi-in-fuga.js"></script>
@@ -267,8 +282,16 @@
   <script src="schermo-intero.js"></script>
   <script src="joypad.js"></script>
   <script src="vetrina.js"></script>
+  <script src="urti.js"></script>
+  <script src="cometa.js"></script>
+  <script src="barra-orbita.js"></script>
   <script src="arena.js"></script>
+  <script src="classifica-arena.js"></script>
+  <script src="classifica-pagina.js"></script>
   <script src="caffe.js"></script>
   <script src="gameover.js"></script>
+  <script src="gameover-immagini.js"></script>
+  <script src="upgrade-disponibili.js"></script>
+  <script src="esci.js"></script>
 </body>
 </html>

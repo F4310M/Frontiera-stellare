@@ -15,7 +15,7 @@
 'use strict';
 const G=typeof window!=='undefined'?window:globalThis;
 if(typeof TextEncoder==='undefined'||typeof TextDecoder==='undefined'||typeof btoa==='undefined'||typeof atob==='undefined')return;
-const PROTETTE=['frontieraCrediti','frontieraPotenziamenti','frontieraVite','frontieraPhaseOneComplete','frontieraPhaseTwoComplete',
+const PROTETTE=['frontieraCrediti','frontieraGuadagni','frontieraPotenziamenti','frontieraVite','frontieraPhaseOneComplete','frontieraPhaseTwoComplete',
  'frontieraPianetiLiberati','frontieraOmegaLibero','stellarPunti','stellarRecord','stellarMieiRecord','stellarPartita',
  'stellarPartitaSalvata','stellarCorsa','stellarClassifica','stellarInAttesa'];
 const PSET=new Set(PROTETTE);

@@ -297,12 +297,17 @@ function pfFinish(win){
 }
 // Chiamata da finish() della fase 1: dopo la conquista dell'orbita si può atterrare.
 // Fine fase 1: solo due scelte, abbandonare o passare alla fase 2 (niente "ripeti").
-function pfAfterSpaceFinish(win){pfStatLabels(['NEMICI','TEMPO','SCAFO']);$('landBtn').querySelector('span').textContent='LIBERA LA COLONIA · FASE 2';show('landBtn',win);show('marketBtnResult',false);if(win){const p=planets[selected],t=$('resultText');if(p&&t)t.textContent+=' '+pfTheme(p).brief}$('returnBtn').querySelector('span').textContent=win?'ABBANDONA':'TORNA ALLA MAPPA';pfRefreshMapButton()}
+function pfAfterSpaceFinish(win){
+ pfStatLabels(['NEMICI','TEMPO','SCAFO']);
+ $('landBtn').querySelector('span').textContent='LIBERA LA COLONIA · FASE 2';
+ show('landBtn',win);show('marketBtnResult',false);
+ if(win){const p=planets[selected],t=$('resultText');if(p&&t)t.textContent+=' '+pfTheme(p).brief}
+ $('returnBtn').querySelector('span').textContent=win?'ABBANDONA':'TORNA ALLA MAPPA';
+}
 // Chiamata da abort(): ritorno alla mappa.
-function pfCleanup(){show('platformHud',false);show('landBrief',false);show('landBtn',false);pfStatLabels(['NEMICI','TEMPO','SCAFO']);pf=null;pfRefreshMapButton()}
+function pfCleanup(){show('platformHud',false);show('landBrief',false);show('landBtn',false);pfStatLabels(['NEMICI','TEMPO','SCAFO']);pf=null}
 // La fase 2 non si sceglie dalla mappa: ogni missione parte dallo spazio e poi atterra.
-function pfRefreshMapButton(){show('phase2Btn',false)}
-function pfStatLabels(labels){document.querySelectorAll('.result-stats small').forEach((el,i)=>{if(labels[i])el.textContent=labels[i]})}
+function pfStatLabels(labels){document.querySelectorAll('#resultStats small').forEach((el,i)=>{if(labels[i])el.textContent=labels[i]})}
 function pfStatus(text,ms=1400){const el=$('pfStatus');el.textContent=text;clearTimeout(pfStatus.to);pfStatus.to=setTimeout(()=>{el.textContent=pf&&pf.phase==='boss'?'ABBATTI IL ROBOT':'SISTEMI NOMINALI'},ms)}
 function pfBanner(title,sub,life=3.2){pf.banner={title,sub,t:0,life}}
 
@@ -376,7 +381,7 @@ function pfUpdatePilot(dt){
  P.barrier=control&&mouse.right&&P.shield>0;
  if(P.barrier){P.shield=Math.max(0,P.shield-dt*8/pfShieldEff());P.shieldDelay=1.2}
  else{P.shieldDelay=Math.max(0,P.shieldDelay-dt);if(P.shieldDelay<=0)P.shield=Math.min(100,P.shield+dt*(phaseTwoComplete?18:13))}
- P.fire=Math.max(0,P.fire-dt);P.inv=Math.max(0,P.inv-dt);
+ P.fire=Math.max(0,P.fire-dt);pfUpdateRifle(P,dt,control);P.inv=Math.max(0,P.inv-dt);
  P.contactCd=Math.max(0,(P.contactCd||0)-dt);
 }
 function pfMoveBody(b,dt,drop=false){
@@ -476,13 +481,52 @@ function pfFireAt(x,y){
  if(!P.visible||P.hp<=0||P.landing)return;
  const sh=pfShoulder(P);
  P.aim=Math.atan2(y-sh.y,x-sh.x);P.face=Math.cos(P.aim)>=0?1:-1;
- pfShoot();
+ P.rifleHeld=true;P.rifleCharge=0;
+ pfShoot(); // ogni pressione spara subito (tests/lanciamissili)
 }
-function pfShoot(){
- const P=pf.pilot;P.fire=.14;const lv=typeof upg==='function'?upg('laser'):0,sh=pfShoulder(P),c=Math.cos(P.aim),s=Math.sin(P.aim),x=sh.x+c*30,y=sh.y+s*30;
- const offs=(typeof upg==='function'&&upg('twin')>0)?[-5,5]:[0];
- for(const o of offs){const ox=x-s*o,oy=y+c*o;pf.shots.push({x:ox,y:oy,px:ox,py:oy,vx:c*920,vy:s*920,life:.95,friendly:true,r:3+lv*.6,dmg:1+lv*.5,power:lv})}if(typeof pay==='function')pay('laser',offs.length);
- pfBurst(x,y,'#51e6ff',3,.6);sfx('shoot');
+const PF_RIFLE_START=.28,PF_RIFLE_FULL=1.25;
+function pfRifleLevel(charge){return pfClamp((charge-PF_RIFLE_START)/(PF_RIFLE_FULL-PF_RIFLE_START),0,1)}
+function pfDrawRifleCharge(P,now){
+ if(!(P.rifleCharge>PF_RIFLE_START)||typeof mcDrawCharge!=='function')return;
+ const sh=pfShoulder(P);
+ mcDrawCharge(sh.x+Math.cos(P.aim)*30,sh.y+Math.sin(P.aim)*30,pfRifleLevel(P.rifleCharge),now,.7);
+}
+function pfRifleReset(P){
+ P.rifleHeld=false;P.rifleCharge=0;
+}
+function pfUpdateRifle(P,dt,control){
+ if(!control){pfRifleReset(P);return}
+ const charge=P.rifleCharge||0;
+ if(!mouse.down){
+  const level=pfRifleLevel(charge);
+  if(P.rifleHeld&&level>=.12)pfShoot(level);
+  pfRifleReset(P);return;
+ }
+ if(!P.rifleHeld&&P.fire<=0)pfShoot();
+ P.rifleHeld=true;
+ P.rifleCharge=Math.min(PF_RIFLE_FULL,charge+dt);
+ if(charge<PF_RIFLE_START&&P.rifleCharge>=PF_RIFLE_START)pfStatus('CARICA DEL MEGA COLPO · LASCIA PER SPARARE',1300);
+ if(charge<PF_RIFLE_FULL&&P.rifleCharge===PF_RIFLE_FULL){pfStatus('MEGA COLPO PRONTO',900);tone(1240,.12,'sine',.03,1860)}
+ if(P.rifleCharge>PF_RIFLE_START&&typeof mcChargeParticles==='function'){
+  const sh=pfShoulder(P);
+  mcChargeParticles(pf.fx,sh.x+Math.cos(P.aim)*30,sh.y+Math.sin(P.aim)*30,P.vx,P.vy,pfRifleLevel(P.rifleCharge),dt,.7);
+ }
+}
+function pfShoot(level=0){
+ const P=pf.pilot,lv=typeof upg==='function'?upg('laser'):0,sh=pfShoulder(P),c=Math.cos(P.aim),s=Math.sin(P.aim),x=sh.x+c*30,y=sh.y+s*30;
+ const charged=level>0,offs=!charged&&typeof upg==='function'&&upg('twin')>0?[-5,5]:[0];
+ const r=charged?7+level*8:3+lv*.6,dmg=charged?(4+level*8)*(1+lv*.3):1+lv*.5;
+ P.fire=charged?.42:.14;
+ for(const o of offs){
+  const ox=x-s*o,oy=y+c*o;
+  const shot={x:ox,y:oy,px:ox,py:oy,vx:c*920,vy:s*920,life:.95,friendly:true,r,dmg,power:charged?3:lv};
+  if(charged){shot.rifleLevel=level;shot.rifleTrail=[]}
+  pf.shots.push(shot);
+ }
+ if(typeof pay==='function')pay('laser',charged?2+Math.round(4*level):offs.length);
+ pfBurst(x,y,charged?'#c5b4ff':'#51e6ff',charged?12:3,charged?1.2:.6);
+ sfx('shoot');
+ if(charged)tone(195,.3,'sawtooth',.035,65);
 }
 function pfThrowGrenade(){
  if(!pf||state!=='platform'||paused)return;const P=pf.pilot;
@@ -508,6 +552,10 @@ function pfUpdateShots(dt){
  for(const b of pf.shots){
   if(b.life<=0)continue;
   b.px=b.x;b.py=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
+  if(b.rifleTrail){
+   b.rifleTrail.push({x:b.x,y:b.y});
+   if(b.rifleTrail.length>9)b.rifleTrail.shift();
+  }
   if(b.x<pf.cam.x-80||b.x>pf.cam.x+VW+80||b.y<-80||b.y>PF_VH+40){b.life=0;continue}
   const ob=pfShotObstacle(b);if(ob){b.life=0;pfBurst(ob.x,ob.y,b.friendly?'#8ce9ec':'#ff8a96',5,.55);continue}
   if(b.friendly){
@@ -559,7 +607,7 @@ function pfFell(){
  pfLoseLife(true);
 }
 function pfLoseLife(animated=false){
- const P=pf.pilot;P.hp=0;pf.lives--;
+ const P=pf.pilot;pfRifleReset(P);P.hp=0;pf.lives--;
  if(!animated){pfBurst(P.x,P.y-25,'#ff7b4f',24,1.2);pfBurst(P.x,P.y-25,'#51e6ff',12,.8);sfx('boom',1)}
  if(pf.lives<=0){pf.phase='sconfitta';pf.endT=0;P.visible=false;pfStatus('PILOTA CADUTO',3000);return}
  let x=pf.checkpoint;if(pfGroundAt(x)===null){const next=pf.solids.find(s=>s.x>x);if(next)x=next.x+60}
@@ -624,7 +672,7 @@ function pfUpdateHostages(dt){
    // il colono liberato corre indietro verso la nave atterrata; i burroni li supera con un salto
    const kind=Math.floor(((h.variant??h.id)%8)/2);
    const sp=h.crowd?[230,220,194,160][kind]+(h.id%3)*12:250+(h.id%3)*25;
-   h.x-=sp*dt;h.stride=(h.stride||0)+sp*dt;const g=pfGroundAt(h.x);
+   h.speed=sp;h.x-=sp*dt;h.stride=(h.stride||0)+sp*dt;const g=pfGroundAt(h.x);
    if(g!==null&&!h.air){h.y=g;h.hop=0}else{h.air=true;h.hop=(h.hop||0)+dt;h.y=(h.jy??(h.jy=h.y))-Math.sin(Math.min(1,h.hop/.7)*Math.PI)*90;if(h.hop>=.7&&g!==null){h.air=false;h.jy=undefined;h.y=g}else if(h.hop>=.7){h.hop=.35}}
    if(h.x<=360){h.state='evacuato';h.t=0;h.x=360;noise(.6,.02,4000);tone(880,.5,'sine',.02,1760)}
    else if(h.x<pf.cam.x-160)h.state='salvo';
@@ -753,13 +801,13 @@ function drawPlatform(){
  pfDrawFlora(now);
  pfDrawShipOnPad(now);
  for(const f of pf.fx)if(f.jetSmoke)pfDrawJetSmoke(f);
- for(const h of [...pf.hostages,...pf.crowd])if(h.state!=='salvo'&&(!h.crowd||h.t>=0)&&pfOnScreen(h.x,60))pfDrawColonist(h,now);
+ for(const h of [...pf.hostages,...pf.crowd])if(h.state!=='salvo'&&(!h.crowd||h.t>=0)&&pfOnScreen(h.x,60)){pfDrawColonist(h,now);pfDrawHelp(h,now)}
  for(const k of pf.pickups)pfDrawPickup(k,now);
  for(const w of pf.waves)pfDrawWave(w);
  if(pf.boss&&!pf.boss.gone)pfDrawBoss(pf.boss,now);
  for(const e of pf.enemies)if(pfOnScreen(e.x,60))pfDrawEnemy(e,now);
  const P=pf.pilot;
- if(P.visible){ctx.save();if(P.inv>0&&Math.floor(now*18)%2)ctx.globalAlpha=.4;pfDrawTrooper(P,PF_PILOT,now);ctx.restore();pfDrawJetpack(P,now);if(P.barrier)pfDrawBarrier(P,now)}
+ if(P.visible){ctx.save();if(P.inv>0&&Math.floor(now*18)%2)ctx.globalAlpha=.4;pfDrawTrooper(P,PF_PILOT,now);ctx.restore();pfDrawJetpack(P,now);pfDrawRifleCharge(P,now);if(P.barrier)pfDrawBarrier(P,now)}
  for(const m of pf.missiles)pfDrawBossMissile(m);
  for(const g of pf.grenades)pfDrawGrenade(g);
  for(const b of pf.shots)drawBullet(b);
@@ -904,6 +952,29 @@ function pfDrawEnemy(e,now){
  const top=e.type==='drone'?e.y-20:e.y-62;
  ctx.fillStyle='#ffffff22';ctx.fillRect(e.x-14,top,28,3);ctx.fillStyle=hpColor(e.hp/e.max);ctx.fillRect(e.x-14,top,28*Math.max(0,e.hp/e.max),3);
 }
+const PF_HELP_PIXELS=[
+ ['101','101','111','101','101'],
+ ['111','100','110','100','111'],
+ ['100','100','100','100','111'],
+ ['110','101','110','100','100']
+];
+function pfDrawHelp(h,now){
+ if(h.state!=='legato')return;
+ const x=Math.round(h.x),y=Math.round(h.y-66+Math.sin(now*5+h.id)*2);
+ ctx.save();ctx.translate(x,y);
+ ctx.fillStyle='#16152c';ctx.strokeStyle='#ffbd56';ctx.lineWidth=2;
+ ctx.beginPath();ctx.moveTo(-21,-11);ctx.lineTo(21,-11);ctx.lineTo(24,-8);
+ ctx.lineTo(24,8);ctx.lineTo(21,11);ctx.lineTo(5,11);ctx.lineTo(5,14);
+ ctx.lineTo(2,14);ctx.lineTo(2,17);ctx.lineTo(-2,17);ctx.lineTo(-2,11);
+ ctx.lineTo(-21,11);ctx.lineTo(-24,8);ctx.lineTo(-24,-8);ctx.closePath();ctx.fill();ctx.stroke();
+ ctx.fillStyle='#f6ce78';
+ PF_HELP_PIXELS.forEach((glyph,i)=>{
+  glyph.forEach((row,j)=>{
+   for(let k=0;k<row.length;k++)if(row[k]==='1')ctx.fillRect(-15+i*8+k*2,-5+j*2,2,2);
+  });
+ });
+ ctx.restore();
+}
 function pfDrawColonist(h,now){
  if(typeof pfColonistSprite==='function'&&pfColonistSprite(h,now))return;
  ctx.save();ctx.translate(h.x,h.y);
@@ -1008,13 +1079,12 @@ addEventListener('mousedown',e=>{
  if(e.button===1){e.preventDefault();pfThrowGrenade()}
 });
 addEventListener('auxclick',e=>{if(e.button===1&&state==='platform')e.preventDefault()});
+addEventListener('blur',()=>{if(state==='platform'&&pf?.pilot){mouse.down=false;pfRifleReset(pf.pilot)}});
 // Un solo pannello: dal riepilogo della missione si scende subito in superficie.
 $('landBtn').onclick=()=>{enterGameFullscreen();startPlatform()};
-$('phase2Btn').onclick=()=>{sfx('ui');pfOpenBrief()};
 $('landEngageBtn').onclick=()=>{enterGameFullscreen();startPlatform()};
 $('landBackBtn').onclick=()=>{show('landBrief',false);abort()};
 $('pfPauseBtn').onclick=togglePause;
-pfRefreshMapButton();
 
 // ---------------------------------------------------------------- novità 2026-10-31: jetpack, colpi bloccati, boss per pianeta, coloni liberati
 // Un robot finale diverso per ogni pianeta. gun/pod: posizione del cannone e del lanciamissili (rispetto ai piedi).
@@ -1141,7 +1211,7 @@ function pfUpdateRetreat(dt){
 function pfFreeColony(){
  // Una folla più compatta mantiene leggibile la liberazione e riduce il costo
  // di aggiornamento/disegno mentre parte anche la flotta nemica.
- const VW=Math.min(pfViewW(),1500),left=pf.cam.lockX,n=8+Math.ceil(pf.p.difficulty/2);
+ const VW=Math.min(pfViewW(),1500),left=pf.cam.lockX,n=13+Math.ceil(pf.p.difficulty/2);
  const hostages=pf.sup?.hostages||pf.hostages;
  for(const h of hostages){
   if(h.state!=='legato')continue;

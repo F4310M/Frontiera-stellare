@@ -27,9 +27,9 @@ const GP_CTX={all:'',space:'NELLO SPAZIO',ground:'A TERRA'};
 const GP_NOREMAP=new Set([12,13,14,15,16]);   // croce e tasto centrale: restano per muoversi
 const GP_XBOX=['A','B','X','Y','LB','RB','LT','RT','VIEW','MENU','L3','R3','CROCE SU','CROCE GIÙ','CROCE SINISTRA','CROCE DESTRA','HOME'];
 const GP_PS=['CROCE','CERCHIO','QUADRATO','TRIANGOLO','L1','R1','L2','R2','CREATE','OPTIONS','L3','R3','CROCE SU','CROCE GIÙ','CROCE SINISTRA','CROCE DESTRA','PS'];
-const GP={dead:.24,aimDead:.32,aimR:240,move:.35,crouch:.6,jump:.75,nav:.55,rep1:.38,rep:.13,fireRep:.18,waitMax:8};
+const GP={dead:.24,aimDead:.32,aimR:240,move:.35,crouch:.6,jump:.75,nav:.55,rep1:.38,rep:.13,waitMax:8};
 const gp={on:true,rumble:true,bind:null,index:null,id:'',ps:false,prev:[],mine:new Set(),mouseMine:{down:false,right:false},
- wait:null,waitT:0,useT:-1e9,mouseT:0,aimT:-1e9,navDir:null,navT:0,fireT:0,focus:null,layer:null,layerT:0,hp:null,rumbleT:0,mode:false,last:0};
+ wait:null,waitT:0,useT:-1e9,mouseT:0,aimT:-1e9,navDir:null,navT:0,focus:null,layer:null,layerT:0,hp:null,rumbleT:0,mode:false,last:0};
 
 // ---------------------------------------------------------------- impostazioni salvate
 function gpDefault(){const o={};for(const a of GP_ACTIONS)o[a.id]=a.def.slice();return o}
@@ -114,11 +114,7 @@ function gpGame(s,dt,now){
   if(R.m>0&&typeof pfShoulder==='function'){const sh=pfShoulder(P),m=Math.hypot(R.x,R.y);aim={x:sh.x+R.x/m*300,y:sh.y+R.y/m*300}}
   else if(gpLeads())aim=gpGroundTarget();
   if(aim&&typeof pfScale==='function'){const k=pfScale();mouse.x=(aim.x-pf.cam.x)*k;mouse.y=aim.y*k}
-  gp.fireT-=dt;
-  if(gpAct(s,'fire')&&(gpEdge(s,'fire')||gp.fireT<=0)&&typeof pfFireAt==='function'){
-   const t=aim||(typeof pfScale==='function'?{x:pf.cam.x+mouse.x/pfScale(),y:mouse.y/pfScale()}:gpGroundTarget());
-   pfFireAt(t.x,t.y);gp.fireT=GP.fireRep;
-  }
+  gpMouse('down',gpAct(s,'fire'));
   if(gpEdge(s,'missile')&&typeof pfThrowGrenade==='function')pfThrowGrenade();
  }
  if(gpEdge(s,'special')&&typeof spcUse==='function')spcUse();
@@ -267,7 +263,7 @@ function gpFrame(now){
  }
  if(!gp.on){gpRelease();gp.prev=s.b.slice();return}
  const playing=gpPlaying()&&!(typeof paused!=='undefined'&&paused);
- if(playing)gpGame(s,dt,now);else{gpRelease();gp.fireT=0;gpWatchLayer(now);if(gp.mode)gpMenu(s,dt)}
+ if(playing)gpGame(s,dt,now);else{gpRelease();gpWatchLayer(now);if(gp.mode)gpMenu(s,dt)}
  if(gpPlaying()&&gpEdge(s,'pause')&&typeof togglePause==='function')togglePause();
  if(gpEdge(s,'music')&&typeof setMusic==='function'&&typeof mus!=='undefined')setMusic(!mus.on);
  gpCheckHit(s,now);

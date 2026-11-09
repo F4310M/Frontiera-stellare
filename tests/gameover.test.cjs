@@ -20,12 +20,12 @@ nodes.get('returnBtn').querySelector=()=>({textContent:''});
 assert.equal(nodes.get('gameOverArcade'),undefined,'Nessuna scritta finché ci sono vite');
 
 // Ultima vita persa nello spazio: logica di sempre + scritta GAME OVER
-run('abort();vite=1;viteSave();eco.balance=4000;selected=0;startGame();arrivalRemaining=0;explodePlayer();for(let i=0;i<400;i++)update(1/60)');
+run('abort();vite=1;viteSave();eco.balance=4000;eco.earned=3000;selected=0;startGame();arrivalRemaining=0;explodePlayer();for(let i=0;i<400;i++)update(1/60)');
 const o=nodes.get('gameOverArcade');
 assert(o,'La scritta GAME OVER è stata creata');
 assert(!o.classList.contains('hidden')&&o.classList.contains('go-on'),'La scritta GAME OVER è visibile');
 assert.equal(nodes.get('resultEyebrow').textContent,'GAME OVER');
-assert.equal(val('vite'),3,'Si riparte con 3 vite');assert.equal(val('eco.balance'),1000,'Resta il 25% dei crediti');
+assert.equal(val('vite'),3,'Si riparte con 3 vite');assert.equal(val('eco.balance'),600,'Resta il 20% dei guadagni');
 assert.equal(nodes.get('goRow1').children.length,4);assert.equal(nodes.get('goRow2').children.length,4);
 assert.deepEqual(Object.keys(val('GO_FONT')).sort(),['A','E','G','M','O','R','V']);
 assert(val('Object.values(GO_FONT).every(l=>l.length===7&&l.every(r=>/^[01]{5}$/.test(r)))'),'Lettere 5x7');

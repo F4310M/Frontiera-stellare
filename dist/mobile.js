@@ -34,7 +34,11 @@ function touchBuild(){
   const k=b.dataset.k;
   b.addEventListener('pointerdown',e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId)}catch(_){}touch.btn[k]=true;b.classList.add('on');touchPress(k)});
   const up=e=>{touch.btn[k]=false;b.classList.remove('on')};
-  b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);
+  b.addEventListener('pointerup',up);
+  b.addEventListener('pointercancel',e=>{
+   up(e);
+   if(k==='fire'&&state==='platform'&&pf?.pilot){touchMouse('down',false);pfRifleReset(pf.pilot)}
+  });
   b.addEventListener('contextmenu',e=>e.preventDefault());
  }
  ui.addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
@@ -78,7 +82,7 @@ function touchApply(){
  }else if(typeof pf!=='undefined'&&pf&&pf.pilot){
   touchKey('ArrowLeft',active&&px<-T);touchKey('ArrowRight',active&&px>T);touchKey('ArrowDown',active&&py>.6);
   touchKey('Space',!!touch.btn.jump||active&&py<-.6);
-  touchMouse('down',false);touchMouse('right',!!touch.btn.shield);
+  touchMouse('down',!!touch.btn.fire);touchMouse('right',!!touch.btn.shield);
   const P=pf.pilot,s=pfScale(),t=touchGroundTarget(),aim=t||{x:P.x+P.face*300,y:P.y-34};
   mouse.x=(aim.x-pf.cam.x)*s;mouse.y=aim.y*s;
  }

@@ -81,6 +81,13 @@ function battLandingStep(P,dt){
  if(Math.random()<dt*45)pf.fx.push({x:P.x-8+(Math.random()-.5)*4,y:P.y-22,vx:(Math.random()-.5)*40,vy:260+Math.random()*120,life:.3,max:.3,color:Math.random()<.5?'#ffb05a':'#fff1c9',r:2+Math.random()*2.5});
  if(g-P.y<60&&Math.random()<dt*30)pfBurst(P.x+(Math.random()-.5)*30,g-2,'#c7d6e2',1,.9,true,{vy:-40});
  if(prevY<=g&&P.y>=g){
+  if(P.reserveLanding&&terraSafeGround(P.x)===null){
+   const spot=terraFindDrop(P.x);
+   if(spot){P.x=spot.x;terraFrameDrop(spot.x)}
+   P.y=(spot?.g??g)-65;P.vx=0;P.vy=0;P.inv=Math.max(P.inv,1);
+   return;
+  }
+  P.reserveLanding=false;
   Object.assign(P,{y:g,vy:0,vx:0,ground:true,landing:false,jetOn:false,landed:true,landedAt:pf.t,lastGround:P.x});
   if(pf.shipLeaveT==null)pf.shipLeaveT=pf.t+BATT.leaveDelay;
   for(let i=0;i<18;i++)pfBurst(P.x+(Math.random()-.5)*50,g-2,'#c7d6e2',1,1.2,true,{vy:-50-Math.random()*60});
@@ -96,7 +103,7 @@ pfUpdatePilot=function(dt){
 // Pilota di riserva: anche lui scende col jetpack dalla navetta.
 if(bt.terraUpdateDrop)terraUpdateDrop=function(dt){
  bt.terraUpdateDrop(dt);
- const D=pf.drop;if(D&&D.released&&!D.jet){D.jet=true;Object.assign(pf.pilot,{landing:true,jetOn:true,vx:0,vy:40})}
+ const D=pf.drop;if(D&&D.released&&!D.jet){D.jet=true;Object.assign(pf.pilot,{landing:true,reserveLanding:true,jetOn:true,vx:0,vy:40})}
 };
 // Polvere sollevata dai motori della nave sospesa.
 pfDrawShipOnPad=function(now){
@@ -268,10 +275,9 @@ function battBoom(dt){
   if(t>BATT.boomBlast-.75){K.charge=Math.min(1,(t-(BATT.boomBlast-.75))/.75);if(prev<=BATT.boomBlast-.75){tone(180,.8,'sawtooth',.03,1900);tone(240,.8,'sine',.03,2600)}}
   if(t>=BATT.boomBlast)battBlast(B,K,core);
  }else{
-  // fungo di fumo e braci dopo lo scoppio
   const a=t-BATT.boomBlast;
-  if(a<5&&Math.random()<dt*26){const k=Math.min(1,a/2.5);pf.fx.push({x:K.x+(Math.random()-.5)*(40+k*60),y:PF_FLOOR-40-k*260-Math.random()*40,vx:(Math.random()-.5)*30,vy:-40-Math.random()*30,life:2.6,max:2.6,color:'rgba(52,48,50,.5)',r:18+Math.random()*22,soft:true})}
-  if(a<7&&Math.random()<dt*20)pf.fx.push({x:K.x+(Math.random()-.5)*120,y:PF_FLOOR-10,vx:(Math.random()-.5)*50,vy:-80-Math.random()*120,life:1.4,max:1.4,color:'#ffb05a',r:1.6+Math.random()*1.4});
+  battSmoke(K,dt,a);
+  if(a<7&&Math.random()<dt*24)pf.fx.push({x:K.x+(Math.random()-.5)*120,y:PF_FLOOR-12,vx:(Math.random()-.5)*70,vy:-90-Math.random()*150,life:1.4,max:1.4,color:'#ffb05a',r:1.6+Math.random()*1.4});
   B.dead=2.3+a;
  }
  for(const b of K.balls){b.life-=dt;b.r+=dt*(b.grow||60);b.y+=(b.vy||0)*dt}
@@ -295,7 +301,7 @@ function battDebris(x,y,n,power){
   K.debris.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,rot:Math.random()*6.28,vr:(Math.random()-.5)*14,w:6+Math.random()*16,h:4+Math.random()*9,life:4+Math.random()*3,hot:Math.random()<.6,col:['#3a4656','#55697d','#2a3644','#6b4a3a'][i%4]})}
 }
 function battBlast(B,K,core){
- K.gone=true;K.white=1;K.x=B.x;B.gone=true;B.dead=2.3;
+ K.gone=true;K.white=1;K.x=B.x;K.smoke=[];K.smokeAcc=1;B.gone=true;B.dead=2.3;
  K.rings.push({x:core.x,y:core.y,r:20,speed:1500,life:1.1,max:1.1,w:10,col:'255,240,210'},{x:core.x,y:core.y,r:10,speed:900,life:1.4,max:1.4,w:6,col:'255,170,90'},{x:B.x,y:PF_FLOOR-4,r:10,speed:1200,life:1,max:1,w:5,col:'255,210,160',flat:true});
  for(let i=0;i<16;i++){const a=Math.random()*6.28,d=Math.random()*B.w*.5;K.balls.push({x:core.x+Math.cos(a)*d,y:core.y+Math.sin(a)*d*.8,r:30+Math.random()*40,max:1.1+Math.random()*.6,life:1.1+Math.random()*.6,vy:-60-Math.random()*60,grow:90})}
  battDebris(core.x,core.y,28,1);
@@ -339,6 +345,43 @@ function battDrawBoom(now){
  ctx.restore();
  if(K.white>0){ctx.fillStyle=`rgba(255,246,228,${K.white*.85})`;ctx.fillRect(0,0,W,H)}
 }
+function battSmoke(K,dt,age){
+ K.smokeAcc+=dt*(age<1?25:12);
+ while(age<7.6&&K.smokeAcc>=1){
+  K.smokeAcc--;
+  const life=2.7+Math.random()*1.25;
+  K.smoke.push({x:K.x+(Math.random()-.5)*132,y:PF_FLOOR-22-Math.random()*20,r:16+Math.random()*11,
+   vx:(Math.random()-.28)*32,vy:-48-Math.random()*35,life,max:life,phase:Math.random()*6.28});
+ }
+ for(const p of K.smoke){
+  p.life-=dt;p.x+=(p.vx+Math.sin(K.t*2+p.phase)*17)*dt;p.y+=p.vy*dt;p.r+=dt*17;
+ }
+ K.smoke=K.smoke.filter(p=>p.life>0);
+}
+function battDrawSmoke(K){
+ for(const p of K.smoke){
+  const life=p.life/p.max,alpha=Math.min(1,(1-life)*6)*life;
+  const g=ctx.createRadialGradient(p.x-p.r*.16,p.y+p.r*.15,0,p.x,p.y,p.r);
+  g.addColorStop(0,`rgba(47,43,44,${.58*alpha})`);
+  g.addColorStop(.48,`rgba(64,58,60,${.48*alpha})`);
+  g.addColorStop(.77,`rgba(92,85,86,${.2*alpha})`);
+  g.addColorStop(1,'rgba(85,80,80,0)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.28);ctx.fill();
+ }
+}
+function battDrawFire(x,y,now){
+ for(let i=0;i<8;i++){
+  const wave=now*(5+i%3)+i*2.4,fx=x-66+i*18,base=y-8-(i%3)*6;
+  const h=36+(i*19)%42+Math.sin(wave)*16+Math.sin(wave*2.2)*8,w=7+(i%3)*3,lean=8+Math.sin(wave*.81)*12;
+  const g=ctx.createLinearGradient(fx,base-h,fx,base);
+  g.addColorStop(0,'rgba(197,41,14,0)');g.addColorStop(.27,'rgba(245,62,12,.42)');
+  g.addColorStop(.62,'rgba(255,131,28,.86)');g.addColorStop(.88,'rgba(255,218,111,.97)');g.addColorStop(1,'rgba(255,247,198,.92)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(fx-w,base);
+  ctx.bezierCurveTo(fx-w*2,base-h*.38,fx+lean*.6+w*.6,base-h*.58,fx+lean,base-h);
+  ctx.bezierCurveTo(fx+lean+w,base-h*.74,fx+lean*.35-w,base-h*.46,fx+w,base);
+  ctx.closePath();ctx.fill();
+ }
+}
 // Rottami fumanti dove c'era il robot.
 function battDrawWreck(now){
  const K=pf.boom,x=K.x,y=PF_FLOOR;if(!pfOnScreen(x,160))return;
@@ -347,8 +390,8 @@ function battDrawWreck(now){
  ctx.fillStyle='#1a1f26';ctx.strokeStyle='#4a5260';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x-90,y);ctx.lineTo(x-62,y-22);ctx.lineTo(x-30,y-16);ctx.lineTo(x-8,y-40);ctx.lineTo(x+22,y-26);ctx.lineTo(x+50,y-34);ctx.lineTo(x+86,y);ctx.closePath();ctx.fill();ctx.stroke();
  ctx.strokeStyle='#2b3846';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(x-20,y-30);ctx.lineTo(x-44,y-70);ctx.moveTo(x+30,y-28);ctx.lineTo(x+58,y-58);ctx.stroke();
  const glow=.5+.5*Math.sin(now*6);ctx.fillStyle=`rgba(255,${Math.round(100+glow*80)},40,.8)`;ctx.fillRect(x-24,y-20,14,3);ctx.fillRect(x+18,y-14,10,3);
- ctx.globalCompositeOperation='lighter';
- for(let i=0;i<5;i++){const fx=x-60+i*30,h=26+Math.sin(now*9+i*1.7)*10+((i*37)%17);const g=ctx.createLinearGradient(fx,y-12-h,fx,y-10);g.addColorStop(0,'rgba(255,120,40,0)');g.addColorStop(.5,'rgba(255,150,60,.6)');g.addColorStop(1,'rgba(255,230,160,.8)');ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(fx-9,y-10);ctx.quadraticCurveTo(fx-6+Math.sin(now*7+i)*4,y-10-h*.6,fx+Math.sin(now*5+i)*5,y-10-h);ctx.quadraticCurveTo(fx+6,y-10-h*.5,fx+9,y-10);ctx.closePath();ctx.fill()}
+ battDrawSmoke(K);
+ battDrawFire(x,y,now);
  ctx.restore();
 }
 pfDrawBanner=function(){if(pf&&pf.boom)battDrawBoom(performance.now()/1000);bt.pfDrawBanner()};

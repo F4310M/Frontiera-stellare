@@ -107,7 +107,7 @@ run('pf.boss.t=0;pf.waves=[]');
 const hp0=run('pf.boss.hp');run('pfHitBoss(1)');assert.equal(run('pf.boss.hp'),hp0-1);
 run('pfBossSet(pf.boss,"stordito");pfHitBoss(1)');assert.equal(run('pf.boss.hp'),hp0-3,'Nucleo esposto: danno doppio');
 run('pf.boss.hp=1;pfBossSet(pf.boss,"stordito");pfHitBoss(1)');assert.equal(run('pf.phase'),'vittoria');
-step(3.8);assert(run('pf.crowd.length')>=8&&run('pf.crowd.length')<=11,'La folla finale resta compatta');assert(run('pf.crowd.some(h=>h.state==="fuga")'),'I coloni scappano');step(5);assert.equal(run('state'),'won','La distruzione del robot completa la fase 2');
+step(3.8);assert(run('pf.crowd.length')>=13&&run('pf.crowd.length')<=16,'La folla finale resta compatta');assert(run('pf.crowd.some(h=>h.state==="fuga")'),'I coloni scappano');step(5);assert.equal(run('state'),'won','La distruzione del robot completa la fase 2');
 assert.equal(store.frontieraPhaseTwoComplete,'yes');
 console.log('PASS: robot finale, onda d’urto, nucleo esposto, vittoria');
 

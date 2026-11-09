@@ -150,12 +150,21 @@ function cammTaglia(a,G){
 // Angolo "in avanti" di un segmento (0 = verticale, positivo = verso dove guarda la figura).
 function cammAng(p,q){return Math.atan2(q[0]-p[0],q[1]-p[1])}
 
-// Posa delle gambe: angolo della coscia e piega del ginocchio a una fase del passo.
-function cammPosaColono(fi,aria,k){
- if(aria)return k==='avanti'?{a:.62,b:1.05}:{a:-.15,b:1.15};
- const sw=Math.max(0,Math.cos(fi));         // ritorno della gamba: il ginocchio si piega molto
- const ap=Math.max(0,-Math.cos(fi));        // appoggio: piccola piega che fa da molla
- return {a:.1+.64*Math.sin(fi),b:.15+1.55*sw**1.4+.35*ap};
+// Adatta la traiettoria del piede del pilota alle ossa del colono.
+function cammPosaColono(L,phase,st,w,aria,k){
+ const upper=Math.hypot(L.gin[0]-L.anca[0],L.gin[1]-L.anca[1]),lower=Math.hypot(L.cav[0]-L.gin[0],L.cav[1]-L.gin[1]);
+ if(aria){
+  if(upper<4)return {a:0,b:k==='avanti'?.43:1.3};
+  return k==='avanti'?{a:.62,b:1.05}:{a:-.15,b:1.15};
+ }
+ const [px,py]=cammPiede(phase,st,w),reach=upper+lower,scale=reach/620;
+ const x=px*scale,y=reach*.94+py*scale,angle=Math.atan2(x,y);
+ if(upper<4)return {a:0,b:-angle};
+ const d=Math.max(Math.abs(upper-lower)+.1,Math.min(reach-.1,Math.hypot(x,y)));
+ const acos=v=>Math.acos(Math.max(-1,Math.min(1,v)));
+ const knee=acos((d*d-upper*upper-lower*lower)/(2*upper*lower));
+ const hip=angle+acos((d*d+upper*upper-lower*lower)/(2*d*upper));
+ return {a:hip,b:knee};
 }
 
 function cammCatena(L,P){
@@ -177,18 +186,17 @@ if(cammColOrig){
   const G=CAMM.coloni[Math.floor(i/2)];
   if(!cammPezzi[i]){try{cammPezzi[i]=cammTaglia(a,G)}catch(e){cammPezzi[i]=false}}
   const pz=cammPezzi[i];if(!pz)return cammColOrig(h,now);
-  const fi=(h.stride||0)*.062+(h.id||0)*.7,aria=!!h.air;
+  const C=CAMM.sold,w=cammLiscio(((h.speed||PF_RUN)-C.lenta)/(C.veloce-C.lenta)),st=cammMix(C.appoggio,w);
+  const size=typeof pfColonistSize==='function'?pfColonistSize(i):1,height=(typeof SOLD==='undefined'?66:SOLD.H)*size,s=height/(a.foot-a.top);
+  const stride=(C.avanti+C.dietro)*s*((a.foot-G.avanti.anca[1])/620)/st;
+  const phase=((h.stride||0)/stride+(h.id||0)*.11)%1,fi=phase*2*Math.PI,aria=!!h.air;
   const cat={};let piede=0,rest=0;
   for(const k of ['dietro','avanti']){
-   const L=G[k],P=cammPosaColono(k==='dietro'?fi+Math.PI:fi,aria,k);
-   // la coscia del bambino dietro la valigetta non si vede: si muove solo dal ginocchio in giù
-   if(L.gin[1]<=L.anca[1]+4){P.b=P.b-P.a;P.a=0}
+   const L=G[k],P=cammPosaColono(L,k==='dietro'?(phase+.5)%1:phase,st,w,aria,k);
    cat[k]=cammCatena(L,P);piede=Math.max(piede,cat[k].ay);rest=Math.max(rest,L.cav[1]);
   }
-  // il piede più basso tocca terra; in volo (tra un passo e l'altro) il corpo si stacca un poco
-  const volo=aria?0:Math.max(0,Math.sin(2*fi))**2*20;
+  const volo=aria?0:Math.max(0,Math.sin(2*fi))**2*cammMix(C.molla,w)*.5;
   const giu=rest-piede-volo;
-  const size=typeof pfColonistSize==='function'?pfColonistSize(i):1,height=(typeof SOLD==='undefined'?66:SOLD.H)*size,s=height/(a.foot-a.top);
   if(!aria&&typeof gShadow==='function')gShadow(h.x,h.y,14*size,.32);
   ctx.save();ctx.translate(h.x,h.y);
   ctx.scale(-s,s);ctx.rotate(.17+Math.sin(2*fi)*.035);

@@ -13,7 +13,7 @@ const MC={
  radius:[11,26],dmg:[5,15],blast:[70,165],blastDmg:[2,6]
 };
 const mc={click:false,held:false,t:0,pending:false,inUpdate:false,flag:false,ready:false,tick:0,shots:[],hint:false};
-const mcOrig={update,shoot,startGame,drawTargetLock};
+const mcOrig={update,shoot,startGame,drawTargetLock,drawBullet};
 
 const mcClamp=v=>Math.max(0,Math.min(1,v));
 function mcLevel(){return mcClamp((mc.t-MC.start)/(MC.full-MC.start))}
@@ -59,12 +59,16 @@ function mcStep(dt){
 }
 
 // particelle risucchiate verso la prua e fischio che sale
-function mcChargeFx(L,dt){
- const n=mcNose(),count=Math.floor((10+30*L)*dt+Math.random());
+function mcChargeParticles(target,x,y,vx,vy,L,dt,scale=1){
+ const count=Math.floor((10+30*L)*dt+Math.random());
  for(let i=0;i<count;i++){
-  const a=Math.random()*6.28,d=34+Math.random()*30+L*24,life=.22+Math.random()*.12;
-  particles.push({x:n.x+Math.cos(a)*d,y:n.y+Math.sin(a)*d,vx:-Math.cos(a)*d/life+player.vx,vy:-Math.sin(a)*d/life+player.vy,life,max:life,color:L>=1?'#e6d2ff':'#7cf2ff',r:1+Math.random()*1.6})
+  const a=Math.random()*6.28,d=(34+Math.random()*30+L*24)*scale,life=.22+Math.random()*.12;
+  target.push({x:x+Math.cos(a)*d,y:y+Math.sin(a)*d,vx:-Math.cos(a)*d/life+vx,vy:-Math.sin(a)*d/life+vy,life,max:life,color:L>=1?'#e6d2ff':'#7cf2ff',r:(1+Math.random()*1.6)*scale});
  }
+}
+function mcChargeFx(L,dt){
+ const n=mcNose();
+ mcChargeParticles(particles,n.x,n.y,player.vx,player.vy,L,dt);
  mc.tick-=dt;
  if(mc.tick<=0&&L<1){mc.tick=.11;tone(320+L*900,.09,'triangle',.012+L*.01,380+L*980)}
 }
@@ -141,36 +145,54 @@ drawTargetLock=function(){
  try{mcDraw()}catch(e){console.error(e)}
 };
 function mcOrb(x,y,r,L,t){
- const g=ctx.createRadialGradient(x,y,0,x,y,r*2.4);
- const c=L>=1?'214,190,255':'120,236,255';
- g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.22,`rgba(${c},.95)`);g.addColorStop(.5,`rgba(${c},.35)`);g.addColorStop(1,`rgba(${c},0)`);
- ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r*2.4,0,6.283);ctx.fill();
- // archi elettrici che girano
- ctx.strokeStyle=`rgba(${c},.85)`;ctx.lineWidth=1.3;
+ const full=L>=1,c=full?'214,190,255':'120,236,255';
+ const halo=ctx.createRadialGradient(x,y,r*.55,x,y,r*2.4);
+ halo.addColorStop(0,`rgba(${c},.65)`);halo.addColorStop(.48,`rgba(${c},.24)`);halo.addColorStop(1,`rgba(${c},0)`);
+ ctx.save();
+ ctx.fillStyle=halo;ctx.beginPath();ctx.arc(x,y,r*2.4,0,6.283);ctx.fill();
+ // Il nucleo resta leggibile anche sopra le superfici illuminate del pianeta.
+ ctx.globalCompositeOperation='source-over';
+ const core=ctx.createRadialGradient(x-r*.18,y-r*.22,0,x,y,r);
+ core.addColorStop(0,'#fff');core.addColorStop(.38,full?'#f2e6ff':'#e5fcff');
+ core.addColorStop(.72,full?'#bc91ff':'#59e8ff');core.addColorStop(1,full?'#60409d':'#087fa8');
+ ctx.fillStyle=core;ctx.strokeStyle=full?'#36265e':'#104757';ctx.lineWidth=Math.max(.8,r*.07);
+ ctx.beginPath();ctx.arc(x,y,r,0,6.283);ctx.fill();ctx.stroke();
+ ctx.strokeStyle=`rgba(${c},.9)`;ctx.lineWidth=1.3;
  for(let i=0;i<3;i++){const a=t+i*2.094;ctx.beginPath();ctx.arc(x,y,r*1.15,a,a+1.1);ctx.stroke()}
+ ctx.restore();
 }
+function mcDrawProjectile(s,L,spin,trail,scale=1){
+ const r=mcLerp([9,22],.35+.65*L)*scale;
+ ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=1;
+ for(let i=0;i<trail.length;i++){
+  const p=trail[i],k=(i+1)/trail.length;
+  ctx.fillStyle=`rgba(110,225,255,${.12*k})`;ctx.beginPath();ctx.arc(p.x,p.y,r*(.4+.6*k),0,6.283);ctx.fill();
+ }
+ mcOrb(s.x,s.y,r,L,spin);
+ ctx.restore();
+}
+function mcDrawCharge(x,y,L,now,scale=1){
+ const pulse=.85+.15*Math.sin(now*(18+L*14)),r=(4+14*L)*pulse*scale;
+ ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineCap='round';
+ const ring=r+20*scale*(1-((now*2.2)%1));
+ ctx.strokeStyle=L>=1?'rgba(225,205,255,.7)':`rgba(124,242,255,${.25+.4*L})`;ctx.lineWidth=1.6;
+ ctx.beginPath();ctx.arc(x,y,ring,0,6.283);ctx.stroke();
+ if(L>=1){ctx.strokeStyle=`rgba(255,255,255,${.35+.3*Math.sin(now*20)})`;ctx.beginPath();ctx.arc(x,y,r*2.6,0,6.283);ctx.stroke()}
+ mcOrb(x,y,r,L,now*7);
+ ctx.restore();
+}
+drawBullet=function(b){
+ if(!b.rifleLevel)return mcOrig.drawBullet(b);
+ mcDrawProjectile(b,b.rifleLevel,performance.now()*.009,b.rifleTrail,.7);
+};
 function mcDraw(){
  if(state!=='play'&&state!=='dying')return;
  const now=performance.now()/1000;
- ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineCap='round';
- for(const s of mc.shots){
-  for(let i=0;i<s.trail.length;i++){
-   const p=s.trail[i],k=(i+1)/s.trail.length;
-   ctx.fillStyle=`rgba(110,225,255,${.12*k})`;ctx.beginPath();ctx.arc(p.x,p.y,s.r*(.4+.6*k),0,6.283);ctx.fill();
-  }
-  mcOrb(s.x,s.y,s.r,s.L,s.spin);
- }
+ for(const s of mc.shots)mcDrawProjectile(s,s.L,s.spin,s.trail);
  if(state==='play'&&mc.held&&mc.t>MC.start&&player&&!player.destroyed){
-  const L=mcLevel(),n=mcNose(34),pulse=.85+.15*Math.sin(now*(18+L*14));
-  const r=(4+14*L)*pulse;
-  mcOrb(n.x,n.y,r,L,now*7);
-  // anello che si stringe sulla prua
-  const ring=r+20*(1-((now*2.2)%1));
-  ctx.strokeStyle=L>=1?'rgba(225,205,255,.7)':`rgba(124,242,255,${.25+.4*L})`;ctx.lineWidth=1.6;
-  ctx.beginPath();ctx.arc(n.x,n.y,ring,0,6.283);ctx.stroke();
-  if(L>=1){ctx.strokeStyle=`rgba(255,255,255,${.35+.3*Math.sin(now*20)})`;ctx.beginPath();ctx.arc(n.x,n.y,r*2.6,0,6.283);ctx.stroke()}
+  const n=mcNose(34);
+  mcDrawCharge(n.x,n.y,mcLevel(),now);
  }
- ctx.restore();
 }
 
 // ---- testi e traduzioni (righe aggiunte qui per non toccare i18n.js)
