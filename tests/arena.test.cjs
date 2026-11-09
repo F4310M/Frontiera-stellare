@@ -17,7 +17,7 @@ const dist=path.join(__dirname,'..','dist'),src=f=>fs.readFileSync(path.join(dis
 // ---- 2) logica di gioco con due piloti collegati da una rete finta
 const I18N_ROWS=[];
 const sb={I18N_ROWS,console,Math,Date,JSON,Object,Array,Set,String,Number,Promise};vm.createContext(sb);
-vm.runInContext(src('arena.js')+';this.A={arHurt,arUpgrades,arDamage,arShoot,arMeteorSpawn,arMeteorTick,ARENA,arRocks,arApply,arNew,arTick,arOnState,arHostPid,arScore,arSpawn,arCode,arCleanCode,arCleanName,arFull,arColor,arFactionInfo,arSetTeam,arTeamFix,arTeamScore,arWinTeam,arAlly,arLaunch,arUgCode,arUgDecode,arPickTeam,arHostile,arTeamOf};',sb);
+vm.runInContext(src('arena.js')+';this.A={arHurt,arUpgrades,arDamage,arShoot,arMeteorSpawn,arMeteorTick,ARENA,arRocks,arApply,arNew,arTick,arOnState,arHostPid,arScore,arSpawn,arCode,arCleanCode,arCleanName,arFull,arColor,arFactionInfo,arSetTeam,arTeamFix,arTeamScore,arWinTeam,arAlly,arLaunch,arUgCode,arUgDecode,arPickTeam,arHostile,arTeamOf,arRockMask,arRockBroken,arRockHit};',sb);
 const A=sb.A;
 {
  // stanza: stessi asteroidi per tutti
@@ -120,13 +120,44 @@ const A=sb.A;
  console.log('PASS: comandi single-player e colpo caricato');
 }
 {
- // meteorite radente: attraversa gli asteroidi intatti ma distrugge nave e proiettili
+ // cometa (meteorite radente): distrugge nave, proiettili e meteoriti sul percorso
  const g=A.arNew('ffffffffbb','Meteor');g.room='VEGA';g.phase='P';g.rt=100;g.inv=0;g.rocks=[{x:0,y:0,r:120,pts:[1],rot:0,shade:0}];
  Object.assign(g.me,{x:0,y:0,h:100,al:1,sd:1});g.meteor={x:0,y:0,vx:0,vy:0,w:0,life:2};g.meteorT=99;g.bullets=[{x:0,y:0,vx:0,vy:0,life:1,r:3}];
  const before=JSON.stringify(g.rocks);A.arTick(g,1/60,{ax:0,ay:0,aim:0,fire:false,boost:false,shield:false});
- assert.strictEqual(g.me.al,0,'il meteorite distrugge anche una nave protetta');assert.strictEqual(g.bullets.length,0,'distrugge i colpi sul percorso');assert.strictEqual(JSON.stringify(g.rocks),before,'attraversa i meteoriti enormi senza modificarli');
+ assert.strictEqual(g.me.al,0,'il meteorite distrugge anche una nave protetta');assert.strictEqual(g.bullets.length,0,'distrugge i colpi sul percorso');assert.strictEqual(g.rocks[0].br,1,'(2026-11-09) la cometa spazza via anche i meteoriti');
  const h=A.arNew('ffffffffcc','Host');h.room='VEGA';h.phase='P';h.rt=100;h.meteorT=0;A.arTick(h,1/60,{ax:0,ay:0,aim:0,fire:false,boost:false,shield:false});assert.ok(h.meteor&&h.meteor.w>0,'preavviso prima del passaggio');
  console.log('PASS: meteorite radente sincronizzato');
+}
+{
+ // meteoriti distruttibili: l'host decide, gli altri seguono; i frammenti fanno danno
+ const rocks=A.arRocks('NOVA');assert.ok(rocks.length>=40,'campo di meteoriti più fitto');assert.ok(rocks.every(o=>o.hp>=100),'più resistenti');
+ assert.ok(A.ARENA.R>=5000,'arena più grande');
+ const mk=[];for(let i=0;i<57;i++)if(i%3===0)mk.push(i);
+ const fake={rocks:Array.from({length:57},(_,i)=>({br:mk.includes(i)?1:0}))},mask=A.arRockMask(fake);
+ assert.ok(mask.every(n=>n<1e6),'numeri accettati dal database');for(let i=0;i<57;i++)assert.strictEqual(A.arRockBroken(mask,i),mk.includes(i));
+ const h=A.arNew('rrrrrrrrr1','Host'),c=A.arNew('rrrrrrrrr2','Altro');c.me.j=h.me.j+1000;
+ for(const g of [h,c]){g.room='NOVA';g.rocks=A.arRocks('NOVA');g.phase='L';g.meteorT=1e9}
+ const tree={},deliver=(f,p)=>{tree[f.pid]=Object.assign(tree[f.pid]||{},p);for(const g of [h,c])if(g!==f)A.arOnState(g,tree,new Set([f.pid]))};
+ deliver(h,A.arFull(h));deliver(c,A.arFull(c));
+ const idle={ax:0,ay:0,aim:0,fire:false,boost:false,shield:false};
+ const step=()=>{for(const g of [h,c]){const p=A.arTick(g,1/60,idle);if(p)deliver(g,p)}};
+ step();assert.ok(h.isHost&&!c.isHost);
+ const o=h.rocks[0];
+ // un colpo solo non basta
+ A.arRockHit(h,0,10);assert.strictEqual(o.br,0);
+ A.arRockHit(c,0,9999);assert.strictEqual(c.rocks[0].br,0,'chi non è host non rompe da solo');
+ // il pilota (non host) è vicino al meteorite: i frammenti lo colpiscono
+ Object.assign(c.me,{x:o.x+o.r+40,y:o.y,vx:0,vy:0,h:100});c.inv=0;
+ A.arRockHit(h,0,o.hp);assert.strictEqual(o.br,1,'rotto dall’host');
+ const f0=h.frags[0],fa=Math.atan2(f0.vy,f0.vx);Object.assign(c.me,{x:o.x+Math.cos(fa)*(o.r+60),y:o.y+Math.sin(fa)*(o.r+60)});const px=c.me.x,py=c.me.y;
+ let hit=false;for(let i=0;i<30;i++){step();Object.assign(c.me,{x:px,y:py,vx:0,vy:0});if(c.me.h<100)hit=true}
+ assert.strictEqual(c.rocks[0].br,1,'l’altro pilota lo vede rotto');assert.ok(hit,'i frammenti fanno danno');
+ 
+ // dopo un po' ricompare (se nessuno ci sta sopra)
+ Object.assign(c.me,{x:o.x+2000,y:o.y});Object.assign(h.me,{x:o.x-2000,y:o.y});
+ h.rocks[0].bt=h.time-A.ARENA.rockBack-1;for(let i=0;i<60;i++)step();
+ assert.strictEqual(h.rocks[0].br,0);assert.strictEqual(c.rocks[0].br,0,'ricompare per tutti');
+ console.log('PASS: meteoriti distruttibili e frammenti');
 }
 {
  // bordo dell'arena: fa male e spinge dentro

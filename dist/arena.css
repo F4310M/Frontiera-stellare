@@ -6,6 +6,38 @@
 .arena .brief-card{pointer-events:auto}
 .arena h2{margin:6px 0 10px;font:700 30px 'Chakra Petch',sans-serif;letter-spacing:3px}
 .ar-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-height:94vh;overflow:auto}
+/* menu della sfida online come pagina intera (2026-11-09) */
+.arena .ar-page{position:absolute;inset:0;pointer-events:auto;overflow:auto;display:flex;flex-direction:column;background:radial-gradient(ellipse at 70% 30%,rgba(37,112,183,.16),transparent 60%),linear-gradient(90deg,rgba(2,7,14,.94),rgba(2,7,14,.72) 50%,rgba(2,7,14,.9))}
+.ar-page-top{display:flex;align-items:center;justify-content:space-between;gap:16px;height:76px;flex:none;padding:0 42px;border-bottom:1px solid var(--line)}
+.ar-page-top .eyebrow{margin:0;font-size:12px;letter-spacing:5px}
+.ar-page-top .text-btn{margin:0;width:auto;flex:none;padding-left:22px;padding-right:22px}
+.ar-page-top .ar-pilot{margin:0}
+.ar-page-body{flex:1;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.9fr);gap:56px;width:min(1180px,100%);margin:0 auto;padding:44px 42px 40px;align-content:center}
+.ar-page h2{margin:0 0 10px;font:600 clamp(36px,4.6vw,68px)/1 'Chakra Petch',sans-serif;letter-spacing:4px;text-transform:uppercase}
+.ar-lead{max-width:560px;margin:0 0 26px;color:var(--muted);font-size:14px;line-height:1.7}
+.ar-sec{margin:22px 0 10px;font:600 10px 'Chakra Petch',sans-serif;letter-spacing:3px;color:var(--cyan)}
+.ar-page-col>.ar-sec:first-child{margin-top:0}
+.ar-page .ar-desc{margin:12px 0 0;text-align:left;min-height:44px}
+.ar-page .ar-modes{margin:0}
+.ar-page .ar-mode{padding:16px 10px}
+.ar-page .ar-mode b{font-size:16px}
+.ar-page .ar-faction-label{margin-top:22px}
+.ar-feats{list-style:none;margin:26px 0 0;padding:0;display:grid;gap:10px}
+.ar-feats li{display:grid;grid-template-columns:110px 1fr;gap:12px;padding:12px 14px;border:1px solid var(--line);background:rgba(4,12,22,.55);font-size:12px;line-height:1.55;color:var(--muted)}
+.ar-feats b{font:700 11px 'Chakra Petch',sans-serif;letter-spacing:2px;color:#ffb340;padding-top:1px}
+.ar-page-play{padding:28px;border:1px solid rgba(81,230,255,.28);background:linear-gradient(145deg,rgba(7,19,33,.92),rgba(3,9,17,.88));clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px));align-self:start}
+.ar-page-play .launch-btn{margin-top:12px}
+.ar-page-play .launch-btn:first-of-type{margin-top:0}
+.ar-keys{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
+.ar-keys div{display:flex;flex-direction:column;gap:2px;padding:6px 0;border-bottom:1px solid rgba(100,170,220,.1)}
+.ar-keys dt{font:700 11px 'Chakra Petch',sans-serif;letter-spacing:1px;color:var(--text)}
+.ar-keys dd{margin:0;font-size:9px;letter-spacing:1px;color:var(--muted)}
+@media (max-width:900px){
+ .ar-page-top{padding:0 16px;height:60px}.ar-page-top .eyebrow{display:none}
+ .ar-page-body{grid-template-columns:1fr;gap:26px;padding:24px 16px 32px;align-content:start}
+ .ar-feats li{grid-template-columns:1fr;gap:4px}
+ .ar-page-play{padding:20px}
+}
 .ar-desc{color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 14px}
 .ar-pilot{margin:0 0 4px;font-size:12px;letter-spacing:1.5px;color:var(--muted)}
 .ar-pilot b{color:var(--cyan);font-size:15px;margin-left:6px}

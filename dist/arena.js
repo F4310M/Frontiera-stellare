@@ -8,8 +8,11 @@
 // 3 contro 3. La modalità della stanza la decide l'host; chi entra per primo sceglie la squadra,
 // gli ultimi prendono i posti rimasti. Niente fuoco amico. Il nome di ogni pilota è sotto la sua nave.
 // In team battle la fazione scelta nel menu è la squadra preferita; la squadra decide la fazione (fa).
-const ARENA={R:3400,max:6,dur:300,win:10,respawn:3,hz:12,hp:100,dmg:10,bulletSpeed:1050,bulletLife:1.05,
- fireCd:.17,maxDmg:65,stale:7,rocks:24,inv:2,countdown:4,endTime:12,shipR:16,meteorR:74,meteorSpeed:1450,
+const ARENA={R:5000,max:6,dur:300,win:10,respawn:3,hz:12,hp:100,dmg:10,bulletSpeed:1050,bulletLife:1.05,
+ fireCd:.17,maxDmg:65,stale:7,rocks:46,inv:2,countdown:4,endTime:12,shipR:16,meteorR:74,meteorSpeed:1450,
+ // (2026-11-09) meteoriti come quelli intorno ai pianeti ma più resistenti: si rompono, i frammenti fanno danno,
+ // e dopo un po' ricompaiono. Decide l'host (bit rb0..rb2), i frammenti li calcola ognuno uguale (seme).
+ rockHp:[1,1.6,2.4],rockBack:35,fragN:10,fragDmg:14,fragLife:2.6,cometFirst:15,
  colors:['#51e6ff','#ffb340','#ff5268','#9dff6a','#c38bff','#ff7ad9'],
  quick:['ALFA','BETA','VEGA','NOVA','ORSA','LIRA','SOLE','LUNA'],
  // team battle: stanze veloci a parte, 3 posti per squadra, vince la prima squadra a 15 abbattimenti
@@ -35,15 +38,55 @@ function arCleanCode(c){return String(c||'').toUpperCase().replace(/[^A-Z]/g,'')
 function arPid(){const L='abcdefghijklmnopqrstuvwxyz0123456789';let s='';for(let i=0;i<10;i++)s+=L[Math.floor(Math.random()*36)];return s}
 function arCleanName(n){return String(n||'').replace(/[^\p{L}\p{N} ]/gu,'').trim().slice(0,16)||'PILOTA'}
 // asteroidi uguali per tutti i piloti della stessa stanza
+// materiali dei meteoriti della fascia intorno ai pianeti (game.js makeOrbitalBelt)
+const AR_ROCK_MAT=[{fill:'#584435',edge:'#d7ac78'},{fill:'#294e56',edge:'#87d4cf'},{fill:'#503756',edge:'#d3a0ee'}];
 function arRocks(code){
  const r=arRand(arHash('rocce'+code)),out=[];
- for(let tries=0;out.length<ARENA.rocks&&tries<400;tries++){
-  const a=r()*Math.PI*2,d=ARENA.R*(.22+r()*.7),rad=45+r()*75,x=Math.cos(a)*d,y=Math.sin(a)*d;
+ for(let tries=0;out.length<ARENA.rocks&&tries<1500;tries++){
+  const a=r()*Math.PI*2,d=ARENA.R*(.12+r()*.8),rad=45+r()*75,x=Math.cos(a)*d,y=Math.sin(a)*d;
   if(out.some(o=>Math.hypot(o.x-x,o.y-y)<o.r+rad+160))continue;
   const n=9+Math.floor(r()*4),pts=[];for(let i=0;i<n;i++)pts.push(.78+r()*.22);
-  out.push({x,y,r:rad,pts,rot:r()*6.28,shade:r()});
+  const mat=out.length%3,hp=Math.round((60+rad)*ARENA.rockHp[mat]);
+  out.push({x,y,r:rad,pts,rot:r()*6.28,shade:r(),mat,v:Math.floor(r()*8),hp,dmg:0,br:0,bt:0,n:0,fade:0});
  }
  return out;
+}
+// meteoriti rotti in 3 numeri da 19 bit (le regole del database accettano solo numeri sotto il milione)
+function arRockMask(g){const m=[0,0,0];g.rocks.forEach((o,i)=>{if(o.br&&i<57)m[Math.floor(i/19)]+=2**(i%19)});return m}
+function arRockBroken(mask,i){return Math.floor((+mask[Math.floor(i/19)]||0)/2**(i%19))%2===1}
+function arRockBreak(g,i){
+ const o=g.rocks[i];if(!o||o.br)return;
+ o.br=1;o.bt=g.time;o.n++;
+ arBlast(g,o.x,o.y,AR_ROCK_MAT[o.mat||0].edge,34,1.3);arBlast(g,o.x,o.y,'#ffd099',18,.9);
+ // frammenti uguali per tutti: stesso seme (stanza, meteorite, quante volte si è rotto)
+ const r=arRand(arHash(g.room+'|frag|'+i+'|'+o.n));
+ for(let k=0;k<ARENA.fragN;k++){const a=k/ARENA.fragN*6.283+r()*.4,sp=260+r()*300,off=o.r*.45;
+  g.frags.push({x:o.x+Math.cos(a)*off,y:o.y+Math.sin(a)*off,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:6+r()*7,rot:a,spin:(r()-.5)*6,life:ARENA.fragLife,v:Math.floor(r()*10),hit:0})}
+ if(g.frags.length>200)g.frags.splice(0,g.frags.length-200);
+ g.events.push({type:'rock',x:o.x,y:o.y});
+}
+function arRockRestore(g,i){const o=g.rocks[i];if(!o||!o.br)return;o.br=0;o.dmg=0;o.fade=1}
+// un colpo prende un meteorite: l'host tiene il conto vero, gli altri solo le crepe
+function arRockHit(g,i,dmg){
+ const o=g.rocks[i];if(!o||o.br)return;
+ if(g.isHost){o.dmg+=dmg;if(o.dmg>=o.hp)arRockBreak(g,i)}else o.dmg=Math.min(o.hp*.92,o.dmg+dmg);
+}
+function arRockTick(g,dt){
+ if(g.isHost){
+  for(let i=0;i<g.rocks.length;i++){const o=g.rocks[i];
+   if(o.br&&g.time-o.bt>ARENA.rockBack){// ricompare se non c'è nessuna nave sopra
+    const busy=arActive(g).some(p=>p.s.al&&Math.hypot((+p.s.x||0)-o.x,(+p.s.y||0)-o.y)<o.r+80);if(!busy)arRockRestore(g,i)}}
+ }else{
+  const h=g.others[arHostPid(g)];
+  if(h&&typeof h.s.rb0==='number'){const mask=[h.s.rb0,h.s.rb1,h.s.rb2];
+   g.rocks.forEach((o,i)=>{const b=arRockBroken(mask,i);if(b&&!o.br)arRockBreak(g,i);else if(!b&&o.br)arRockRestore(g,i)})}
+ }
+ for(const o of g.rocks)if(o.fade>0)o.fade=Math.max(0,o.fade-dt*1.5);
+ // frammenti: volano, rallentano e fanno male a chi colpiscono
+ const m=g.me;
+ for(const f of g.frags){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=1-.45*dt;f.vy*=1-.45*dt;f.rot+=f.spin*dt;f.life-=dt;
+  if(!f.hit&&m.al&&Math.hypot(m.x-f.x,m.y-f.y)<f.r+ARENA.shipR){f.hit=1;f.life=0;arBlast(g,f.x,f.y,'#ffbf7e',8,.5);if(arHurt(g,ARENA.fragDmg,''))g.events.push({type:'hit'})}}
+ g.frags=g.frags.filter(f=>f.life>0);
 }
 // applica un evento della Realtime Database (put/patch) all'albero locale; dice quali piloti sono cambiati
 function arSet(tree,parts,val){
@@ -79,7 +122,7 @@ function arNew(pid,name,avatar,up,mode,faction){
  return {pid,up:u,mode:md,wantTeam:fa==='I'?1:2,room:'',rocks:[],time:0,phase:'L',rt:0,isHost:true,wantStart:false,
   me:{n:arCleanName(name),a:avatar||'',fa,j:Date.now(),x:0,y:0,vx:0,vy:0,r:0,f:0,s:0,h:ARENA.hp,sd:0,bo:0,iv:0,al:1,k:0,d:0,dz:0,by:'',sh:[],md,tm:0,tj:0,ug:arUgCode(u)},
   boost:100,shield:100,shieldHit:0,inv:0,respawnT:0,fireCd:0,misCd:0,fireHeld:false,charge:0,shotSeq:0,shots:[],sendT:0,
-  meteor:null,meteorT:12,meteorSeq:0,
+  meteor:null,meteorT:ARENA.cometFirst,meteorSeq:0,frags:[],
   others:{},bullets:[],parts:[],events:[],drop:[]};
 }
 function arActive(g){return [{pid:g.pid,s:g.me}].concat(Object.keys(g.others).map(pid=>({pid,s:g.others[pid].s})))}
@@ -132,7 +175,7 @@ function arName(g,pid){if(pid===g.pid)return g.me.n;const o=g.others[pid];return
 function arBlast(g,x,y,color,n=26,power=1){
  for(let i=0;i<n;i++){const a=Math.random()*6.28,s=(40+Math.random()*260)*power;g.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.5+Math.random()*.7,max:1.2,color,r:1.5+Math.random()*3.5})}
 }
-function arFree(g,x,y,r){return Math.hypot(x,y)<ARENA.R-80&&!g.rocks.some(o=>Math.hypot(o.x-x,o.y-y)<o.r+r+40)}
+function arFree(g,x,y,r){return Math.hypot(x,y)<ARENA.R-80&&!g.rocks.some(o=>!o.br&&Math.hypot(o.x-x,o.y-y)<o.r+r+40)}
 function arSpawn(g){
  let best=null,bestD=-1;const side=g.mode===1&&g.me.tm?(g.me.tm===1?Math.PI:0):null;// team battle: ogni squadra parte dal suo lato
  for(let i=0;i<30;i++){
@@ -148,7 +191,7 @@ function arSpawn(g){
 }
 function arEnterPhase(g,ph){
  if(g.phase===ph)return;g.phase=ph;
- if(ph==='C'){g.me.k=0;g.me.d=0;arSpawn(g);g.bullets=[]}
+ if(ph==='C'){g.me.k=0;g.me.d=0;g.rocks.forEach((o,i)=>{arRockRestore(g,i);o.dmg=0});g.frags=[];arSpawn(g);g.bullets=[]}
  g.events.push({type:'phase',ph});
 }
 function arHurt(g,amount,by){
@@ -245,7 +288,7 @@ function arPhysics(g,dt,inp){
  const shieldOn=!locked&&inp.shield&&g.shield>2;
  g.shield=Math.max(0,Math.min(100,g.shield+(shieldOn?-32/(1+.35*(g.up.shield||0)):12)*dt));m.sd=shieldOn?1:0;
  // asteroidi: rimbalzo
- for(const o of g.rocks){const dx=m.x-o.x,dy=m.y-o.y,d=Math.hypot(dx,dy),min=o.r+ARENA.shipR;
+ for(const o of g.rocks){if(o.br)continue;const dx=m.x-o.x,dy=m.y-o.y,d=Math.hypot(dx,dy),min=o.r+ARENA.shipR;
   if(d<min&&d>0){const nx=dx/d,ny=dy/d;m.x=o.x+nx*min;m.y=o.y+ny*min;const vn=m.vx*nx+m.vy*ny;if(vn<0){m.vx-=1.6*vn*nx;m.vy-=1.6*vn*ny}}}
  // bordo dell'arena: spinge dentro e brucia lo scafo
  const dist=Math.hypot(m.x,m.y);
@@ -264,15 +307,19 @@ function arMeteorSpawn(g){
  g.meteor={x:nx*(ARENA.R+700)-ny*off,y:ny*(ARENA.R+700)+nx*off,vx:-nx*ARENA.meteorSpeed,vy:-ny*ARENA.meteorSpeed,w:3,life:(ARENA.R*2+1800)/ARENA.meteorSpeed};
 }
 function arMeteorTick(g,dt,host){
- if(g.phase!=='P'){if(host){g.meteor=null;g.meteorT=12}return}
+ if(g.phase!=='P'){if(host){g.meteor=null;g.meteorT=ARENA.cometFirst}return}
  if(host){
   if(!g.meteor){g.meteorT-=dt;if(g.meteorT<=0)arMeteorSpawn(g)}
-  const m=g.meteor;if(m){if(m.w>0)m.w=Math.max(0,m.w-dt);else{m.x+=m.vx*dt;m.y+=m.vy*dt;m.life-=dt;if(m.life<=0){g.meteor=null;g.meteorT=28+(g.meteorSeq%4)*4}}}
+  const m=g.meteor;if(m){if(m.w>0)m.w=Math.max(0,m.w-dt);else{m.x+=m.vx*dt;m.y+=m.vy*dt;m.life-=dt;if(m.life<=0){g.meteor=null;g.meteorT=22+(g.meteorSeq%4)*4}}
+   // la cometa spazza via i meteoriti che incontra
+   if(m&&m.w<=0)g.rocks.forEach((o,i)=>{if(!o.br&&Math.hypot(o.x-m.x,o.y-m.y)<ARENA.meteorR+o.r*.8)arRockBreak(g,i)})}
  }else{
   const h=g.others[arHostPid(g)],s=h&&h.s;
   g.meteor=s&&(+s.ml>0||+s.mw>0)?{x:+s.mx||0,y:+s.my||0,vx:+s.mvx||0,vy:+s.mvy||0,w:+s.mw||0,life:+s.ml||0}:null;
  }
- const m=g.meteor;if(!m||m.w>0||m.life<=0)return;
+ const m=g.meteor;if(m&&m.w>0&&g.cometWarn!==g.meteorSeq+'|'+Math.round(m.x)){g.cometWarn=g.meteorSeq+'|'+Math.round(m.x);if(!g.cometSeen||g.time-g.cometSeen>6){g.cometSeen=g.time;g.events.push({type:'comet'})}}
+ if(!m||m.w>0||m.life<=0)return;
+ for(const f of g.frags)if(Math.hypot(f.x-m.x,f.y-m.y)<ARENA.meteorR+f.r)f.life=0;
  for(const b of g.bullets)if(Math.hypot(b.x-m.x,b.y-m.y)<ARENA.meteorR+(b.r||3))b.life=0;
  if(g.me.al&&Math.hypot(g.me.x-m.x,g.me.y-m.y)<ARENA.meteorR+ARENA.shipR){g.inv=0;g.me.sd=0;arHurt(g,999,'')}
 }
@@ -299,6 +346,7 @@ function arTick(g,dt,inp){
  arTeamFix(g);
  arPhysics(g,dt,inp);
  arMeteorTick(g,dt,g.isHost);
+ arRockTick(g,dt);
  g.me.iv=g.inv>0?1:0;
  // colpi
  for(const b of g.bullets){
@@ -311,7 +359,8 @@ function arTick(g,dt,inp){
   }
   b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
   const hr=ARENA.shipR+(b.mis?7:(b.r||3));
-  if(g.rocks.some(o=>Math.hypot(o.x-b.x,o.y-b.y)<o.r)){b.life=0;arBlast(g,b.x,b.y,'#9aa7b8',4,.35);continue}
+  const ri=g.rocks.findIndex(o=>!o.br&&Math.hypot(o.x-b.x,o.y-b.y)<o.r);
+  if(ri>=0){b.life=0;arBlast(g,b.x,b.y,'#9aa7b8',5,.4);arRockHit(g,ri,b.dmg||ARENA.dmg);continue}
   if(b.o!==g.pid&&!arAlly(g,b.o,g.pid)&&g.me.al&&Math.hypot(g.me.x-b.x,g.me.y-b.y)<hr){
    b.life=0;arBlast(g,b.x,b.y,b.mis?'#ffb340':b.c,b.mis?16:6,b.mis?.8:.4);if(arHurt(g,b.dmg||ARENA.dmg,b.o))g.events.push({type:'hit'});continue;
   }
@@ -330,13 +379,13 @@ function arTick(g,dt,inp){
  if(g.sendT>0)return null;
  g.sendT=1/ARENA.hz;
  const m=g.me;
- const mt=g.isHost&&g.meteor?g.meteor:null;
+ const mt=g.isHost&&g.meteor?g.meteor:null;const rb=arRockMask(g);
  return {x:Math.round(m.x),y:Math.round(m.y),vx:Math.round(m.vx),vy:Math.round(m.vy),r:Math.round(m.r*100)/100,f:m.f,s:m.s,
   h:Math.round(m.h),sd:m.sd,bo:m.bo,iv:m.iv,al:m.al,k:m.k,d:m.d,dz:m.dz,by:m.by,sh:g.shots.map(s=>s.sh),ph:m.ph,rt:m.rt,
-  mx:mt?Math.round(mt.x):0,my:mt?Math.round(mt.y):0,mvx:mt?Math.round(mt.vx):0,mvy:mt?Math.round(mt.vy):0,mw:mt?Math.round(mt.w*10)/10:0,ml:mt?Math.round(mt.life*10)/10:0,ms:g.meteorSeq,md:g.mode,tm:m.tm,tj:m.tj,ug:m.ug,fa:arFaNum(m.fa)};
+  mx:mt?Math.round(mt.x):0,my:mt?Math.round(mt.y):0,mvx:mt?Math.round(mt.vx):0,mvy:mt?Math.round(mt.vy):0,mw:mt?Math.round(mt.w*10)/10:0,ml:mt?Math.round(mt.life*10)/10:0,ms:g.meteorSeq,rb0:rb[0],rb1:rb[1],rb2:rb[2],md:g.mode,tm:m.tm,tj:m.tj,ug:m.ug,fa:arFaNum(m.fa)};
 }
 function arFull(g){const m=g.me,p=arTickSnapshot(g);return Object.assign({n:m.n,j:m.j,fa:arFaNum(m.fa)},m.a?{a:m.a}:{},p)}
-function arTickSnapshot(g){const m=g.me;return {x:Math.round(m.x),y:Math.round(m.y),vx:0,vy:0,r:Math.round(m.r*100)/100,f:0,s:0,h:Math.round(m.h),sd:0,bo:0,iv:1,al:m.al,k:m.k,d:m.d,dz:m.dz,by:m.by,ph:m.ph,rt:m.rt,mx:0,my:0,mvx:0,mvy:0,mw:0,ml:0,ms:0,md:g.mode,tm:m.tm,tj:m.tj,ug:m.ug}}
+function arTickSnapshot(g){const m=g.me;return {x:Math.round(m.x),y:Math.round(m.y),vx:0,vy:0,r:Math.round(m.r*100)/100,f:0,s:0,h:Math.round(m.h),sd:0,bo:0,iv:1,al:m.al,k:m.k,d:m.d,dz:m.dz,by:m.by,ph:m.ph,rt:m.rt,mx:0,my:0,mvx:0,mvy:0,mw:0,ml:0,ms:0,rb0:0,rb1:0,rb2:0,md:g.mode,tm:m.tm,tj:m.tj,ug:m.ug}}
 
 // ---------------------------------------------------------------- rete
 function arDbUrl(){
@@ -409,28 +458,51 @@ function arBuildUI(){
  if(arEl('arena')||typeof document==='undefined'||!document.body)return;
  const s=document.createElement('section');s.id='arena';s.className='arena hidden';s.setAttribute('aria-label','Sfida online');
  s.innerHTML=`
- <div id="arMenu" class="ar-card brief-card">
-  <p class="eyebrow">SFIDA ONLINE</p>
-  <h2>ARENA SPAZIALE</h2>
-  <div class="ar-modes" role="radiogroup" aria-label="Modalità">
-   <button id="arModeFfa" class="ar-mode" data-mode="0" role="radio"><b>DEATHMATCH</b><small>TUTTI CONTRO TUTTI</small></button>
-   <button id="arModeTeam" class="ar-mode" data-mode="1" role="radio"><b>TEAM BATTLE</b><small>IMPERIALI CONTRO RIBELLI</small></button>
+ <div id="arMenu" class="ar-page">
+  <header class="ar-page-top">
+   <button id="arBack" class="text-btn">${AR_ICO('arrow-left')} <span>TORNA ALLA MAPPA</span></button>
+   <p class="eyebrow">SFIDA ONLINE</p>
+   <p class="ar-pilot"><span>PILOTA</span> <b id="arName"></b></p>
+  </header>
+  <div class="ar-page-body">
+   <section class="ar-page-col">
+    <h2>ARENA SPAZIALE</h2>
+    <p class="ar-lead">Battaglie tra piloti veri, fino a 6 per stanza, in un campo di meteoriti attraversato dalle comete.</p>
+    <p class="ar-sec">MODALITÀ</p>
+    <div class="ar-modes" role="radiogroup" aria-label="Modalità">
+     <button id="arModeFfa" class="ar-mode" data-mode="0" role="radio"><b>DEATHMATCH</b><small>TUTTI CONTRO TUTTI</small></button>
+     <button id="arModeTeam" class="ar-mode" data-mode="1" role="radio"><b>TEAM BATTLE</b><small>IMPERIALI CONTRO RIBELLI</small></button>
+    </div>
+    <p id="arDescFfa" class="ar-desc">Tutti contro tutti, fino a 6 piloti. Vince chi arriva per primo a 10 abbattimenti o chi ne ha di più dopo 5 minuti.</p>
+    <p id="arDescTeam" class="ar-desc hidden">Due squadre da 3: gli IMPERIALI volano con le navi nemiche, i RIBELLI con la nave del gioco. Chi entra per primo sceglie la squadra, gli ultimi prendono i posti rimasti. Vince la prima squadra a 15 abbattimenti o quella che ne ha di più dopo 5 minuti.</p>
+    <p class="ar-faction-label">SCEGLI LA FAZIONE <small id="arFactionHint">· IN TEAM BATTLE È LA SQUADRA CHE PREFERISCI</small></p>
+    <div class="ar-factions" role="group" aria-label="Scegli la fazione">
+     <button id="arRebels" type="button" data-faction="R"><i></i><span>RIBELLI</span><small>NAVI BLU</small></button>
+     <button id="arEmpire" type="button" data-faction="I"><i></i><span>IMPERO GALATTICO</span><small>NAVI ROSSE</small></button>
+    </div>
+    <ul class="ar-feats">
+     <li><b>METEORITI</b><span>Resistenti come quelli intorno ai pianeti: se li rompi, i frammenti colpiscono chi è vicino.</span></li>
+     <li><b>COMETE</b><span>Attraversano l’arena e spazzano via navi, colpi e meteoriti: segui la scia d’avviso.</span></li>
+     <li><b>MERCATO</b><span>I tuoi potenziamenti del mercato valgono anche qui: laser, barriera, motori, doppio laser, iniettori e lanciatore multiplo (missili guidati).</span></li>
+    </ul>
+   </section>
+   <section class="ar-page-col ar-page-play">
+    <p class="ar-sec">GIOCA</p>
+    <button id="arQuick" class="launch-btn"><span>PARTITA VELOCE</span><b>${AR_ICO('play')}</b></button>
+    <button id="arCreate" class="launch-btn ar-alt"><span>CREA UNA STANZA</span><b>${AR_ICO('user')}</b></button>
+    <p class="ar-sec">HAI UN CODICE?</p>
+    <div class="ar-join"><input id="arCode" maxlength="4" placeholder="CODICE" aria-label="Codice della stanza" autocomplete="off" spellcheck="false"><button id="arJoinBtn" class="settings-btn"><span>ENTRA</span></button></div>
+    <p id="arNote" class="ar-note"></p>
+    <p id="arErr" class="ar-err"></p>
+    <p class="ar-sec">COMANDI</p>
+    <dl class="ar-keys">
+     <div><dt>WASD</dt><dd>MUOVI</dd></div><div><dt>MOUSE</dt><dd>PUNTA</dd></div>
+     <div><dt>CLIC</dt><dd>SPARA · TIENI PREMUTO PER CARICARE</dd></div><div><dt>SHIFT</dt><dd>POST-BRUCIATORE</dd></div>
+     <div><dt>MOUSE DX / E</dt><dd>BARRIERA</dd></div><div><dt>Q / ROTELLA</dt><dd>MISSILI</dd></div>
+     <div><dt>F</dt><dd>FRENA</dd></div><div><dt>ESC</dt><dd>ESCI</dd></div>
+    </dl>
+   </section>
   </div>
-  <p id="arDescFfa" class="ar-desc">Tutti contro tutti, fino a 6 piloti. Vince chi arriva per primo a 10 abbattimenti o chi ne ha di più dopo 5 minuti.</p>
-  <p id="arDescTeam" class="ar-desc hidden">Due squadre da 3: gli IMPERIALI volano con le navi nemiche, i RIBELLI con la nave del gioco. Chi entra per primo sceglie la squadra, gli ultimi prendono i posti rimasti. Vince la prima squadra a 15 abbattimenti o quella che ne ha di più dopo 5 minuti.</p>
-  <p class="ar-pilot"><span>PILOTA</span> <b id="arName"></b></p>
-  <p class="ar-faction-label">SCEGLI LA FAZIONE <small id="arFactionHint">· IN TEAM BATTLE È LA SQUADRA CHE PREFERISCI</small></p>
-  <div class="ar-factions" role="group" aria-label="Scegli la fazione">
-   <button id="arRebels" type="button" data-faction="R"><i></i><span>RIBELLI</span><small>NAVI BLU</small></button>
-   <button id="arEmpire" type="button" data-faction="I"><i></i><span>IMPERO GALATTICO</span><small>NAVI ROSSE</small></button>
-  </div>
-  <p class="ar-note ar-up">I tuoi potenziamenti del mercato valgono anche qui: laser, barriera, motori, doppio laser, iniettori e lanciatore multiplo (missili guidati).</p>
-  <button id="arQuick" class="launch-btn"><span>PARTITA VELOCE</span><b>${AR_ICO('play')}</b></button>
-  <button id="arCreate" class="launch-btn ar-alt"><span>CREA UNA STANZA</span><b>${AR_ICO('user')}</b></button>
-  <div class="ar-join"><input id="arCode" maxlength="4" placeholder="CODICE" aria-label="Codice della stanza" autocomplete="off" spellcheck="false"><button id="arJoinBtn" class="settings-btn"><span>ENTRA</span></button></div>
-  <p id="arNote" class="ar-note"></p>
-  <p id="arErr" class="ar-err"></p>
-  <button id="arBack" class="text-btn">${AR_ICO('arrow-left')} <span>TORNA ALLA MAPPA</span></button>
  </div>
  <div id="arLobby" class="ar-lobby brief-card hidden">
   <p class="eyebrow"><span>STANZA</span> · <span id="arLobbyMode">DEATHMATCH</span></p><h2 id="arRoom"></h2>
@@ -606,6 +678,8 @@ function arHandleEvents(g){
   else if(e.type==='team'){arMessage((e.moved?AR_T('SQUADRA COMPLETA')+' · ':'')+AR_T('LA TUA SQUADRA')+': '+arTeamName(e.tm),2.2);arSyncPanels(true)}
   else if(e.type==='mode')arSyncPanels(true);
   else if(e.type==='lock')arFeedLock(g);
+  else if(e.type==='rock'){if(typeof sfx==='function'&&Math.hypot(e.x-g.me.x,e.y-g.me.y)<1400)try{sfx('boom')}catch(x){}}
+  else if(e.type==='comet'){arMessage(AR_T('COMETA IN ARRIVO!'),2.4);if(typeof sfx==='function')try{sfx('ui')}catch(x){}}
   else if(e.type==='missile'){if(typeof sfx==='function')try{sfx('missile')}catch(x){}}
   else if(e.type==='shot'){if(typeof sfx==='function')try{sfx('shoot')}catch(x){}}
   else if(e.type==='hit'){if(typeof sfx==='function')try{sfx('hit')}catch(x){}}
@@ -696,10 +770,44 @@ function arDrawBarrier(x,y,impact,now){
  if(typeof drawEnergyBubble==='function'){try{drawEnergyBubble(x,y,33+pulse*4,31+pulse*4,.65,now,pulse);return}catch(e){}}
  ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=`rgba(100,225,255,${.65+pulse*.3})`;ctx.lineWidth=2.5+pulse*3;ctx.beginPath();ctx.arc(x,y,31+pulse*4,0,6.283);ctx.stroke();ctx.restore();
 }
+// sprite HD dei meteoriti della fascia (meteoriti.js): stesse varianti già pronte in cache
+function arMtSprite(key,make){try{return typeof mtGet==='function'&&typeof mtBuild==='function'?mtGet(key,make):null}catch(e){return null}}
+function arRockSprite(o){const M=AR_ROCK_MAT[o.mat||0];return arMtSprite('r|'+M.fill+'|'+M.edge+'|'+o.v,()=>mtBuild(MT_REF,o.v+1+M.fill.length*31,M.fill,M.edge))}
+function arDrawRock(o,i,fallback,now){
+ const sp=arRockSprite(o);ctx.save();if(o.fade>0)ctx.globalAlpha=1-o.fade;
+ if(sp){const size=sp.size*o.r/MT_REF;ctx.translate(o.x,o.y);ctx.rotate(o.rot+now*.03*(i%2?1:-1));ctx.drawImage(sp.c,-size/2,-size/2,size,size)}
+ else if(fallback){ctx.drawImage(fallback.c,o.x-fallback.s/2,o.y-fallback.s/2,fallback.s,fallback.s);ctx.translate(o.x,o.y)}
+ else{ctx.translate(o.x,o.y);ctx.fillStyle='#555a66';ctx.beginPath();ctx.arc(0,0,o.r,0,6.28);ctx.fill()}
+ // crepe che crescono con i colpi
+ const dmg=o.hp?Math.min(1,o.dmg/o.hp):0;
+ if(dmg>.05){const r=arRand(arHash('crepe'+i)),n=Math.ceil(dmg*7);ctx.strokeStyle=`rgba(255,${190-dmg*90|0},120,${.35+dmg*.5})`;ctx.lineWidth=1.6+dmg*1.6;ctx.lineCap='round';
+  for(let k=0;k<n;k++){let a=r()*6.283,d=o.r*.12;ctx.beginPath();ctx.moveTo(Math.cos(a)*d,Math.sin(a)*d);for(let q=0;q<3;q++){a+=(r()-.5)*.9;d+=o.r*(.18+r()*.14)*Math.min(1,dmg*1.6);ctx.lineTo(Math.cos(a)*d,Math.sin(a)*d)}ctx.stroke()}}
+ ctx.restore();
+}
+function arDrawFrags(g){
+ for(const f of g.frags){const sp=arMtSprite('f|'+f.v,()=>mtBuild(MT_FRAG_REF,f.v*17+5,'#725342','#ffbf7e',{angular:true,craters:1,hot:true}));
+  ctx.save();ctx.globalAlpha=Math.min(1,f.life*2);ctx.translate(f.x,f.y);ctx.rotate(f.rot);
+  if(sp){const size=sp.size*f.r/MT_FRAG_REF*1.15;ctx.drawImage(sp.c,-size/2,-size/2,size,size)}
+  else{ctx.fillStyle='#725342';ctx.strokeStyle='#ffbf7e';ctx.beginPath();ctx.moveTo(f.r,0);ctx.lineTo(0,-f.r*.7);ctx.lineTo(-f.r*.8,0);ctx.lineTo(0,f.r*.7);ctx.closePath();ctx.fill();ctx.stroke()}
+  ctx.restore()}
+}
+// cometa come quella del gioco in singolo: bagliore, coda di fuoco e nucleo di roccia
 function arDrawMeteor(g,now){
  const m=g.meteor;if(!m)return;
- if(m.w>0){const a=Math.atan2(m.vy,m.vx),ex=m.x+Math.cos(a)*m.w*ARENA.meteorSpeed,ey=m.y+Math.sin(a)*m.w*ARENA.meteorSpeed;ctx.save();ctx.setLineDash([24,18]);ctx.lineWidth=4;ctx.strokeStyle=`rgba(255,90,50,${.35+.3*Math.sin(now*9)})`;ctx.beginPath();ctx.moveTo(m.x,m.y);ctx.lineTo(ex,ey);ctx.stroke();ctx.setLineDash([]);ctx.restore();return}
- const a=Math.atan2(m.vy,m.vx),tail=170;ctx.save();ctx.globalCompositeOperation='lighter';const gr=ctx.createLinearGradient(m.x,m.y,m.x-Math.cos(a)*tail,m.y-Math.sin(a)*tail);gr.addColorStop(0,'rgba(255,245,190,.95)');gr.addColorStop(.25,'rgba(255,105,35,.75)');gr.addColorStop(1,'rgba(255,35,15,0)');ctx.strokeStyle=gr;ctx.lineWidth=58;ctx.beginPath();ctx.moveTo(m.x,m.y);ctx.lineTo(m.x-Math.cos(a)*tail,m.y-Math.sin(a)*tail);ctx.stroke();ctx.globalCompositeOperation='source-over';ctx.translate(m.x,m.y);ctx.rotate(now*1.8);const rg=ctx.createRadialGradient(-22,-25,4,0,0,ARENA.meteorR);rg.addColorStop(0,'#eee0c4');rg.addColorStop(.35,'#9b7564');rg.addColorStop(1,'#241c25');ctx.fillStyle=rg;ctx.beginPath();for(let i=0;i<13;i++){const q=i/13*6.283,rr=ARENA.meteorR*(.82+.18*Math.sin(i*7.1));i?ctx.lineTo(Math.cos(q)*rr,Math.sin(q)*rr):ctx.moveTo(Math.cos(q)*rr,Math.sin(q)*rr)}ctx.closePath();ctx.fill();ctx.restore();
+ const a=Math.atan2(m.vy,m.vx),R=ARENA.meteorR;
+ if(m.w>0){const ex=m.x+Math.cos(a)*m.w*ARENA.meteorSpeed*2,ey=m.y+Math.sin(a)*m.w*ARENA.meteorSpeed*2;ctx.save();ctx.setLineDash([30,20]);ctx.lineDashOffset=-now*120;ctx.lineWidth=R*1.6;ctx.strokeStyle=`rgba(255,90,40,${.06+.05*Math.sin(now*9)})`;ctx.beginPath();ctx.moveTo(m.x,m.y);ctx.lineTo(ex,ey);ctx.stroke();ctx.lineWidth=4;ctx.strokeStyle=`rgba(255,120,60,${.4+.3*Math.sin(now*9)})`;ctx.stroke();ctx.setLineDash([]);ctx.restore();return}
+ ctx.save();ctx.translate(m.x,m.y);ctx.rotate(a);ctx.globalCompositeOperation='lighter';
+ const k=R/24;// la cometa del gioco ha raggio 24
+ const glow=ctx.createRadialGradient(-20*k,0,4*k,-20*k,0,95*k);glow.addColorStop(0,'rgba(255,196,100,.38)');glow.addColorStop(1,'rgba(255,75,10,0)');ctx.fillStyle=glow;ctx.fillRect(-115*k,-95*k,190*k,190*k);
+ for(let i=0;i<5;i++){const length=(190-i*22)*k*1.6,width=(22-i*3)*k,tail=ctx.createLinearGradient(-length,0,10*k,0);tail.addColorStop(0,'rgba(255,65,15,0)');tail.addColorStop(.65,`rgba(255,105,28,${.1+i*.035})`);tail.addColorStop(1,'rgba(255,235,177,.8)');ctx.fillStyle=tail;ctx.beginPath();ctx.moveTo(10*k,-width);ctx.quadraticCurveTo(-length*.35,-width*.9,-length,Math.sin(now*12+i)*5*k);ctx.quadraticCurveTo(-length*.35,width*.8,10*k,width);ctx.closePath();ctx.fill()}
+ ctx.globalCompositeOperation='source-over';ctx.restore();
+ const core={x:m.x,y:m.y,r:R*.78,rot:now*1.8,mat:0,v:3,hp:1,dmg:0,fade:0};
+ const sp=arMtSprite('r|#665042|#ffc78d|3',()=>mtBuild(MT_REF,4+'#665042'.length*31,'#665042','#ffc78d'));
+ ctx.save();ctx.translate(m.x,m.y);ctx.rotate(now*1.8);
+ if(sp){const size=sp.size*core.r/MT_REF;ctx.drawImage(sp.c,-size/2,-size/2,size,size)}
+ else{const rg=ctx.createRadialGradient(-22,-25,4,0,0,R);rg.addColorStop(0,'#eee0c4');rg.addColorStop(.35,'#9b7564');rg.addColorStop(1,'#241c25');ctx.fillStyle=rg;ctx.beginPath();ctx.arc(0,0,R*.85,0,6.283);ctx.fill()}
+ ctx.restore();
+ ctx.save();ctx.translate(m.x,m.y);ctx.rotate(a);ctx.strokeStyle='#ffe0a1';ctx.globalAlpha=.85;ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,R*.82,-1.1,1.1);ctx.stroke();ctx.restore();
 }
 function arDraw(){
  const g=ar;
@@ -715,7 +823,8 @@ function arDraw(){
  ctx.lineWidth=5;ctx.strokeStyle=`rgba(81,230,255,${.35+.15*Math.sin(now*3)})`;ctx.setLineDash([46,26]);ctx.lineDashOffset=-now*40;ctx.beginPath();ctx.arc(0,0,ARENA.R,0,6.283);ctx.stroke();ctx.setLineDash([]);
  ctx.lineWidth=1.5;ctx.strokeStyle='rgba(81,230,255,.12)';ctx.beginPath();ctx.arc(0,0,ARENA.R*.5,0,6.283);ctx.stroke();
  // asteroidi
- const sp=arRockSprites(g);g.rocks.forEach((o,i)=>{const s=sp[i];if(s)ctx.drawImage(s.c,o.x-s.s/2,o.y-s.s/2,s.s,s.s);else{ctx.fillStyle='#555a66';ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,6.28);ctx.fill()}});
+ const sp=arRockSprites(g),vw=(W/2)/z+160,vh=(H/2)/z+160;g.rocks.forEach((o,i)=>{if(o.br||Math.abs(o.x-cam.x)>vw+o.r||Math.abs(o.y-cam.y)>vh+o.r)return;arDrawRock(o,i,sp[i],now)});
+ arDrawFrags(g);
  arDrawMeteor(g,now);
  // colpi
  ctx.lineCap='round';
@@ -843,6 +952,25 @@ if(typeof I18N_ROWS!=='undefined'){
   ["COLLEGAMENTO…","CONNECTING…","CONNEXION…","CONECTANDO…","ПОДКЛЮЧЕНИЕ…","正在连接…","接続中…"],
   ["STANZA PIENA","ROOM FULL","SALON PLEIN","SALA LLENA","КОМНАТА ЗАПОЛНЕНА","房间已满","ルームは満員です"],
   // team battle (2026-11-09)
+  ["Battaglie tra piloti veri, fino a 6 per stanza, in un campo di meteoriti attraversato dalle comete.","Battles between real pilots, up to 6 per room, in a meteor field crossed by comets.","Des combats entre vrais pilotes, jusqu’à 6 par salon, dans un champ de météorites traversé par des comètes.","Batallas entre pilotos reales, hasta 6 por sala, en un campo de meteoritos atravesado por cometas.","Бои между настоящими пилотами, до 6 в комнате, в поле метеоритов, которое пересекают кометы.","真人飞行员对战，每个房间最多 6 人，战场布满陨石并有彗星划过。","本物のパイロット同士の対戦。1ルーム最大6人、彗星が横切る隕石帯で戦います。"],
+  ["MODALITÀ","MODE","MODE","MODO","РЕЖИМ","模式","モード"],
+  ["METEORITI","METEORS","MÉTÉORITES","METEORITOS","МЕТЕОРИТЫ","陨石","隕石"],
+  ["Resistenti come quelli intorno ai pianeti: se li rompi, i frammenti colpiscono chi è vicino.","Tough like the ones around the planets: break them and the fragments hit anyone nearby.","Solides comme ceux autour des planètes : si tu les brises, les fragments frappent ceux qui sont proches.","Resistentes como los que rodean los planetas: si los rompes, los fragmentos golpean a quien esté cerca.","Прочные, как у планет: если разбить, осколки бьют всех рядом.","像行星周围的陨石一样坚固：击碎后，碎片会击中附近的人。","惑星の周りの隕石のように頑丈：壊すと破片が近くの機体に当たります。"],
+  ["COMETE","COMETS","COMÈTES","COMETAS","КОМЕТЫ","彗星","彗星"],
+  ["Attraversano l’arena e spazzano via navi, colpi e meteoriti: segui la scia d’avviso.","They cross the arena sweeping away ships, shots and meteors: watch the warning trail.","Elles traversent l’arène et balaient vaisseaux, tirs et météorites : surveille la traînée d’alerte.","Cruzan la arena y barren naves, disparos y meteoritos: fíjate en la estela de aviso.","Пролетают через арену, сметая корабли, выстрелы и метеориты: следи за предупреждающим следом.","彗星会横穿竞技场，扫除飞船、子弹和陨石：注意预警轨迹。","アリーナを横切り、機体・弾・隕石を一掃します。警告の軌跡に注意。"],
+  ["MERCATO","MARKET","MARCHÉ","MERCADO","РЫНОК","商店","マーケット"],
+  ["GIOCA","PLAY","JOUER","JUGAR","ИГРАТЬ","开始","プレイ"],
+  ["HAI UN CODICE?","GOT A CODE?","TU AS UN CODE ?","¿TIENES UN CÓDIGO?","ЕСТЬ КОД?","有代码吗？","コードはある？"],
+  ["COMANDI","CONTROLS","COMMANDES","CONTROLES","УПРАВЛЕНИЕ","操作","操作"],
+  ["MUOVI","MOVE","BOUGER","MOVER","ДВИЖЕНИЕ","移动","移動"],
+  ["PUNTA","AIM","VISER","APUNTAR","ПРИЦЕЛ","瞄准","照準"],
+  ["CLIC","CLICK","CLIC","CLIC","КЛИК","点击","クリック"],
+  ["SPARA · TIENI PREMUTO PER CARICARE","FIRE · HOLD TO CHARGE","TIRER · MAINTIENS POUR CHARGER","DISPARAR · MANTÉN PARA CARGAR","ОГОНЬ · УДЕРЖИВАЙ ДЛЯ ЗАРЯДА","射击 · 按住蓄力","射撃 · 長押しでチャージ"],
+  ["MOUSE DX / E","RIGHT MOUSE / E","CLIC DROIT / E","CLIC DCHO / E","ПКМ / E","右键 / E","右クリック / E"],
+  ["Q / ROTELLA","Q / WHEEL","Q / MOLETTE","Q / RUEDA","Q / КОЛЕСО","Q / 滚轮","Q / ホイール"],
+  ["FRENA","BRAKE","FREINER","FRENAR","ТОРМОЗ","刹车","ブレーキ"],
+  ["ESCI","LEAVE","QUITTER","SALIR","ВЫХОД","离开","退出"],
+  ["COMETA IN ARRIVO!","INCOMING COMET!","COMÈTE EN APPROCHE !","¡COMETA ENTRANTE!","КОМЕТА НА ПОДЛЁТЕ!","彗星来袭！","彗星接近！"],
   ["Modalità","Mode","Mode","Modo","Режим","模式","モード"],
   ["TUTTI CONTRO TUTTI","FREE FOR ALL","CHACUN POUR SOI","TODOS CONTRA TODOS","КАЖДЫЙ САМ ЗА СЕБЯ","混战","バトルロイヤル"],
   ["IMPERIALI CONTRO RIBELLI","IMPERIALS VS REBELS","IMPÉRIAUX CONTRE REBELLES","IMPERIALES CONTRA REBELDES","ИМПЕРЦЫ ПРОТИВ МЯТЕЖНИКОВ","帝国军对叛军","帝国軍 対 反乱軍"],
