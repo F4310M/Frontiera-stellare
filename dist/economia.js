@@ -74,10 +74,10 @@ function ecoEndPhase(phase,win,info={}){
   rows.push({label:'GRANATE LANCIATE',qty:c.granata||0,unit:'× '+ECO_COST.granata+' CR',amount:-(sp.granata||0)});
   rows.push({label:'CARBURANTE DISCESA E JETPACK',qty:Math.round(c.fuel||0)+' u',unit:'× '+ECO_COST.fuel+' CR',amount:-(sp.fuel||0)});
  }
- const kills=info.kills||0,bounty=kills*ECO_BOUNTY[phase];
+ const god=typeof godMode!=='undefined'&&godMode,kills=info.kills||0,bounty=god?0:kills*ECO_BOUNTY[phase];
  rows.push({label:'TAGLIA NEMICI ABBATTUTI',qty:kills,unit:'× '+ECO_BOUNTY[phase]+' CR',amount:bounty,income:true});
  let prize=0;
- if(phase===2&&win){
+ if(phase===2&&win&&!god){
   const base=ecoPlanetReward(p),bonus=(info.rescued||0)*ecoHostageBonus(p);prize=base+bonus;
   rows.push({label:'PREMIO MISSIONE · '+(typeof pfBossInfo==='function'?pfBossInfo(p).name:'ROBOT')+' DISTRUTTO',qty:'',unit:'',amount:base,income:true,prize:true});
   rows.push({label:'BONUS OSTAGGI LIBERATI',qty:(info.rescued||0)+'/'+(info.hostages||0),unit:'× '+ecoHostageBonus(p)+' CR',amount:bonus,income:true,prize:true});

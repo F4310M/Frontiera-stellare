@@ -9,6 +9,14 @@
 .ar-desc{color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 14px}
 .ar-pilot{margin:0 0 4px;font-size:12px;letter-spacing:1.5px;color:var(--muted)}
 .ar-pilot b{color:var(--cyan);font-size:15px;margin-left:6px}
+.ar-faction-label{margin:12px 0 6px;color:var(--muted);font-size:9px;letter-spacing:2px}
+.ar-factions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ar-factions button{min-width:0;padding:9px 7px;border:1px solid var(--line);border-radius:7px;background:rgba(4,12,22,.72);color:var(--muted);cursor:pointer;font:700 10px 'Chakra Petch',sans-serif;letter-spacing:1px}
+.ar-factions button i{display:inline-block;width:8px;height:8px;margin-right:5px;border-radius:50%;background:#51e6ff;box-shadow:0 0 9px #51e6ff}
+.ar-factions #arEmpire i{background:#ff5268;box-shadow:0 0 9px #ff5268}
+.ar-factions button span,.ar-factions button small{display:block}.ar-factions button small{margin-top:3px;font-size:8px;color:var(--muted)}
+.ar-factions button.active{color:#fff;border-color:currentColor;background:rgba(81,230,255,.1);box-shadow:inset 0 0 18px rgba(81,230,255,.08)}
+.ar-factions #arEmpire.active{background:rgba(255,82,104,.1);box-shadow:inset 0 0 18px rgba(255,82,104,.08)}
 .arena .launch-btn{margin-top:14px}
 .arena .launch-btn b svg{width:16px;height:16px}
 .arena .ar-alt{background:transparent;color:var(--cyan)}
@@ -29,6 +37,7 @@
 .ar-list em,.ar-board em{display:grid;place-items:center;font-style:normal;font-weight:700;font-size:12px;color:#02060c}
 .ar-pos{width:14px;color:var(--muted);font-size:11px}
 .ar-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.ar-fa{display:grid;place-items:center;width:18px;height:18px;border:1px solid var(--fa);border-radius:50%;color:var(--fa);font-size:9px;font-weight:800;flex:none}
 .ar-list li b,.ar-board li b{min-width:22px;text-align:right;color:var(--text)}
 .ar-list li small,.ar-board li small{min-width:20px;text-align:right;color:var(--muted)}
 .ar-hud{position:absolute;inset:0}

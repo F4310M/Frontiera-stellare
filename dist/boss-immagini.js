@@ -55,7 +55,13 @@ function biLoad(name){
  const names=Object.keys(D.parts);let left=names.length;biOrig.img[name]={};
  for(const n of names){
   const im=new Image();
-  im.onload=()=>{if(--left===0){biOrig.ready[name]=true;try{if(typeof MP!=='undefined'&&MP.boss)MP.boss.delete(D.kind)}catch(e){}}};
+  im.onload=()=>{if(--left===0){
+   biOrig.ready[name]=true;
+   // menu-pianeti.js puo aver messo in cache il vecchio boss vettoriale mentre
+   // le nuove immagini erano ancora in caricamento. Svuota la cache e ridisegna
+   // subito il pannello selezionato (in particolare LYRA / millepiedi).
+   try{if(typeof MP!=='undefined'&&MP.boss){MP.boss.delete(D.kind);if(typeof state!=='undefined'&&state==='map'&&typeof selected==='number'&&typeof selectPlanet==='function')setTimeout(()=>selectPlanet(selected),0)}}catch(e){}
+  }};
   im.src=D.dir+n+'.png';biOrig.img[name][n]=im;
  }
 }
@@ -167,7 +173,8 @@ function bMillepiediImg(c,B,now){
 function bDragoImg(c,B,now){
  if(!biOrig.ready.drago)return biOrig.draw.lava&&biOrig.draw.lava(c,B,now);
  const N='drago',D=BI[N],st=B.state,t=B.t||0,rec=biRecoil(B);
- let speed=2.2,amp=.12,bob=Math.sin(now*2)*1.5,lean=0,jump=0;
+ const grounded=typeof PF_FLOOR==='number'&&Number.isFinite(B.y)&&B.y>=PF_FLOOR-2&&!['passi','raffica','carica','missili'].includes(st);
+ let speed=grounded?.7:2.2,amp=grounded?.018:.12,bob=grounded?0:Math.sin(now*2)*1.5,lean=0,jump=0;
  if(st==='passi'){bob=-Math.abs(Math.sin((B.legT||0)*1.5))*4}
  else if(st==='carica'){if(t<.8){const k=biEase(t/.8);lean=-.06*k;speed=5;amp=.3}else{lean=.06;speed=12;amp=.35}}
  else if(st==='onda'){if(B.shots===2){speed=3}else{jump=biEase(t/.5)*12;speed=14;amp=.45}}
@@ -180,7 +187,7 @@ function bDragoImg(c,B,now){
  c.save();c.translate(0,bob+jump);c.rotate(lean);
  wing('ala-lontana',D.wingFar,1);
  // zampe a passo alternato (diagonali insieme), il braccio davanti graffia l'aria
- const walking=st==='passi'||(st==='carica'&&t>=.8),ph=walking?(B.legT||0)*3+(st==='carica'?now*16:0):now*1.3,la=walking?.16:.035;
+ const walking=st==='passi'||(st==='carica'&&t>=.8),ph=walking?(B.legT||0)*3+(st==='carica'?now*16:0):now*1.3,la=grounded?0:walking?.16:.035;
  for(const [n,[pt,off]] of Object.entries(D.legs)){
   let a=la*Math.sin(ph+off);
   if(n==='braccio'&&(st==='raffica'||st==='ruggito'))a=-.25+.08*Math.sin(now*10);

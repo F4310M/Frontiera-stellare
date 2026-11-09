@@ -17,13 +17,14 @@ const dist=path.join(__dirname,'..','dist'),src=f=>fs.readFileSync(path.join(dis
 // ---- 2) logica di gioco con due piloti collegati da una rete finta
 const I18N_ROWS=[];
 const sb={I18N_ROWS,console,Math,Date,JSON,Object,Array,Set,String,Number,Promise};vm.createContext(sb);
-vm.runInContext(src('arena.js')+';this.A={arHurt,arUpgrades,arDamage,arShoot,ARENA,arRocks,arApply,arNew,arTick,arOnState,arHostPid,arScore,arSpawn,arCode,arCleanCode,arCleanName,arFull,arColor,arSetTeam,arTeamFix,arTeamScore,arWinTeam,arAlly,arLaunch,arUgCode,arUgDecode,arPickTeam,arHostile,arTeamOf};',sb);
+vm.runInContext(src('arena.js')+';this.A={arHurt,arUpgrades,arDamage,arShoot,arMeteorSpawn,arMeteorTick,ARENA,arRocks,arApply,arNew,arTick,arOnState,arHostPid,arScore,arSpawn,arCode,arCleanCode,arCleanName,arFull,arColor,arFactionInfo,arSetTeam,arTeamFix,arTeamScore,arWinTeam,arAlly,arLaunch,arUgCode,arUgDecode,arPickTeam,arHostile,arTeamOf};',sb);
 const A=sb.A;
 {
  // stanza: stessi asteroidi per tutti
  assert.deepStrictEqual(JSON.stringify(A.arRocks('ORSA')),JSON.stringify(A.arRocks('ORSA')));
  assert.notStrictEqual(JSON.stringify(A.arRocks('ORSA')),JSON.stringify(A.arRocks('VEGA')));
  assert.ok(A.arRocks('ORSA').length>=10);
+ assert.ok(A.ARENA.R>=3400&&A.ARENA.rocks>=24,'arena più grande e più ricca');
  assert.match(A.arCode(),/^[A-Z]{4}$/);assert.strictEqual(A.arCleanCode(' ab-cd9e'),'ABCD');
  assert.strictEqual(A.arCleanName('<b>Fabio</b>!!'),'bFabiob');assert.strictEqual(A.arCleanName(''),'PILOTA');
  console.log('PASS: stanza, codici e nomi');
@@ -40,7 +41,7 @@ const A=sb.A;
 }
 {
  // due piloti: la rete finta consegna subito lo stato all'altro
- const a=A.arNew('aaaaaaaaaa','Fabio'),b=A.arNew('bbbbbbbbbb','Luca');b.me.j=a.me.j+1000;
+ const a=A.arNew('aaaaaaaaaa','Fabio','',null,'R'),b=A.arNew('bbbbbbbbbb','Luca','',null,'I');b.me.j=a.me.j+1000;
  for(const g of [a,b]){g.room='ORSA';g.rocks=[];A.arSpawn(g)}
  const tree={};
  const deliver=(from,patch)=>{tree[from.pid]=Object.assign(tree[from.pid]||{},patch);for(const g of [a,b])if(g!==from)A.arOnState(g,tree,new Set([from.pid]))};
@@ -50,6 +51,8 @@ const A=sb.A;
  step();
  assert.strictEqual(A.arHostPid(a),'aaaaaaaaaa');assert.ok(a.isHost&&!b.isHost,'il primo entrato è l’host');
  assert.notStrictEqual(A.arColor(a,a.pid),A.arColor(a,b.pid),'colori diversi');
+ assert.strictEqual(A.arColor(a,a.pid),'#51e6ff','ribelli blu');assert.strictEqual(A.arColor(a,b.pid),'#ff5268','impero rosso');
+ assert.strictEqual(A.arFull(a).fa,2,'la fazione viene sincronizzata (come numero: le regole del database accettano solo numeri)');assert.strictEqual(A.arFull(b).fa,1);assert.strictEqual(A.arScore(a)[1].fa,'I');
  a.wantStart=true;b.wantStart=true;
  for(let i=0;i<60*5;i++)step();
  assert.strictEqual(a.phase,'P');assert.strictEqual(b.phase,'P','l’altro segue l’host');
@@ -57,7 +60,7 @@ const A=sb.A;
  // Fabio spara a Luca, che sta fermo davanti
  const place=()=>{Object.assign(a.me,{x:0,y:0,vx:0,vy:0,r:0});Object.assign(b.me,{x:300,y:0,vx:0,vy:0});a.inv=0;b.inv=0};
  place();
- for(let i=0;i<60*4&&b.me.dz===0;i++){place();step({...idle,fire:true})}
+ for(let i=0;i<60*7&&b.me.dz===0;i++){place();step({...idle,fire:i%18===0})}
  assert.strictEqual(b.me.dz,1,'Luca abbattuto');assert.strictEqual(b.me.by,a.pid,'da Fabio');
  for(let i=0;i<10;i++)step();
  assert.strictEqual(a.me.k,1,'abbattimento a Fabio, contato una volta sola');
@@ -103,6 +106,29 @@ const A=sb.A;
  console.log('PASS: potenziamenti del mercato');
 }
 {
+ // comandi come nel single-player: clic singolo, pressione prolungata e rilascio potenziato
+ const g=A.arNew('ffffffffaa','Carica');g.room='NOVA';g.rocks=[];g.phase='P';g.rt=100;g.inv=0;
+ const input=fire=>({ax:0,ay:0,aim:0,fire,boost:false,shield:false,brake:false});
+ A.arTick(g,1/60,input(true));const first=g.shotSeq;
+ for(let i=0;i<40;i++)A.arTick(g,1/60,input(true));
+ assert.strictEqual(g.shotSeq,first,'tenere premuto non produce una raffica automatica');
+ A.arTick(g,1/60,input(false));
+ assert.strictEqual(g.shotSeq,first+1,'al rilascio parte un solo colpo caricato');
+ const mega=g.bullets[g.bullets.length-1];assert.ok(mega.power>0&&mega.r>3&&mega.dmg>A.arDamage(g.up),'colpo più grande e potente');
+ // F frena sensibilmente la nave
+ Object.assign(g.me,{vx:200,vy:0});for(let i=0;i<30;i++)A.arTick(g,1/60,{...input(false),brake:true});assert.ok(Math.abs(g.me.vx)<25);
+ console.log('PASS: comandi single-player e colpo caricato');
+}
+{
+ // meteorite radente: attraversa gli asteroidi intatti ma distrugge nave e proiettili
+ const g=A.arNew('ffffffffbb','Meteor');g.room='VEGA';g.phase='P';g.rt=100;g.inv=0;g.rocks=[{x:0,y:0,r:120,pts:[1],rot:0,shade:0}];
+ Object.assign(g.me,{x:0,y:0,h:100,al:1,sd:1});g.meteor={x:0,y:0,vx:0,vy:0,w:0,life:2};g.meteorT=99;g.bullets=[{x:0,y:0,vx:0,vy:0,life:1,r:3}];
+ const before=JSON.stringify(g.rocks);A.arTick(g,1/60,{ax:0,ay:0,aim:0,fire:false,boost:false,shield:false});
+ assert.strictEqual(g.me.al,0,'il meteorite distrugge anche una nave protetta');assert.strictEqual(g.bullets.length,0,'distrugge i colpi sul percorso');assert.strictEqual(JSON.stringify(g.rocks),before,'attraversa i meteoriti enormi senza modificarli');
+ const h=A.arNew('ffffffffcc','Host');h.room='VEGA';h.phase='P';h.rt=100;h.meteorT=0;A.arTick(h,1/60,{ax:0,ay:0,aim:0,fire:false,boost:false,shield:false});assert.ok(h.meteor&&h.meteor.w>0,'preavviso prima del passaggio');
+ console.log('PASS: meteorite radente sincronizzato');
+}
+{
  // bordo dell'arena: fa male e spinge dentro
  const g=A.arNew('cccccccccc','Solo');g.rocks=[];g.phase='P';g.rt=100;Object.assign(g.me,{x:A.ARENA.R+200,y:0,vx:0,vy:0});
  for(let i=0;i<30;i++)A.arTick(g,1/30,{ax:0,ay:0,aim:0,fire:false,boost:false,shield:false});
@@ -112,7 +138,7 @@ const A=sb.A;
 {
  // TEAM BATTLE: imperiali contro ribelli, scelta della squadra, posti rimasti, niente fuoco amico
  const names=['Fabio','Luca','Sara','Marco','Anna','Gino','Pia'];
- const gs=names.map((n,i)=>{const g=A.arNew('p'+i+'xxxxxxxx'.slice(0,9-String(i).length),n,'',{},1);g.me.j=Date.now()-60000+i*1000;g.room='DUNA';g.rocks=[];return g});
+ const gs=names.map((n,i)=>{const g=A.arNew('p'+i+'xxxxxxxx'.slice(0,9-String(i).length),n,'',{},1);g.me.j=Date.now()-60000+i*1000;g.room='DUNA';g.rocks=[];g.meteorT=1e9;return g});// niente meteora durante il test
  const tree={};
  const deliver=(from,patch)=>{tree[from.pid]=Object.assign(tree[from.pid]||{},patch);for(const g of gs)if(g!==from&&g.inRoom)A.arOnState(g,tree,new Set([from.pid]))};
  const idle={ax:0,ay:0,aim:0,fire:false,boost:false,shield:false};
@@ -159,9 +185,9 @@ const A=sb.A;
  // niente fuoco amico: Sara spara a Fabio (stessa squadra) → nessun danno; spara a Luca → danno
  const sara=gs[2],fabio=gs[0],luca=gs[1];
  const place=(t)=>{for(const g of gs)if(g.inRoom){g.inv=0}Object.assign(sara.me,{x:0,y:0,vx:0,vy:0,r:0});Object.assign(t.me,{x:300,y:0,vx:0,vy:0});for(const g of gs)if(g.inRoom&&g!==sara&&g!==t)Object.assign(g.me,{x:-1500,y:1500*(g.me.tm===1?1:-1)})};
- for(let i=0;i<60;i++){place(fabio);for(const g of gs)if(g.inRoom){const p=A.arTick(g,1/60,g===sara?{...idle,fire:true}:idle);if(p)deliver(g,p)}}
+ for(let i=0;i<60;i++){place(fabio);for(const g of gs)if(g.inRoom){const p=A.arTick(g,1/60,g===sara?{...idle,fire:i%2===0}:idle);if(p)deliver(g,p)}}
  assert.strictEqual(fabio.me.h,100,'nessun danno all’alleato');
- for(let i=0;i<60*4&&luca.me.dz===0;i++){place(luca);for(const g of gs)if(g.inRoom){const p=A.arTick(g,1/60,g===sara?{...idle,fire:true}:idle);if(p)deliver(g,p)}}
+ for(let i=0;i<60*4&&luca.me.dz===0;i++){place(luca);for(const g of gs)if(g.inRoom){const p=A.arTick(g,1/60,g===sara?{...idle,fire:i%2===0}:idle);if(p)deliver(g,p)}}
  assert.strictEqual(luca.me.by,sara.pid,'Luca abbattuto da Sara');
  step(10);
  assert.strictEqual(A.arTeamScore(fabio)[1],1,'punto agli imperiali');
@@ -170,11 +196,11 @@ const A=sb.A;
  for(const g of gs)if(g.inRoom){assert.strictEqual(g.phase,'E');assert.strictEqual(A.arWinTeam(g),1,'vincono gli imperiali')}
  assert.strictEqual(A.arScore(luca)[0].tm,1,'in classifica prima la squadra vincente');
  // deathmatch: chi entra in una stanza deathmatch con la team battle scelta si adegua all'host
- const h=A.arNew('hhhhhhhhhh','Host','',{},0),v=A.arNew('vvvvvvvvvv','Ospite','',{},1);v.me.j=h.me.j+1000;h.rocks=v.rocks=[];
+ const h=A.arNew('hhhhhhhhhh','Host','',{},0),v=A.arNew('vvvvvvvvvv','Ospite','',{},1,'I');v.me.j=h.me.j+1000;h.rocks=v.rocks=[];
  const t2={};const d2=(f,p)=>{t2[f.pid]=Object.assign(t2[f.pid]||{},p);for(const g of [h,v])if(g!==f)A.arOnState(g,t2,new Set([f.pid]))};
  d2(h,A.arFull(h));d2(v,A.arFull(v));for(let i=0;i<120;i++){for(const g of [h,v]){const p=A.arTick(g,1/60,idle);if(p)d2(g,p)}}
  assert.strictEqual(v.mode,0,'modalità dell’host');assert.strictEqual(v.me.tm,0,'nessuna squadra in deathmatch');
- assert.strictEqual(A.arHostile(h,v.pid),true);assert.strictEqual(A.arHostile(h,h.pid),false);
+ assert.strictEqual(A.arHostile(h,v.pid),true,'in deathmatch la nave segue la fazione scelta');assert.strictEqual(A.arHostile(h,h.pid),false);
  console.log('PASS: team battle');
 }
 {
@@ -184,7 +210,7 @@ const A=sb.A;
  assert.ok(A.arUgCode(up)<1000000,'rientra nelle regole del database');
  const a=A.arNew('mmmmmmmmmm','Missili','',up),b=A.arNew('nnnnnnnnnn','Bersaglio','',{}),c=A.arNew('oooooooooo','Altro','',{});
  b.me.j=a.me.j+1;c.me.j=a.me.j+2;
- const all=[a,b,c],tree={};for(const g of all){g.rocks=[];g.phase='P';g.rt=100}
+ const all=[a,b,c],tree={};for(const g of all){g.rocks=[];g.phase='P';g.rt=100;g.meteorT=1e9}
  const deliver=(f,p)=>{tree[f.pid]=Object.assign(tree[f.pid]||{},p);for(const g of all)if(g!==f)A.arOnState(g,tree,new Set([f.pid]))};
  for(const g of all)deliver(g,A.arFull(g));
  Object.assign(a.me,{x:0,y:0,r:0});Object.assign(b.me,{x:500,y:200});Object.assign(c.me,{x:500,y:-300});
@@ -192,8 +218,8 @@ const A=sb.A;
  const idle={ax:0,ay:0,aim:0,fire:false,boost:false,shield:false};
  const pa=A.arTick(a,1/60,{...idle,missile:true});
  assert.strictEqual(a.shots.length,3,'livello 2: tre missili');
- assert.ok(a.shots.every(s=>typeof s.sh[6]==='string'),'ogni missile ha il suo bersaglio');
- assert.deepStrictEqual(new Set(a.shots.map(s=>s.sh[6])).size,2,'due bersagli diversi');
+ assert.ok(a.shots.every(s=>typeof s.sh[8]==='string'),'ogni missile ha il suo bersaglio');
+ assert.deepStrictEqual(new Set(a.shots.map(s=>s.sh[8])).size,2,'due bersagli diversi');
  assert.ok(!A.arLaunch(a),'poi si ricarica');
  deliver(a,pa||{sh:a.shots.map(s=>s.sh)});
  const hp0=b.me.h+c.me.h;
@@ -207,7 +233,7 @@ const A=sb.A;
 {
  // traduzioni complete
  for(const r of I18N_ROWS)assert.ok(r.length===7&&r.every(x=>typeof x==='string'&&x),'7 lingue: '+r[0]);
- for(const s of ['SFIDA ONLINE','ARENA SPAZIALE','PARTITA VELOCE','INIZIA LA SFIDA','ABBATTUTO DA'])assert.ok(I18N_ROWS.some(r=>r[0]===s),s);
+ for(const s of ['SFIDA ONLINE','ARENA SPAZIALE','PARTITA VELOCE','INIZIA LA SFIDA','ABBATTUTO DA','SCEGLI LA FAZIONE','RIBELLI','IMPERO GALATTICO'])assert.ok(I18N_ROWS.some(r=>r[0]===s),s);
  console.log('PASS: traduzioni');
 }
 {

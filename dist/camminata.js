@@ -188,8 +188,8 @@ if(cammColOrig){
   // il piede più basso tocca terra; in volo (tra un passo e l'altro) il corpo si stacca un poco
   const volo=aria?0:Math.max(0,Math.sin(2*fi))**2*20;
   const giu=rest-piede-volo;
-  const height=typeof SOLD==='undefined'?66:SOLD.H,s=height/(a.foot-a.top);
-  if(!aria&&typeof gShadow==='function')gShadow(h.x,h.y,14,.32);
+  const size=typeof pfColonistSize==='function'?pfColonistSize(i):1,height=(typeof SOLD==='undefined'?66:SOLD.H)*size,s=height/(a.foot-a.top);
+  if(!aria&&typeof gShadow==='function')gShadow(h.x,h.y,14*size,.32);
   ctx.save();ctx.translate(h.x,h.y);
   ctx.scale(-s,s);ctx.rotate(.17+Math.sin(2*fi)*.035);
   ctx.translate(-250,-a.foot+giu);

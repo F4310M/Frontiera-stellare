@@ -538,7 +538,7 @@ function pfContact(e){
 }
 function pfDamage(n,dir=1,piercing=false){
  const P=pf.pilot;if(P.hp<=0||pf.phase==='vittoria')return;
- if(!piercing&&P.barrier&&P.shield>0){P.vx=(Math.sign(dir)||1)*310;P.vy=Math.min(P.vy,P.ground?-160:-75);P.shieldPush=.24;P.shieldDelay=1.2;P.shield=Math.max(0,P.shield-n*1.6/pfShieldEff());if(P.shield<=0){P.barrier=false;pfStatus('SCUDO ESAURITO')}pfBurst(P.x,P.y-28,'#51e6ff',6,.7);sfx('shield');return}
+ if(!piercing&&P.barrier&&P.shield>0){const damp=pfShieldEff();P.vx=(Math.sign(dir)||1)*310/damp;P.vy=Math.min(P.vy,(P.ground?-160:-75)/damp);P.shieldPush=.24/damp;P.shieldDelay=1.2;P.shield=Math.max(0,P.shield-n*1.6/damp);if(P.shield<=0){P.barrier=false;pfStatus('SCUDO ESAURITO')}pfBurst(P.x,P.y-28,'#51e6ff',6,.7);sfx('shield');return}
  if(!piercing&&P.inv>0)return;
  P.hp-=n;P.inv=.9;pf.flash=.35;P.vx=dir*230;if(P.ground)P.vy=-220;
  pfBurst(P.x,P.y-28,'#ffb36b',10,.8);sfx('hit');
@@ -656,9 +656,11 @@ function pfUpdateBoss(dt){
   if(B.dead>=2.3&&!B.gone){B.gone=true;pfBurst(B.x,B.y-100,'#ffb05a',60,2.4);pfBurst(B.x,B.y-100,'#ffffff',20,1.4);pfBurst(B.x,B.y-100,'#7d8794',30,1.2,true,{vy:-200});pf.cam.shake=1.2;pf.flash=.2;sfx('boom',2.2);show('pfBoss',false);pfBanner('COLONIA LIBERATA','LA REPUBBLICA INTERGALATTICA RINGRAZIA',3.6);pfFreeColony()}
   return;
  }
- // Fisica verticale semplice sul pavimento dell'arena.
- const prevY=B.y;B.vy=Math.min(1400,B.vy+PF_GRAVITY*dt);B.y+=B.vy*dt;let landed=false;
- if(B.y>=PF_FLOOR){B.y=PF_FLOOR;if(B.vy>300&&prevY<PF_FLOOR)landed=true;B.vy=0}
+ // Il drago di UMBRA vola durante gli attacchi e torna ad appoggiare le zampe
+ // quando resta fermo. Gli altri boss mantengono la fisica sul pavimento.
+ const dragonFlying=B.kind==='lava'&&['passi','raffica','carica','missili'].includes(B.state),prevY=B.y;let landed=false;
+ if(dragonFlying){const target=PF_FLOOR-112+Math.sin(B.t*3)*10,acc=(target-B.y)*13-B.vy*4.5;B.vy=pfClamp(B.vy+acc*dt,-420,420);B.y+=B.vy*dt}
+ else{B.vy=Math.min(1400,B.vy+PF_GRAVITY*dt);B.y+=B.vy*dt;if(B.y>=PF_FLOOR){B.y=PF_FLOOR;if(B.vy>300&&prevY<PF_FLOOR)landed=true;B.vy=0}}
  const dx=P.x-B.x;if(B.state!=='carica')B.face=dx>=0?1:-1;
  const G0=pfBossInfo(pf.p).gun,mz0={x:B.x+B.face*G0.x,y:B.y-G0.y},want=Math.atan2(P.y-30-mz0.y,P.x-mz0.x),base=B.face>0?0:Math.PI;
  B.aim=base+pfClamp(Math.atan2(Math.sin(want-base),Math.cos(want-base)),-1,1);
@@ -675,7 +677,7 @@ function pfUpdateBoss(dt){
    if(next==='onda')pfStatus('ONDA D’URTO · SALTA!',1500);
   }break;
   case'passi':{const sp=(rage?115:75)*pfBossInfo(pf.p).speed;B.vx=Math.abs(dx)>170?B.face*sp:0;B.legT+=Math.abs(B.vx)*dt*.04;if(B.t>1.5){B.vx=0;pfBossSet(B,'pausa')}break}
-  case'raffica':{const n=rage?5:3;if(B.t>.45+B.shots*.2&&B.shots<n){B.shots++;const m=pfBossMuzzle(B);for(const off of rage?[-.14,0,.14]:[0])pfEnemyShot(m.x,m.y,B.aim+off,430,Math.round(13*(pfBossInfo(pf.p).dmg||1)));pf.cam.shake=Math.max(pf.cam.shake,.12)}if(B.t>.45+n*.2+.4)pfBossSet(B,'pausa');break}
+  case'raffica':{const fire=B.kind==='lava',n=fire?(rage?10:8):(rage?5:3),gap=fire?.11:.2;if(B.t>.45+B.shots*gap&&B.shots<n){B.shots++;const m=pfBossMuzzle(B),offs=fire?[Math.sin(B.shots*2.1)*.075]:(rage?[-.14,0,.14]:[0]);for(const off of offs){pfEnemyShot(m.x,m.y,B.aim+off,fire?350:430,fire?Math.round(5*(pfBossInfo(pf.p).dmg||1)):Math.round(13*(pfBossInfo(pf.p).dmg||1)));if(fire){const f=pf.shots[pf.shots.length-1];f.fire=true;f.r=6;f.life=1.65}}pf.cam.shake=Math.max(pf.cam.shake,fire?.06:.12)}if(B.t>.45+n*gap+.4)pfBossSet(B,'pausa');break}
   case'onda':if(B.t>.5&&B.shots===0){B.shots=1;B.vy=-560}
    if(B.shots===1&&landed){B.shots=2;for(const dir of [-1,1])pf.waves.push({x:B.x+dir*60,dir,speed:rage?520:440,life:3,hit:false});pf.cam.shake=Math.max(pf.cam.shake,.9)}
    if(B.shots===2&&B.t>1.6)pfBossSet(B,'pausa');break;
@@ -684,7 +686,7 @@ function pfUpdateBoss(dt){
   case'missili':{const n=rage?3:2;if(B.t>.3+B.shots*.28&&B.shots<n){B.shots++;const pd=pfBossInfo(pf.p).pod,x=B.x+B.face*pd.x,y=B.y-pd.y;pf.missiles.push({x,y,vx:(pf.rnd()-.5)*160,vy:-430,angle:-Math.PI/2,hp:1,life:5.5,t:0});noise(.3,.03,3000);tone(150,.3,'sawtooth',.02,500)}if(B.t>.3+n*.28+.6)pfBossSet(B,'pausa');break}
  }
  B.x=pfClamp(B.x+B.vx*dt,minX,maxX);
- if(P.visible&&P.hp>0&&pfOverlap(pfRect(P),pfBossRect(B))){pfDamage(B.state==='carica'?25:18,Math.sign(P.x-B.x)||-1);P.vx=(Math.sign(P.x-B.x)||-1)*430;P.vy=-330}
+ if(P.visible&&P.hp>0&&pfOverlap(pfRect(P),pfBossRect(B))){const shielded=P.barrier&&P.shield>0;pfDamage(B.state==='carica'?25:18,Math.sign(P.x-B.x)||-1);if(!shielded){P.vx=(Math.sign(P.x-B.x)||-1)*430;P.vy=-330}}
 }
 function pfHitBoss(n,x,y){
  const B=pf.boss;if(!B||B.hp<=0)return;
@@ -1137,7 +1139,9 @@ function pfUpdateRetreat(dt){
 
 // Boss distrutto: i coloni escono a sinistra, i ribelli ripiegano a destra.
 function pfFreeColony(){
- const VW=Math.min(pfViewW(),1500),left=pf.cam.lockX,n=18+pf.p.difficulty*2;
+ // Una folla più compatta mantiene leggibile la liberazione e riduce il costo
+ // di aggiornamento/disegno mentre parte anche la flotta nemica.
+ const VW=Math.min(pfViewW(),1500),left=pf.cam.lockX,n=8+Math.ceil(pf.p.difficulty/2);
  const hostages=pf.sup?.hostages||pf.hostages;
  for(const h of hostages){
   if(h.state!=='legato')continue;

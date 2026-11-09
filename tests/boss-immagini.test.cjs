@@ -36,3 +36,12 @@ run('abort();vite=3;selected=0;startPlatform()');for(let i=0;i<210;i++)run('upda
 run('pf.phase="missione";pfEnterArena();pf.boss.y=PF_FLOOR;pf.boss.vy=0;pf.boss.x=pf.cam.lockX+5000;pfBossSet(pf.boss,"carica",.9);pf.boss.shots=1;pf.boss.face=1;pfUpdateBoss(1/60)');
 assert(val('pf.boss.x<=pf.cam.lockX+Math.min(pfViewW(),1500)-70-155+.01'));assert.equal(val('pf.boss.state'),'stordito');
 console.log('PASS: boss lunghi nello schermo');
+
+// UMBRA: il drago vola durante la raffica, sputa colpi di fuoco dalla bocca e a riposo torna a terra.
+run('abort();vite=3;selected=4;startPlatform()');for(let i=0;i<210;i++)run('update(1/60)');
+run('pf.phase="missione";pfEnterArena();pf.pilot.inv=999;pf.boss.y=PF_FLOOR;pf.boss.vy=0;pfBossSet(pf.boss,"raffica")');
+for(let i=0;i<60;i++)run('pfUpdateBoss(1/60)');
+assert(val('pf.boss.y<PF_FLOOR-20'),'il drago vola durante l attacco');assert(val('pf.shots.some(s=>s.fire)'),'il drago spara fuoco dalla bocca');
+run('pfBossSet(pf.boss,"stordito")');for(let i=0;i<55;i++)run('pfUpdateBoss(1/60)');
+assert.equal(Math.round(val('pf.boss.y')),val('PF_FLOOR'),'da fermo appoggia le zampe a terra');
+console.log('PASS: drago di UMBRA in volo, fuoco e appoggio a terra');

@@ -72,6 +72,7 @@ function recShow(o){
 }
 // Fine di una missione: si salva il record e si mostra la posizione.
 function recMission(){
+ if(typeof godMode!=='undefined'&&godMode){recShow(null);return Promise.resolve()}
  if(recEnded){recEnded=false;return}   // fine partita: ci pensa l'invio finale (scoreSubmit)
  myAdd(score);
  if(!coOn){recShow(null);return}

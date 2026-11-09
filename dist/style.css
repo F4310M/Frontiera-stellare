@@ -719,6 +719,8 @@ body.touch .spec-badge{top:64px;left:12px;padding:4px 9px 4px 6px;font-size:8px}
 .save-new{display:block;width:100%;margin-top:8px;padding:9px;border:1px solid rgba(160,210,240,.3);border-radius:8px;background:transparent;color:#cfe3f2;font:600 10px 'Chakra Petch',sans-serif;letter-spacing:2px;cursor:pointer}
 .save-new:hover{border-color:var(--cyan);color:#fff}
 body.has-save #launchBtn,body.has-save #mapScreen .planet-panel .keyhint,body.has-save #phase2Btn{display:none!important}
+body.has-save .planet-node{pointer-events:none}
+body.has-save .planet-node:not(.selected){opacity:.35}
 #mapScreen .planet-panel .save-box .save-resume,.planet-panel .save-box .save-resume{background:linear-gradient(110deg,#ffe3a6,#ffc65c);border-color:#ffd27a;color:#1d1300}
 
 /* ---- La riga del pilota in classifica ben in evidenza (2026-11-05) */

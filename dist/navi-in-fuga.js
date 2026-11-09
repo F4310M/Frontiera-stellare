@@ -8,8 +8,9 @@
 // Niente shadowBlur né ctx.filter sul canvas principale (PC lenti). Va caricato dopo classifica.js.
 
 const NF={
- vicine:3,lontane:3,      // navi che passano davanti e navi che decollano dallo sfondo
- px:5                     // pixel dell'immagine per unità della nave
+ vicine:2,lontane:2,      // flotta più leggera: due passaggi vicini e due decolli lontani
+ px:4,                    // sprite meno grande in memoria, ancora nitido alla scala massima
+ trail:8,smokeRate:18     // meno segmenti e particelle nella scena finale
 };
 const nfOrig={pfFreeColony,updatePlatform,pfDrawShipOnPad};
 let nfSprite=null;
@@ -75,8 +76,8 @@ function nfUpdate(dt){
   else{S.vx+=S.ax*dt;S.vy+=S.ay*dt}
   S.x+=S.vx*dt;S.y+=S.vy*dt;
   if(!S.near)S.a=Math.min(1,S.a+dt*2.5);
-  S.trail.push({x:S.x,y:S.y});if(S.trail.length>14)S.trail.shift();
-  if(S.smoke&&Math.random()<dt*45)S.puffs.push({x:S.x-22*S.s,y:S.y+(Math.random()-.5)*6,r:3+Math.random()*4,life:1.1,max:1.1});
+  S.trail.push({x:S.x,y:S.y});if(S.trail.length>NF.trail)S.trail.shift();
+  if(S.smoke&&Math.random()<dt*NF.smokeRate)S.puffs.push({x:S.x-22*S.s,y:S.y+(Math.random()-.5)*6,r:3+Math.random()*4,life:1.1,max:1.1});
   for(const p of S.puffs){p.life-=dt;p.r+=dt*22;p.y-=dt*12}
   S.puffs=S.puffs.filter(p=>p.life>0);
   if(S.x>VW+260||S.y<-200)S.gone=true;
@@ -93,9 +94,9 @@ function nfDrawShip(S,cx,now){
  // scia luminosa dei motori
  if(S.trail.length>2){
   ctx.globalCompositeOperation='lighter';ctx.lineCap='round';
-  for(let i=1;i<S.trail.length;i++){const a=S.trail[i-1],b=S.trail[i],k=i/S.trail.length;
-   ctx.strokeStyle=`rgba(255,${90+k*80|0},${80+k*40|0},${.32*k})`;ctx.lineWidth=(S.near?7:3)*k*S.s;
-   ctx.beginPath();ctx.moveTo(cx+a.x-20*S.s,a.y);ctx.lineTo(cx+b.x-20*S.s,b.y);ctx.stroke()}
+  const first=S.trail[0],last=S.trail[S.trail.length-1],tg=ctx.createLinearGradient(cx+first.x,first.y,cx+last.x,last.y);
+  tg.addColorStop(0,'rgba(255,60,70,0)');tg.addColorStop(1,'rgba(255,170,120,.34)');ctx.strokeStyle=tg;ctx.lineWidth=(S.near?6:3)*S.s;
+  ctx.beginPath();ctx.moveTo(cx+first.x-20*S.s,first.y);for(let i=1;i<S.trail.length;i++){const p=S.trail[i];ctx.lineTo(cx+p.x-20*S.s,p.y)}ctx.stroke();
   ctx.globalCompositeOperation='source-over';
  }
  ctx.translate(x,y);ctx.rotate(ang);ctx.scale(S.s,S.s);

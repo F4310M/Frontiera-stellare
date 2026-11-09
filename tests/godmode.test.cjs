@@ -68,6 +68,8 @@ const omega=val('planets.findIndex(p=>p.final)');
 assert(omega>=0&&val(`mapPlayable(planets[${omega}])`),'OMEGA giocabile in god mode');
 assert(val('mapPlayable(planets[0])'),'Pianeta liberato rigiocabile in god mode');
 const sc=val('score');run('scoreAdd(500)');assert.equal(val('score'),sc,'In god mode non si guadagnano punti');
+run('eco.balance=4000;ecoStartPhase(2);ecoEndPhase(2,true,{kills:20,rescued:5,hostages:5})');
+assert.equal(val('eco.balance'),4000,'In god mode non si guadagnano crediti');
 run('setGodMode(false)');
 assert(!val(`mapPlayable(planets[${omega}])`),'Senza god mode OMEGA resta bloccato');
 assert(!val('mapPlayable(planets[0])'),'Senza god mode il pianeta liberato non si ripete');
