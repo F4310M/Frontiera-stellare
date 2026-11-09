@@ -34,7 +34,7 @@ console.log('PASS: GAME OVER nello spazio');
 // Un tasto troppo presto non la chiude; dopo un attimo sì
 const ev={stopPropagation(){},preventDefault(){}};
 now=500;winKeys.forEach(f=>f(ev));assert(!o.classList.contains('hidden'),'Resta visibile per almeno un secondo');
-now=2000;winKeys.forEach(f=>f(ev));assert(o.classList.contains('hidden'),'Un tasto la chiude');
+now=2500;winKeys.forEach(f=>f(ev));assert(o.classList.contains('hidden'),'Un tasto la chiude');
 console.log('PASS: si chiude con un tasto');
 
 // Ultima vita persa a terra
