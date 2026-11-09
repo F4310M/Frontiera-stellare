@@ -62,7 +62,11 @@ run('missile=null;wingMissiles=[];eco.upgrades.salvo=1;launchMissile()');assert.
 run('player.fire=0;shoot()');assert.equal(val('bullets[bullets.length-1].dmg'),2,'Laser potenziato');
 run('player.vx=0;player.vy=0;applyShipThrust(1,0,false,10)');assert(val('player.vx')>240*1.3,'Motori più veloci');
 run('player.health=100;player.shield=100;player.barrier=true;player.inv=0;damage(50)');assert(val('player.shield')>70,'Barriera rinforzata consuma meno');
+run('player.x=0;player.y=0;player.vx=100;player.vy=0;player.barrier=true;eco.upgrades.shield=0;bounce({x:20,y:0,vx:0,vy:0},10);globalThis.kick0=Math.abs(player.vx-100)');
+run('player.x=0;player.y=0;player.vx=100;player.vy=0;player.barrier=true;eco.upgrades.shield=2;bounce({x:20,y:0,vx:0,vy:0},10);globalThis.kick2=Math.abs(player.vx-100)');
+assert(val('kick2<kick0*.7'),'La barriera rinforzata riduce anche il rimbalzo nello spazio');
 run('abort();selected=0;startPlatform()');assert.equal(val('pf.pilot.grenades'),5,'Granate extra');
+run('pf.pilot.barrier=true;pf.pilot.shield=100;pf.pilot.ground=true;pf.pilot.vx=0;pfDamage(10,1);globalThis.groundKick=Math.abs(pf.pilot.vx)');assert(val('groundKick<220'),'La barriera rinforzata riduce il contraccolpo a terra');
 run('pf.pilot.fire=0;pfShoot()');assert.equal(val('pf.shots[0].dmg'),2,'Laser potenziato a terra');
 run('eco.upgrades={};abort()');
 console.log('PASS: potenziamenti nello spazio e a terra');

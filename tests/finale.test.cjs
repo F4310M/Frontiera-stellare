@@ -74,9 +74,9 @@ run(`abort();selected=${fi};startGame();drawWorld(world)`);
 console.log('PASS: pianeta finale e IMPERATORE OMEGA');
 
 // Game over: senza vite si riparte da capo
-run('abort();vite=1;viteSave();eco.balance=9999;selected=0;startPlatform()');step(3.5);run('pf.lives=1;pfLoseLife()');step(2.5);
+run('abort();vite=1;viteSave();eco.balance=12000;selected=0;startPlatform()');step(3.5);const deathCredits=val('eco.balance');run('pf.lives=1;pfLoseLife()');step(2.5);
 assert.equal(val('state'),'lost');assert.equal(nodes.get('resultEyebrow').textContent,'GAME OVER');
-assert.equal(val('vite'),3);assert.equal(val('eco.balance'),val('ECO_START'));assert(!val('planets.includes(FINAL_PLANET)'),'Progressi azzerati');
+assert.equal(val('vite'),3);assert.equal(val('eco.balance'),Math.round(deathCredits*.25),'resta il 25% dei crediti');assert(!val('planets.includes(FINAL_PLANET)'),'Progressi azzerati');
 console.log('PASS: game over');
 
 // Niente scelta della fase dalla mappa: si parte sempre dallo spazio

@@ -271,7 +271,6 @@ function profRefresh(){
  if(prof&&!prof.foto){const p=profPhotos(profEmblem(prof.nome));prof.foto=p.foto;prof.mini=prof.mini||p.mini;profStore()}
  if(chip){show('profChip',!!prof);if(prof){$('profChipImg').src=prof.foto||'';$('profChipName').textContent=prof.nome}}
  if(save){show('profSaveBtn',!!prof);save.classList.toggle('dirty',profDirty())}
- if($('profSavePause'))show('profSavePause',!!prof);
  if(prof&&$('profPanelName')){
   $('profPanelImg').src=prof.foto||'';$('profPanelName').textContent=prof.nome;
   $('profPanelMode').textContent=profT(prof.modo==='pc'?'PROGRESSI NEL BROWSER E SUL PC':'PROGRESSI SOLO NEL BROWSER · SALVALI SUL PC PER NON PERDERLI');
@@ -378,12 +377,6 @@ function profBuild(){
   const s=document.createElement('button');s.id='profSaveBtn';s.className='settings-btn prof-save hidden';s.setAttribute('aria-label','Salva progressi sul PC');
   s.innerHTML=I('save')+' <span>SALVA PROGRESSI</span><em class="prof-dot"></em>';s.onclick=()=>profSaveClick();
   top.insertBefore(s,top.firstChild);top.insertBefore(c,s);
- }
- // anche nella pausa
- const pause=document.querySelector('#pauseOverlay .brief-card'),abort=$('abortBtn');
- if(pause&&abort&&!$('profSavePause')){
-  const b=document.createElement('button');b.id='profSavePause';b.className='text-btn prof-pause-save hidden';b.innerHTML=I('save')+' <span>SALVA PROGRESSI</span>';b.onclick=()=>profSaveClick();
-  pause.insertBefore(b,abort);
  }
  // fine gioco: pilota al posto della casella del nome
  const entry=$('scoreEntry');

@@ -103,6 +103,7 @@ function game(ls,extra={}){
  g.run('selected=1;beginWarp()');
  let s=JSON.parse(ls.getItem('stellarPartitaSalvata'));
  assert.equal(s.fase,1,'inizio missione nello spazio salvato da solo');assert.equal(s.code,'B2');assert.equal(s.snap.frontieraCrediti,'3000');
+ g.run('selectPlanet(0)');assert.equal(g.run('selected'),1,'con una missione sospesa non si puo scegliere un altro pianeta');
  // durante la missione: punti, una vita persa, poi la pagina si chiude (connessione persa)
  g.run("state='play';score=900;scoreSave();vite=2;viteSave()");
  g=G();                                       // riavvio
@@ -136,7 +137,7 @@ function game(ls,extra={}){
  g.run("beginWarp();state='dying'");g.sb.listeners.pagehide.forEach(f=>f());
  assert.equal(ls.getItem('frontieraVite'),'0');
  g=game(ls,{sig:S2});
- assert.equal(ls.getItem('frontieraCrediti'),'2500','all\'avvio: GAME OVER, crediti azzerati');
+ assert.equal(ls.getItem('frontieraCrediti'),'1750','all\'avvio: GAME OVER, resta il 25% dei crediti');
  assert.equal(ls.getItem('frontieraVite'),'3');assert.equal(ls.getItem('stellarPartitaSalvata'),null,'niente RIPRENDI');
  assert.match(g.sb.toast,/GAME OVER/);
  // a terra, pilota che cade con due vite

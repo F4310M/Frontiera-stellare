@@ -10,6 +10,10 @@ const COLONI=[
  return {image,top:top/2,knee:knee/2,split:split/2,right:right/2,foot:foot/2};
 });
 
+// Le varianti 4 e 5 sono i bambini con la valigetta: mantengono le stesse
+// animazioni degli adulti, ma con una statura chiaramente più piccola.
+function pfColonistSize(variant){const i=((variant%COLONI.length)+COLONI.length)%COLONI.length;return(i===4||i===5)?.72:1}
+
 function pfColonistSprite(h,now){
  const variant=h.variant??((h.id??0)+selected*2);
  const a=COLONI[variant%COLONI.length],im=a.image;
@@ -19,8 +23,8 @@ function pfColonistSprite(h,now){
  const kneel=bound?1:1-rising*rising*(3-2*rising);
  const phase=(h.stride||0)*.062,hStep=running&&!h.air?Math.sin(phase):0;
  const bob=running&&!h.air?Math.abs(Math.sin(phase))*1.25:Math.sin(now*2.6+h.id)*.45;
- const height=typeof SOLD==='undefined'?66:SOLD.H,s=height/(a.foot-a.top);
- if(!h.air&&typeof gShadow==='function')gShadow(h.x,h.y,14,.32);
+ const size=pfColonistSize(variant),height=(typeof SOLD==='undefined'?66:SOLD.H)*size,s=height/(a.foot-a.top);
+ if(!h.air&&typeof gShadow==='function')gShadow(h.x,h.y,14*size,.32);
  ctx.save();ctx.translate(h.x,h.y-bob);
  ctx.scale(running?-s:s,s);
  if(running)ctx.rotate(.1);

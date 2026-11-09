@@ -44,6 +44,10 @@ for(let k=0;k<4;k++)for(const lato of ['dietro','avanti']){
 const ritorno=val('cammPosaColono(0,false,"avanti").b'),appoggio=val('cammPosaColono(Math.PI,false,"avanti").b');
 assert(ritorno>appoggio+.8,'ginocchio piegato nel ritorno');
 console.log('PASS: gambe dei coloni');
+assert.equal(val('pfColonistSize(4)'),.72,'il bambino con valigetta è più basso');
+assert.equal(val('pfColonistSize(5)'),.72,'entrambe le varianti bambino sono più basse');
+assert.equal(val('pfColonistSize(0)'),1,'gli adulti mantengono la statura');
+console.log('PASS: bambini più piccoli degli adulti');
 
 // 4) jetpack: il pilota con il jetpack acceso ha le gambe come i soldati nemici col jetpack
 val(`globalThis.T=SOLD.tipi.pilota;globalThis.jp=soldPosa(T,{ground:false,jetOn:true,vy:-120,face:1,aim:0},1);globalThis.en=soldPosa(T,{ground:false,jet:true,vy:-120,face:-1,aim:Math.PI},1)`);

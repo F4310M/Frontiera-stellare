@@ -21,7 +21,14 @@ function saveForLater(){
  const p=inGround?pf.p:(typeof planets!=='undefined'?planets[selected]:null);
  const cur=saveLoad();
  if(p&&!(cur&&cur.auto&&cur.code===p.code)){
-  const s={code:p.code,name:p.name,fase:inGround?2:1,s:Math.round(typeof score==='number'?score:0),d:new Date().toISOString()};
+  // Compatibilita con partite iniziate prima dei checkpoint automatici: se possibile
+  // ricostruiamo l'inizio della missione da economia.js, senza conservare i guadagni correnti.
+  const snap={};for(const k of SAVE_SNAP){try{const v=localStorage.getItem(k);if(v!==null)snap[k]=v}catch(e){}}
+  const run=typeof eco!=='undefined'&&eco&&eco.run;
+  let pts=Math.round(typeof score==='number'?score:0);
+  if(run&&Number.isFinite(run.missionStart))snap.frontieraCrediti=String(Math.round(run.missionStart));
+  if(run&&Number.isFinite(run.scoreStart)){pts=Math.round(run.scoreStart);snap.stellarPunti=String(pts)}
+  const s={code:p.code,name:p.name,fase:inGround?2:1,s:pts,d:new Date().toISOString(),auto:true,snap,vite:saveVite()};
   try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}catch(e){}
  }
  show('abandonOverlay',false);
@@ -50,6 +57,7 @@ async function closeRun(){
  if(closeBusy)return;closeBusy=true;
  show('abandonOverlay',false);show('newGameOverlay',false);
  if(typeof state!=='undefined'&&state!=='map'&&typeof abort==='function')abort();
+ const pending=saveLoad();if(pending)saveRestore(pending); // niente punti/crediti della missione interrotta
  const pts=Math.round(typeof score==='number'?score:0),n=typeof recName==='function'?recName():'';
  const god=typeof godMode!=='undefined'&&godMode;
  let msg='PARTITA CHIUSA · SI RIPARTE DAL PRIMO PIANETA';
@@ -107,9 +115,10 @@ function saveBuild(){
   $('newGameYes').onclick=()=>closeRun();
   $('newGameNo').onclick=()=>show('newGameOverlay',false);
  }
- // pausa: ABBANDONA MISSIONE apre la scelta
+ // Pausa: solo RIPRENDI o ABBANDONA. L'abbandono torna alla home e conserva
+ // esclusivamente il checkpoint di inizio fase; dalla home si potra riprendere o ricominciare.
  const ab=$('abortBtn');
- if(ab)ab.onclick=()=>{show('pauseOverlay',false);show('abandonOverlay',true);if(typeof sfx==='function')try{sfx('ui')}catch(e){}};
+ if(ab)ab.onclick=saveForLater;
  // home: riquadro della partita salvata, sopra INIZIA LA MISSIONE
  const launch=$('launchBtn');
  if(launch&&launch.parentNode&&!$('saveBox')){
@@ -135,6 +144,19 @@ function saveHome(){
   const info=$('saveBoxInfo');
   if(info)info.textContent=(s.name||s.code)+' · '+(s.fase===2?'FASE 2 · A TERRA':'FASE 1 · NELLO SPAZIO')+' · PUNTI '+(typeof scoreFmt==='function'?scoreFmt(s.s||0):s.s||0);
  }
+}
+
+// Con una missione sospesa la mappa e le scorciatoie non possono cambiare pianeta.
+// Il solo percorso valido e RIPRENDI PARTITA; NUOVA PARTITA passa dalla conferma dedicata.
+if(typeof selectPlanet==='function'){
+ const saveSelectPlanet=selectPlanet;
+ selectPlanet=function(i){const s=saveLoad(),locked=savePlanetIndex(s);return saveSelectPlanet(s&&locked>=0?locked:i)};
+}
+if(typeof brief==='function'){
+ const saveBrief=brief;brief=function(){if(saveLoad())return;return saveBrief.apply(this,arguments)};
+}
+if(typeof beginWarp==='function'){
+ const saveBeginWarp=beginWarp;beginWarp=function(){if(saveLoad())return;return saveBeginWarp.apply(this,arguments)};
 }
 
 // ---- REGOLE DI RIPRESA (2026-11-08)
@@ -201,9 +223,13 @@ if(typeof addEventListener==='function')addEventListener('pagehide',saveOnHide);
 function saveBoot(){
  let raw=null;try{raw=localStorage.getItem('frontieraVite')}catch(e){}
  if(raw==='0'){
+  const oldBalance=typeof eco!=='undefined'&&eco&&Number.isFinite(eco.balance)?eco.balance:parseInt(localStorage.getItem('frontieraCrediti'),10);
+  const carry=typeof gameOverCarry==='function'?gameOverCarry(oldBalance):Math.max(0,Math.round((Number.isFinite(oldBalance)?oldBalance:0)*.25));
   if(typeof myAdd==='function'&&typeof score==='number'&&score>0&&!saveGod())try{myAdd(score)}catch(e){}
   if(typeof gameRestart==='function')gameRestart();else{saveClear();corsaFinita()}
-  if(typeof profToast==='function')setTimeout(()=>profToast('GAME OVER · HAI PERSO TUTTE LE VITE · SI RIPARTE DA ZERO'),1500);
+  if(typeof eco!=='undefined'&&eco){eco.balance=carry;if(typeof ecoSave==='function')ecoSave();if(typeof ecoHud==='function')ecoHud()}
+  else try{localStorage.setItem('frontieraCrediti',String(carry))}catch(e){}
+  if(typeof profToast==='function')setTimeout(()=>profToast('GAME OVER · HAI PERSO TUTTE LE VITE · RESTA IL 25% DEI CREDITI'),1500);
  }
  corsaId();
  const a=typeof sigillo!=='undefined'&&sigillo?sigillo.avviso():'';
@@ -252,7 +278,7 @@ if(typeof I18N_ROWS!=='undefined'){
   ["PARTITA CHIUSA · SI RIPARTE DAL PRIMO PIANETA","GAME CLOSED · STARTING AGAIN FROM THE FIRST PLANET","PARTIE FERMÉE · RETOUR AU PREMIER PLANÈTE","PARTIDA CERRADA · SE EMPIEZA DESDE EL PRIMER PLANETA","ИГРА ЗАВЕРШЕНА · СНОВА С ПЕРВОЙ ПЛАНЕТЫ","游戏已结束 · 从第一颗星球重新开始","ゲーム終了 · 最初の惑星から再スタート"],
   ["PARTITA CHIUSA · OFFLINE: IL PUNTEGGIO VERRÀ INVIATO PIÙ TARDI","GAME CLOSED · OFFLINE: THE SCORE WILL BE SENT LATER","PARTIE FERMÉE · HORS LIGNE : LE SCORE SERA ENVOYÉ PLUS TARD","PARTIDA CERRADA · SIN CONEXIÓN: LA PUNTUACIÓN SE ENVIARÁ MÁS TARDE","ИГРА ЗАВЕРШЕНА · ОФЛАЙН: СЧЁТ ОТПРАВИТСЯ ПОЗЖЕ","游戏已结束 · 离线：分数稍后发送","ゲーム終了 · オフライン：スコアは後で送信"],
   ["PARTITA CHIUSA","GAME CLOSED","PARTIE FERMÉE","PARTIDA CERRADA","ИГРА ЗАВЕРШЕНА","游戏已结束","ゲーム終了"],
-  ["GAME OVER · HAI PERSO TUTTE LE VITE · SI RIPARTE DA ZERO","GAME OVER · YOU LOST ALL YOUR LIVES · STARTING FROM ZERO","GAME OVER · TU AS PERDU TOUTES TES VIES · ON REPART DE ZÉRO","GAME OVER · HAS PERDIDO TODAS LAS VIDAS · SE EMPIEZA DE CERO","GAME OVER · ВСЕ ЖИЗНИ ПОТЕРЯНЫ · ВСЁ С НУЛЯ","GAME OVER · 生命已用尽 · 从零开始","GAME OVER · ライフがすべてなくなった · ゼロから再スタート"],
+  ["GAME OVER · HAI PERSO TUTTE LE VITE · RESTA IL 25% DEI CREDITI","GAME OVER · YOU LOST ALL YOUR LIVES · 25% OF YOUR CREDITS REMAIN","GAME OVER · TU AS PERDU TOUTES TES VIES · IL RESTE 25 % DES CRÉDITS","GAME OVER · HAS PERDIDO TODAS LAS VIDAS · CONSERVAS EL 25 % DE LOS CRÉDITOS","GAME OVER · ВСЕ ЖИЗНИ ПОТЕРЯНЫ · ОСТАЛОСЬ 25% КРЕДИТОВ","GAME OVER · 生命已用尽 · 保留 25% 信用点","GAME OVER · ライフがすべてなくなった · クレジットの25%を保持"],
   ["QUESTO BACKUP È DI UNA PARTITA GIÀ FINITA: PILOTA IMPORTATO, PROGRESSI DA ZERO","THIS BACKUP BELONGS TO A GAME THAT ALREADY ENDED: PILOT IMPORTED, PROGRESS FROM ZERO","CETTE SAUVEGARDE VIENT D’UNE PARTIE DÉJÀ TERMINÉE : PILOTE IMPORTÉ, PROGRESSION À ZÉRO","ESTA COPIA ES DE UNA PARTIDA YA TERMINADA: PILOTO IMPORTADO, PROGRESO DESDE CERO","ЭТА КОПИЯ ОТ УЖЕ ЗАВЕРШЁННОЙ ИГРЫ: ПИЛОТ ИМПОРТИРОВАН, ПРОГРЕСС С НУЛЯ","此备份属于已结束的游戏：已导入飞行员，进度从零开始","このバックアップは終了したゲームのもの：パイロットのみ読み込み、進行はゼロから"],
   ["SALVATAGGIO RIPRISTINATO DALLA COPIA PROTETTA","SAVE RESTORED FROM THE PROTECTED COPY","SAUVEGARDE RESTAURÉE DEPUIS LA COPIE PROTÉGÉE","PARTIDA RESTAURADA DESDE LA COPIA PROTEGIDA","СОХРАНЕНИЕ ВОССТАНОВЛЕНО ИЗ ЗАЩИЩЁННОЙ КОПИИ","已从受保护的副本恢复存档","保護されたコピーからセーブを復元"],
   ["SALVATAGGIO MANOMESSO · LA PARTITA RIPARTE DA ZERO","SAVE TAMPERED WITH · THE GAME STARTS FROM ZERO","SAUVEGARDE MODIFIÉE · LA PARTIE REPART DE ZÉRO","PARTIDA MANIPULADA · EL JUEGO EMPIEZA DE CERO","СОХРАНЕНИЕ ИЗМЕНЕНО · ИГРА НАЧИНАЕТСЯ С НУЛЯ","存档被篡改 · 游戏从零开始","セーブが改ざんされた · ゼロから再スタート"],
