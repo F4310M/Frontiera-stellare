@@ -51,3 +51,11 @@ body.touch .capture-status>div{height:7px;margin-top:4px}
 /* la guida alla conquista scende sotto la barra più alta */
 body .orbit-guide{top:186px;width:min(440px,88vw)}
 html body.touch .orbit-guide{top:92px}
+
+/* Dentro l'anello del pianeta: niente freccia della distanza, barra e scritta salgono al suo posto */
+#hud.in-anello .hud-top>.distance-box{display:none}
+#hud.in-anello .capture-status{top:22px}
+#hud.in-anello .missile-status{top:88px}
+body #hud.in-anello .orbit-guide{top:98px}
+body.touch #hud.in-anello .capture-status{top:8px}
+html body.touch #hud.in-anello .orbit-guide{top:48px}

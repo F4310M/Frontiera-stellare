@@ -13,7 +13,9 @@ const RF={
  magnet:150,       // px sullo schermo: entro questa distanza il mirino sente un nemico
  pull:.35,         // quanto del movimento del mouse viene piegato verso il nemico
  flipMin:3,        // px di movimento all'indietro che fanno girare il pilota
- hitGap:.05        // s minimi tra due suoni di scafo colpito
+ hitGap:.05,       // s minimi tra due suoni di scafo colpito
+ anelloEntra:160,  // distanza dal bordo del pianeta in cui la freccia sparisce (come la conquista)
+ anelloEsci:220    // distanza in cui la freccia ritorna (margine contro lo sfarfallio)
 };
 const rf={hitT:0};
 const rfOrig={update,updateTargetLock,destroyableHit,togglePause,startGame,startPlatform:typeof startPlatform==='function'?startPlatform:null};
@@ -23,6 +25,18 @@ function rfCapture(){
  const box=document.querySelector('.capture-status');if(!box||!box.classList)return;
  const on=state==='play'&&typeof capture==='number'&&capture>0;
  if(box.classList.contains('capturing')!==on)box.classList.toggle('capturing',on);
+ rfAnello();
+}
+// Dentro l'anello del pianeta: niente freccia in alto, la barra di conquista sale al suo posto.
+function rfAnello(){
+ const hud=document.getElementById&&document.getElementById('hud');if(!hud||!hud.classList)return;
+ const was=hud.classList.contains('in-anello');
+ let on=false;
+ if(state==='play'&&world&&player){
+  const d=Math.hypot(player.x-world.x,player.y-world.y);
+  on=d<world.r+(was?RF.anelloEsci:RF.anelloEntra);
+ }
+ if(was!==on)hud.classList.toggle('in-anello',on);
 }
 
 // ---------------------------------------------------------------- 2) mirino dei missili
