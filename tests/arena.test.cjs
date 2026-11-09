@@ -17,7 +17,7 @@ const dist=path.join(__dirname,'..','dist'),src=f=>fs.readFileSync(path.join(dis
 // ---- 2) logica di gioco con due piloti collegati da una rete finta
 const I18N_ROWS=[];
 const sb={I18N_ROWS,console,Math,Date,JSON,Object,Array,Set,String,Number,Promise};vm.createContext(sb);
-vm.runInContext(src('arena.js')+';this.A={arHurt,arUpgrades,arDamage,arShoot,ARENA,arRocks,arApply,arNew,arTick,arOnState,arHostPid,arScore,arSpawn,arCode,arCleanCode,arCleanName,arFull,arColor};',sb);
+vm.runInContext(src('arena.js')+';this.A={arHurt,arUpgrades,arDamage,arShoot,ARENA,arRocks,arApply,arNew,arTick,arOnState,arHostPid,arScore,arSpawn,arCode,arCleanCode,arCleanName,arFull,arColor,arSetTeam,arTeamFix,arTeamScore,arWinTeam,arAlly,arLaunch,arUgCode,arUgDecode,arPickTeam,arHostile,arTeamOf};',sb);
 const A=sb.A;
 {
  // stanza: stessi asteroidi per tutti
@@ -108,6 +108,101 @@ const A=sb.A;
  for(let i=0;i<30;i++)A.arTick(g,1/30,{ax:0,ay:0,aim:0,fire:false,boost:false,shield:false});
  assert.ok(g.me.h<100&&g.me.vx<0,'il bordo brucia e respinge');
  console.log('PASS: bordo dell’arena');
+}
+{
+ // TEAM BATTLE: imperiali contro ribelli, scelta della squadra, posti rimasti, niente fuoco amico
+ const names=['Fabio','Luca','Sara','Marco','Anna','Gino','Pia'];
+ const gs=names.map((n,i)=>{const g=A.arNew('p'+i+'xxxxxxxx'.slice(0,9-String(i).length),n,'',{},1);g.me.j=Date.now()-60000+i*1000;g.room='DUNA';g.rocks=[];return g});
+ const tree={};
+ const deliver=(from,patch)=>{tree[from.pid]=Object.assign(tree[from.pid]||{},patch);for(const g of gs)if(g!==from&&g.inRoom)A.arOnState(g,tree,new Set([from.pid]))};
+ const idle={ax:0,ay:0,aim:0,fire:false,boost:false,shield:false};
+ const enter=g=>{g.inRoom=true;A.arSpawn(g);for(const pid in tree)A.arOnState(g,tree,new Set([pid]));deliver(g,A.arFull(g))};
+ const step=(n=1)=>{for(let k=0;k<n;k++)for(const g of gs)if(g.inRoom){const p=A.arTick(g,1/60,idle);if(p)deliver(g,p)}};
+ // entrano i primi due: Fabio sceglie gli imperiali, Luca i ribelli
+ enter(gs[0]);enter(gs[1]);step(10);
+ assert.strictEqual(gs[0].me.tm,0,'prima di scegliere si aspetta di conoscere la stanza');
+ assert.ok(A.arSetTeam(gs[0],1),'Fabio negli imperiali');assert.ok(A.arSetTeam(gs[1],2),'Luca nei ribelli');
+ step(3);
+ // entrano Sara, Marco, Anna, Gino: tutti vogliono gli imperiali, ma i posti sono 3
+ for(const g of gs.slice(2,6)){g.wantTeam=1;enter(g);step(5)}
+ step(60*2);
+ const count=tm=>gs.filter(g=>g.inRoom&&g.me.tm===tm).length;
+ assert.strictEqual(count(1),3,'imperiali al completo');assert.strictEqual(count(2),3,'ribelli al completo');
+ assert.strictEqual(gs[2].me.tm,1,'Sara arriva presto e prende un posto negli imperiali');
+ assert.strictEqual(gs[3].me.tm,1,'anche Marco');
+ assert.strictEqual(gs[4].me.tm,2,'Anna arriva tardi: posto rimasto nei ribelli');
+ assert.strictEqual(gs[5].me.tm,2,'Gino idem');
+ assert.ok(!A.arSetTeam(gs[4],1),'squadra completa: non si cambia');
+ // due scelte contemporanee dell'ultimo posto: chi ha scelto dopo torna nell'altra squadra
+ gs[3].me.tm=2;gs[3].me.tj=999;deliver(gs[3],{tm:2,tj:999});// Marco passa ai ribelli → 2 imperiali, 4 ribelli
+ step(60);
+ assert.strictEqual(count(2),3,'ribelli tornano a 3');assert.strictEqual(count(1),3,'imperiali tornano a 3');
+ assert.strictEqual(gs[3].me.tm,1,'Marco, l’ultimo a scegliere, torna negli imperiali');
+ // vista di tutti uguale
+ for(const g of gs.slice(0,6))assert.deepStrictEqual(JSON.stringify(A.arTeamScore(g)),JSON.stringify({1:0,2:0}));
+ assert.ok(A.arAlly(gs[0],gs[0].pid,gs[2].pid)&&!A.arAlly(gs[0],gs[0].pid,gs[1].pid),'alleati e nemici');
+ assert.strictEqual(A.arHostile(gs[1],gs[0].pid),true,'gli imperiali hanno la nave nemica');
+ assert.strictEqual(A.arHostile(gs[0],gs[1].pid),false,'i ribelli la nave del gioco');
+ assert.strictEqual(A.arHostile(gs[0],gs[0].pid),true,'anche la mia, se sono imperiale');
+ assert.strictEqual(A.arColor(gs[1],gs[0].pid),A.ARENA.teams[1].c,'colore di squadra');
+ // la partita parte: ognuno dal suo lato
+ gs[0].wantStart=true;step(60*(A.ARENA.countdown+1));
+ for(const g of gs.slice(0,6))assert.strictEqual(g.phase,'P');
+ assert.ok(gs.slice(0,6).every(g=>g.me.tm===1?g.me.x<0:g.me.x>0),'imperiali a sinistra, ribelli a destra');
+ // in partita non si cambia squadra
+ assert.ok(!A.arSetTeam(gs[0],2));
+ // il settimo pilota non entra (stanza piena) - lo fa arRoomCount; qui: un ritardatario in partita prende il posto rimasto
+ gs[5].inRoom=false;deliver(gs[5],null);delete tree[gs[5].pid];for(const g of gs)if(g.inRoom)A.arOnState(g,tree,new Set([gs[5].pid]));
+ const late=gs[6];late.wantTeam=1;enter(late);step(60*2);
+ assert.strictEqual(late.me.tm,2,'chi arriva per ultimo accetta il posto rimasto');
+ assert.strictEqual(late.phase,'P','entra nella partita in corso');
+ // niente fuoco amico: Sara spara a Fabio (stessa squadra) → nessun danno; spara a Luca → danno
+ const sara=gs[2],fabio=gs[0],luca=gs[1];
+ const place=(t)=>{for(const g of gs)if(g.inRoom){g.inv=0}Object.assign(sara.me,{x:0,y:0,vx:0,vy:0,r:0});Object.assign(t.me,{x:300,y:0,vx:0,vy:0});for(const g of gs)if(g.inRoom&&g!==sara&&g!==t)Object.assign(g.me,{x:-1500,y:1500*(g.me.tm===1?1:-1)})};
+ for(let i=0;i<60;i++){place(fabio);for(const g of gs)if(g.inRoom){const p=A.arTick(g,1/60,g===sara?{...idle,fire:true}:idle);if(p)deliver(g,p)}}
+ assert.strictEqual(fabio.me.h,100,'nessun danno all’alleato');
+ for(let i=0;i<60*4&&luca.me.dz===0;i++){place(luca);for(const g of gs)if(g.inRoom){const p=A.arTick(g,1/60,g===sara?{...idle,fire:true}:idle);if(p)deliver(g,p)}}
+ assert.strictEqual(luca.me.by,sara.pid,'Luca abbattuto da Sara');
+ step(10);
+ assert.strictEqual(A.arTeamScore(fabio)[1],1,'punto agli imperiali');
+ // vince la prima squadra a 15
+ sara.me.k=A.ARENA.teamWin;step(30);
+ for(const g of gs)if(g.inRoom){assert.strictEqual(g.phase,'E');assert.strictEqual(A.arWinTeam(g),1,'vincono gli imperiali')}
+ assert.strictEqual(A.arScore(luca)[0].tm,1,'in classifica prima la squadra vincente');
+ // deathmatch: chi entra in una stanza deathmatch con la team battle scelta si adegua all'host
+ const h=A.arNew('hhhhhhhhhh','Host','',{},0),v=A.arNew('vvvvvvvvvv','Ospite','',{},1);v.me.j=h.me.j+1000;h.rocks=v.rocks=[];
+ const t2={};const d2=(f,p)=>{t2[f.pid]=Object.assign(t2[f.pid]||{},p);for(const g of [h,v])if(g!==f)A.arOnState(g,t2,new Set([f.pid]))};
+ d2(h,A.arFull(h));d2(v,A.arFull(v));for(let i=0;i<120;i++){for(const g of [h,v]){const p=A.arTick(g,1/60,idle);if(p)d2(g,p)}}
+ assert.strictEqual(v.mode,0,'modalità dell’host');assert.strictEqual(v.me.tm,0,'nessuna squadra in deathmatch');
+ assert.strictEqual(A.arHostile(h,v.pid),true);assert.strictEqual(A.arHostile(h,h.pid),false);
+ console.log('PASS: team battle');
+}
+{
+ // gadget del mercato in rete e missili del lanciatore multiplo
+ const up={laser:2,shield:1,speed:3,twin:1,salvo:2,fuel:1};
+ assert.deepStrictEqual(JSON.parse(JSON.stringify(A.arUgDecode(A.arUgCode(up)))),up,'livelli codificati e decodificati');
+ assert.ok(A.arUgCode(up)<1000000,'rientra nelle regole del database');
+ const a=A.arNew('mmmmmmmmmm','Missili','',up),b=A.arNew('nnnnnnnnnn','Bersaglio','',{}),c=A.arNew('oooooooooo','Altro','',{});
+ b.me.j=a.me.j+1;c.me.j=a.me.j+2;
+ const all=[a,b,c],tree={};for(const g of all){g.rocks=[];g.phase='P';g.rt=100}
+ const deliver=(f,p)=>{tree[f.pid]=Object.assign(tree[f.pid]||{},p);for(const g of all)if(g!==f)A.arOnState(g,tree,new Set([f.pid]))};
+ for(const g of all)deliver(g,A.arFull(g));
+ Object.assign(a.me,{x:0,y:0,r:0});Object.assign(b.me,{x:500,y:200});Object.assign(c.me,{x:500,y:-300});
+ for(const g of all){g.inv=0;deliver(g,{x:g.me.x,y:g.me.y,iv:0})}
+ const idle={ax:0,ay:0,aim:0,fire:false,boost:false,shield:false};
+ const pa=A.arTick(a,1/60,{...idle,missile:true});
+ assert.strictEqual(a.shots.length,3,'livello 2: tre missili');
+ assert.ok(a.shots.every(s=>typeof s.sh[6]==='string'),'ogni missile ha il suo bersaglio');
+ assert.deepStrictEqual(new Set(a.shots.map(s=>s.sh[6])).size,2,'due bersagli diversi');
+ assert.ok(!A.arLaunch(a),'poi si ricarica');
+ deliver(a,pa||{sh:a.shots.map(s=>s.sh)});
+ const hp0=b.me.h+c.me.h;
+ for(let i=0;i<60*3;i++){for(const g of all){if(g!==a){Object.assign(g.me,{vx:0,vy:0});}const p=A.arTick(g,1/60,idle);if(p)deliver(g,p)}}
+ assert.ok(b.me.h+c.me.h<hp0,'i missili guidati colpiscono');
+ // iniettori: il post-bruciatore dura di più
+ const run=u=>{const g=A.arNew('qqqqqqqqqq','x','',u);g.rocks=[];g.phase='P';g.rt=100;for(let i=0;i<60;i++)A.arTick(g,1/60,{...idle,ay:1,boost:true});return g.boost};
+ assert.ok(run({fuel:2})>run({})+5,'iniettori: meno consumo');
+ console.log('PASS: gadget in rete, missili, iniettori');
 }
 {
  // traduzioni complete
