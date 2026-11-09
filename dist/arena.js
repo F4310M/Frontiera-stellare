@@ -4,10 +4,18 @@
 // finestre dello stesso browser (BroadcastChannel): serve per provarla sul PC.
 // Ogni pilota scrive solo il proprio stato; chi viene colpito decide il danno sulla propria nave
 // e, se muore, dice chi lo ha abbattuto. L'host (il primo entrato) guida le fasi della partita.
+// TEAM BATTLE (2026-11-09): seconda modalità, IMPERIALI (navi nemiche) contro RIBELLI (la nave del gioco),
+// 3 contro 3. La modalità della stanza la decide l'host; chi entra per primo sceglie la squadra,
+// gli ultimi prendono i posti rimasti. Niente fuoco amico. Il nome di ogni pilota è sotto la sua nave.
 const ARENA={R:2200,max:6,dur:300,win:10,respawn:3,hz:12,hp:100,dmg:10,bulletSpeed:1050,bulletLife:1.05,
  fireCd:.17,maxDmg:25,stale:7,rocks:16,inv:2,countdown:4,endTime:12,shipR:16,
  colors:['#51e6ff','#ffb340','#ff5268','#9dff6a','#c38bff','#ff7ad9'],
- quick:['ALFA','BETA','VEGA','NOVA','ORSA','LIRA','SOLE','LUNA']};
+ quick:['ALFA','BETA','VEGA','NOVA','ORSA','LIRA','SOLE','LUNA'],
+ // team battle: stanze veloci a parte, 3 posti per squadra, vince la prima squadra a 15 abbattimenti
+ quickTeam:['AURA','DUNA','ZETA','KAPA','RIGA','TERA','VOLT','ONDA'],teamMax:3,teamWin:15,teamWait:1.5,
+ teams:{1:{n:'IMPERIALI',c:'#ff5268'},2:{n:'RIBELLI',c:'#51e6ff'}},
+ // missili del LANCIATORE MULTIPLO (mercato): 1 + livello missili guidati sui nemici più vicini
+ mis:{speed:560,turn:3.4,life:3,dmg:20,cd:6,range:1500}};
 
 // ---------------------------------------------------------------- utilità pure (testate)
 function arHash(s){let h=2166136261;for(const ch of String(s)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
@@ -48,29 +56,76 @@ function arList(v){return Array.isArray(v)?v:(v&&typeof v==='object'?Object.valu
 
 // ---------------------------------------------------------------- partita (un'istanza per pilota)
 // potenziamenti comprati nel mercato che valgono anche in arena: laser, barriera, motori, doppio laser
-function arUpgrades(get){const u={};for(const k of ['laser','shield','speed','twin'])u[k]=Math.max(0,Math.min(3,Math.floor(+(get?get(k):0)||0)));return u}
+// (2026-11-09) anche lanciatore multiplo (missili guidati) e iniettori (post-bruciatore che dura di più)
+const AR_UPS=['laser','shield','speed','twin','salvo','fuel'];
+function arUpgrades(get){const u={};for(const k of AR_UPS)u[k]=Math.max(0,Math.min(3,Math.floor(+(get?get(k):0)||0)));return u}
+// i livelli viaggiano in rete in un solo numero (4 valori per potenziamento), così gli altri vedono i pezzi sulla nave
+function arUgCode(up){let n=0;AR_UPS.forEach((k,i)=>{n+=Math.max(0,Math.min(3,(up&&up[k])|0))*4**i});return n}
+function arUgDecode(n){n=Math.max(0,Math.floor(+n||0));const u={};AR_UPS.forEach((k,i)=>{u[k]=Math.floor(n/4**i)%4});return u}
 function arDamage(up){return Math.round(ARENA.dmg*(1+.5*(up&&up.laser||0))*(up&&up.twin?.65:1))}
-function arNew(pid,name,avatar,up){
- return {pid,up:arUpgrades(k=>up&&up[k]),room:'',rocks:[],time:0,phase:'L',rt:0,isHost:true,wantStart:false,
-  me:{n:arCleanName(name),a:avatar||'',j:Date.now(),x:0,y:0,vx:0,vy:0,r:0,f:0,s:0,h:ARENA.hp,sd:0,bo:0,iv:0,al:1,k:0,d:0,dz:0,by:'',sh:[]},
-  boost:100,shield:100,inv:0,respawnT:0,fireCd:0,shotSeq:0,shots:[],sendT:0,
+function arNew(pid,name,avatar,up,mode){
+ const u=arUpgrades(k=>up&&up[k]),md=mode===1?1:0;
+ return {pid,up:u,mode:md,room:'',rocks:[],time:0,phase:'L',rt:0,isHost:true,wantStart:false,
+  me:{n:arCleanName(name),a:avatar||'',j:Date.now(),x:0,y:0,vx:0,vy:0,r:0,f:0,s:0,h:ARENA.hp,sd:0,bo:0,iv:0,al:1,k:0,d:0,dz:0,by:'',sh:[],md,tm:0,tj:0,ug:arUgCode(u)},
+  boost:100,shield:100,inv:0,respawnT:0,fireCd:0,misCd:0,shotSeq:0,shots:[],sendT:0,
   others:{},bullets:[],parts:[],events:[],drop:[]};
 }
 function arActive(g){return [{pid:g.pid,s:g.me}].concat(Object.keys(g.others).map(pid=>({pid,s:g.others[pid].s})))}
 function arHostPid(g){let best=null;for(const p of arActive(g)){const j=+p.s.j||0;if(!best||j<best.j||(j===best.j&&p.pid<best.pid))best={pid:p.pid,j}}return best?best.pid:g.pid}
-function arColor(g,pid){const l=arActive(g).sort((a,b)=>(+a.s.j||0)-(+b.s.j||0)||(a.pid<b.pid?-1:1));const i=l.findIndex(p=>p.pid===pid);return ARENA.colors[(i<0?0:i)%ARENA.colors.length]}
-function arScore(g){return arActive(g).map(p=>({pid:p.pid,n:arCleanName(p.s.n),a:p.s.a||'',k:+p.s.k||0,d:+p.s.d||0,j:+p.s.j||0,me:p.pid===g.pid})).sort((a,b)=>b.k-a.k||a.d-b.d||a.j-b.j)}
+// squadre: 1 imperiali, 2 ribelli, 0 nessuna (deathmatch o non ancora scelta)
+function arTeamOf(g,pid){if(pid===g.pid)return +g.me.tm||0;const o=g.others[pid];return o?+o.s.tm||0:0}
+function arAlly(g,a,b){if(g.mode!==1||!a||!b||a===b)return false;const t=arTeamOf(g,a);return t>0&&t===arTeamOf(g,b)}
+function arTeamCount(g,tm,except){return arActive(g).filter(p=>p.pid!==except&&(+p.s.tm||0)===tm).length}
+function arTeamFree(g,tm){return arTeamCount(g,tm,g.pid)<ARENA.teamMax}
+// squadra da prendere: quella voluta se ha posto, altrimenti quella con meno piloti (i posti rimasti)
+function arPickTeam(g,want){
+ if((want===1||want===2)&&arTeamFree(g,want))return want;
+ const c1=arTeamCount(g,1,g.pid),c2=arTeamCount(g,2,g.pid);
+ return c1<c2?1:c2<c1?2:(want===1?1:2);
+}
+// scelta della squadra: solo in sala d'attesa e solo se c'è posto
+function arSetTeam(g,tm){
+ if(g.mode!==1||(tm!==1&&tm!==2)||g.me.tm===tm)return false;
+ if(g.me.tm&&g.phase!=='L')return false;
+ if(!arTeamFree(g,tm))return false;
+ g.me.tm=tm;g.me.tj=Math.round((Date.now()-g.me.j)/100)/10;g.wantTeam=tm;
+ if(g.me.al&&g.phase==='L')arSpawn(g);
+ g.events.push({type:'team',tm});return true;
+}
+// ordine di arrivo nella squadra (per risolvere due scelte quasi contemporanee dell'ultimo posto)
+function arTeamTime(s){return (+s.j||0)+(+s.tj||0)*1000}
+function arTeamFix(g){
+ if(g.mode!==1){if(g.me.tm){g.me.tm=0;g.me.tj=0}return}
+ if(!g.me.tm){
+  if(g.time<ARENA.teamWait)return;// aspetta di conoscere gli altri piloti della stanza
+  g.me.tm=arPickTeam(g,g.wantTeam||0);g.me.tj=Math.round((Date.now()-g.me.j)/100)/10;
+  if(g.me.al&&g.phase!=='P')arSpawn(g);
+  g.events.push({type:'team',tm:g.me.tm});return;
+ }
+ const mates=arActive(g).filter(p=>(+p.s.tm||0)===g.me.tm).sort((a,b)=>arTeamTime(a.s)-arTeamTime(b.s)||(a.pid<b.pid?-1:1));
+ if(mates.length>ARENA.teamMax&&mates.findIndex(p=>p.pid===g.pid)>=ARENA.teamMax){
+  const other=3-g.me.tm;
+  if(arTeamFree(g,other)){g.me.tm=other;g.me.tj=Math.round((Date.now()-g.me.j)/100)/10;if(g.phase!=='P')arSpawn(g);g.events.push({type:'team',tm:other,moved:true})}
+ }
+}
+function arTeamScore(g){const t={1:0,2:0};for(const p of arActive(g)){const tm=+p.s.tm||0;if(t[tm]!==undefined)t[tm]+=+p.s.k||0}return t}
+function arWinTeam(g){const t=arTeamScore(g);return t[1]>t[2]?1:t[2]>t[1]?2:0}
+function arColor(g,pid){if(g.mode===1){const t=ARENA.teams[arTeamOf(g,pid)];return t?t.c:'#b8c4d0'}const l=arActive(g).sort((a,b)=>(+a.s.j||0)-(+b.s.j||0)||(a.pid<b.pid?-1:1));const i=l.findIndex(p=>p.pid===pid);return ARENA.colors[(i<0?0:i)%ARENA.colors.length]}
+function arScore(g){
+ const ts=g.mode===1?arTeamScore(g):null,tv=p=>ts?(ts[p.tm]||0):0;// team battle: prima la squadra in testa
+ return arActive(g).map(p=>({pid:p.pid,n:arCleanName(p.s.n),a:p.s.a||'',k:+p.s.k||0,d:+p.s.d||0,j:+p.s.j||0,tm:+p.s.tm||0,me:p.pid===g.pid})).sort((a,b)=>tv(b)-tv(a)||b.k-a.k||a.d-b.d||a.j-b.j);
+}
 function arName(g,pid){if(pid===g.pid)return g.me.n;const o=g.others[pid];return o?arCleanName(o.s.n):'?'}
 function arBlast(g,x,y,color,n=26,power=1){
  for(let i=0;i<n;i++){const a=Math.random()*6.28,s=(40+Math.random()*260)*power;g.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.5+Math.random()*.7,max:1.2,color,r:1.5+Math.random()*3.5})}
 }
 function arFree(g,x,y,r){return Math.hypot(x,y)<ARENA.R-80&&!g.rocks.some(o=>Math.hypot(o.x-x,o.y-y)<o.r+r+40)}
 function arSpawn(g){
- let best=null,bestD=-1;
+ let best=null,bestD=-1;const side=g.mode===1&&g.me.tm?(g.me.tm===1?Math.PI:0):null;// team battle: ogni squadra parte dal suo lato
  for(let i=0;i<30;i++){
-  const a=Math.random()*6.28,d=ARENA.R*(.25+Math.random()*.55),x=Math.cos(a)*d,y=Math.sin(a)*d;
+  const a=side===null?Math.random()*6.28:side+(Math.random()-.5)*1.4,d=ARENA.R*(side===null?.25+Math.random()*.55:.5+Math.random()*.3),x=Math.cos(a)*d,y=Math.sin(a)*d;
   if(!arFree(g,x,y,40))continue;
-  let near=1e9;for(const pid in g.others){const o=g.others[pid];near=Math.min(near,Math.hypot(o.x-x,o.y-y))}
+  let near=1e9;for(const pid in g.others){if(arAlly(g,pid,g.pid))continue;const o=g.others[pid];near=Math.min(near,Math.hypot(o.x-x,o.y-y))}
   if(near>bestD){bestD=near;best={x,y}}
   if(near>900)break;
  }
@@ -113,7 +168,9 @@ function arOnState(g,tree,changed){
   const col=arColor(g,pid);
   for(const raw of arList(s.sh)){const sh=arList(raw);const i=+sh[0]||0;if(i<=o.lastShot)continue;o.lastShot=i;
    const dmg=Math.max(1,Math.min(ARENA.maxDmg,+sh[5]||ARENA.dmg));// danno dichiarato da chi spara, con un tetto
-   g.bullets.push({x:+sh[1],y:+sh[2],vx:+sh[3],vy:+sh[4],dmg,o:pid,life:ARENA.bulletLife,c:col,big:dmg>ARENA.dmg*1.2})}
+   const tg=typeof sh[6]==='string'?sh[6].slice(0,10):null;// missile guidato: pilota bersaglio
+   g.bullets.push({x:+sh[1],y:+sh[2],vx:+sh[3],vy:+sh[4],dmg,o:pid,life:tg!==null?ARENA.mis.life:ARENA.bulletLife,c:col,big:dmg>ARENA.dmg*1.2,mis:tg!==null,tg});
+   if(tg!==null&&tg===g.pid)g.events.push({type:'lock'})}
   // abbattimenti: chi è morto dice chi lo ha colpito
   const dz=+s.dz||0;
   if(dz>o.lastDz){o.lastDz=dz;
@@ -123,12 +180,29 @@ function arOnState(g,tree,changed){
   }
  }
 }
+// missili del lanciatore multiplo: uno sul nemico più vicino, gli altri sui successivi
+function arTargets(g,n){
+ const m=g.me,list=[];
+ for(const pid in g.others){const o=g.others[pid];if(!o.s.al||o.s.iv||arAlly(g,pid,g.pid))continue;const d=Math.hypot(o.x-m.x,o.y-m.y);if(d<ARENA.mis.range)list.push({pid,d})}
+ list.sort((a,b)=>a.d-b.d);const out=[];for(let i=0;i<n;i++)out.push(list.length?list[i%list.length].pid:'');return out;
+}
+function arLaunch(g){
+ const lv=g.up.salvo|0;if(!lv||g.misCd>0)return false;
+ const m=g.me,n=lv+1,tgs=arTargets(g,n);
+ for(let i=0;i<n;i++){g.shotSeq++;
+  const a=m.r+(i-(n-1)/2)*.45,c=Math.cos(a),s=Math.sin(a),sp=ARENA.mis.speed*.6;
+  const sh=[g.shotSeq,Math.round(m.x+c*18),Math.round(m.y+s*18),Math.round(m.vx*.4+c*sp),Math.round(m.vy*.4+s*sp),ARENA.mis.dmg,tgs[i]];
+  g.shots.push({t:g.time,sh});
+  g.bullets.push({x:sh[1],y:sh[2],vx:sh[3],vy:sh[4],dmg:ARENA.mis.dmg,o:g.pid,life:ARENA.mis.life,c:arColor(g,g.pid),mis:true,tg:tgs[i]});
+ }
+ g.misCd=ARENA.mis.cd;g.events.push({type:'missile'});return true;
+}
 function arShoot(g){
  const m=g.me,c=Math.cos(m.r),s=Math.sin(m.r),dmg=arDamage(g.up),offs=g.up.twin?[-7,7]:[0];
  for(const o of offs){g.shotSeq++;
   const sh=[g.shotSeq,Math.round(m.x+c*24-s*o),Math.round(m.y+s*24+c*o),Math.round(m.vx*.5+c*ARENA.bulletSpeed),Math.round(m.vy*.5+s*ARENA.bulletSpeed),dmg];
   g.shots.push({t:g.time,sh});
-  g.bullets.push({x:sh[1],y:sh[2],vx:sh[3],vy:sh[4],dmg,o:g.pid,life:ARENA.bulletLife,c:arColor(g,g.pid),big:g.up.laser});
+  g.bullets.push({x:sh[1],y:sh[2],vx:sh[3],vy:sh[4],dmg,o:g.pid,life:ARENA.bulletLife,c:arColor(g,g.pid),big:!!g.up.laser});
  }
  g.fireCd=ARENA.fireCd;g.events.push({type:'shot'});
 }
@@ -143,7 +217,7 @@ function arPhysics(g,dt,inp){
  let fx=locked?0:inp.ay,sx=locked?0:inp.ax;
  if(inp.world&&!locked){fx=0;sx=0}
  const boosting=!locked&&inp.boost&&g.boost>5&&(fx>0||inp.world&&(inp.wx||inp.wy));
- g.boost=Math.max(0,Math.min(100,g.boost+(boosting?-38:16)*dt));
+ g.boost=Math.max(0,Math.min(100,g.boost+(boosting?-38*(1-.2*Math.min(2,g.up.fuel||0)):16)*dt));
  const sp1=1+.12*(g.up.speed||0),acc=(boosting?950:520)*sp1,max=(boosting?620:340)*sp1;
  if(inp.world&&!locked){m.vx+=inp.wx*acc*dt;m.vy+=inp.wy*acc*dt}
  else{m.vx+=(c*fx-s*sx*.8)*acc*dt;m.vy+=(s*fx+c*sx*.8)*acc*dt}
@@ -161,8 +235,9 @@ function arPhysics(g,dt,inp){
  const dist=Math.hypot(m.x,m.y);
  if(dist>ARENA.R){const nx=m.x/dist,ny=m.y/dist;m.vx-=nx*700*dt;m.vy-=ny*700*dt;if(dist>ARENA.R+300){m.x=nx*(ARENA.R+300);m.y=ny*(ARENA.R+300)}
   if(arHurt(g,22*dt,''))g.edge=.3}
- g.fireCd-=dt;
+ g.fireCd-=dt;g.misCd=Math.max(0,g.misCd-dt);
  if(inp.fire&&!locked&&g.fireCd<=0)arShoot(g);
+ if(inp.missile&&!locked)arLaunch(g);
 }
 // un passo di gioco; restituisce lo stato da inviare (o null)
 function arTick(g,dt,inp){
@@ -174,25 +249,36 @@ function arTick(g,dt,inp){
  if(g.isHost){
   if(g.phase==='L'&&g.wantStart){g.wantStart=false;arEnterPhase(g,'C');g.rt=ARENA.countdown}
   else if(g.phase==='C'){g.rt-=dt;if(g.rt<=0){arEnterPhase(g,'P');g.rt=ARENA.dur}}
-  else if(g.phase==='P'){g.rt-=dt;if(g.rt<=0||arScore(g).some(p=>p.k>=ARENA.win)){arEnterPhase(g,'E');g.rt=ARENA.endTime}}
+  else if(g.phase==='P'){g.rt-=dt;if(g.rt<=0||(g.mode===1?Math.max(...Object.values(arTeamScore(g)))>=ARENA.teamWin:arScore(g).some(p=>p.k>=ARENA.win))){arEnterPhase(g,'E');g.rt=ARENA.endTime}}
   else if(g.phase==='E'){g.rt-=dt;if(g.rt<=0){arEnterPhase(g,'L');g.rt=0}}
   g.wantStart=false;
  }else{
   const h=g.others[host];
+  // la modalità della stanza è quella dell'host (chi entra con un codice si adegua)
+  if(h&&(+h.s.md||0)!==g.mode){g.mode=+h.s.md===1?1:0;g.me.md=g.mode;g.events.push({type:'mode'})}
   if(h&&h.s.ph){if(h.s.ph!==g.phase)arEnterPhase(g,h.s.ph);g.rt=Math.max(0,(+h.s.rt||0)-(g.time-h.seen))}
  }
- g.me.ph=g.phase;g.me.rt=Math.round(g.rt*10)/10;
+ g.me.ph=g.phase;g.me.rt=Math.round(g.rt*10)/10;g.me.md=g.mode;
+ arTeamFix(g);
  arPhysics(g,dt,inp);
  g.me.iv=g.inv>0?1:0;
  // colpi
  for(const b of g.bullets){
-  b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
-  if(g.rocks.some(o=>Math.hypot(o.x-b.x,o.y-b.y)<o.r)){b.life=0;arBlast(g,b.x,b.y,'#9aa7b8',4,.35);continue}
-  if(b.o!==g.pid&&g.me.al&&Math.hypot(g.me.x-b.x,g.me.y-b.y)<ARENA.shipR+3){
-   b.life=0;arBlast(g,b.x,b.y,b.c,6,.4);if(arHurt(g,b.dmg||ARENA.dmg,b.o))g.events.push({type:'hit'});continue;
+  if(b.mis){// missile: punta il bersaglio a velocità costante
+   const t=b.tg===g.pid?(g.me.al?g.me:null):(b.tg&&g.others[b.tg]&&g.others[b.tg].s.al?g.others[b.tg]:null);
+   let a=Math.atan2(b.vy,b.vx);
+   if(t){const da=((Math.atan2(t.y-b.y,t.x-b.x)-a+Math.PI*3)%(Math.PI*2))-Math.PI;a+=Math.max(-ARENA.mis.turn*dt,Math.min(ARENA.mis.turn*dt,da))}
+   const sp=Math.min(ARENA.mis.speed,Math.hypot(b.vx,b.vy)+700*dt);b.vx=Math.cos(a)*sp;b.vy=Math.sin(a)*sp;
+   if(Math.random()<.6)g.parts.push({x:b.x,y:b.y,vx:-b.vx*.1+(Math.random()-.5)*30,vy:-b.vy*.1+(Math.random()-.5)*30,life:.35,max:.5,color:'#ffb340',r:2+Math.random()*2});
   }
-  for(const pid in g.others){if(pid===b.o)continue;const o=g.others[pid];
-   if(o.s.al&&!o.s.iv&&Math.hypot(o.x-b.x,o.y-b.y)<ARENA.shipR+3){b.life=0;arBlast(g,b.x,b.y,b.c,6,.4);break}}
+  b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
+  const hr=ARENA.shipR+(b.mis?7:3);
+  if(g.rocks.some(o=>Math.hypot(o.x-b.x,o.y-b.y)<o.r)){b.life=0;arBlast(g,b.x,b.y,'#9aa7b8',4,.35);continue}
+  if(b.o!==g.pid&&!arAlly(g,b.o,g.pid)&&g.me.al&&Math.hypot(g.me.x-b.x,g.me.y-b.y)<hr){
+   b.life=0;arBlast(g,b.x,b.y,b.mis?'#ffb340':b.c,b.mis?16:6,b.mis?.8:.4);if(arHurt(g,b.dmg||ARENA.dmg,b.o))g.events.push({type:'hit'});continue;
+  }
+  for(const pid in g.others){if(pid===b.o||arAlly(g,pid,b.o))continue;const o=g.others[pid];// niente fuoco amico
+   if(o.s.al&&!o.s.iv&&Math.hypot(o.x-b.x,o.y-b.y)<hr){b.life=0;arBlast(g,b.x,b.y,b.mis?'#ffb340':b.c,b.mis?16:6,b.mis?.8:.4);break}}
  }
  g.bullets=g.bullets.filter(b=>b.life>0);
  for(const p of g.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=1-1.8*dt;p.vy*=1-1.8*dt;p.life-=dt}
@@ -207,10 +293,10 @@ function arTick(g,dt,inp){
  g.sendT=1/ARENA.hz;
  const m=g.me;
  return {x:Math.round(m.x),y:Math.round(m.y),vx:Math.round(m.vx),vy:Math.round(m.vy),r:Math.round(m.r*100)/100,f:m.f,s:m.s,
-  h:Math.round(m.h),sd:m.sd,bo:m.bo,iv:m.iv,al:m.al,k:m.k,d:m.d,dz:m.dz,by:m.by,sh:g.shots.map(s=>s.sh),ph:m.ph,rt:m.rt};
+  h:Math.round(m.h),sd:m.sd,bo:m.bo,iv:m.iv,al:m.al,k:m.k,d:m.d,dz:m.dz,by:m.by,sh:g.shots.map(s=>s.sh),ph:m.ph,rt:m.rt,md:g.mode,tm:m.tm,tj:m.tj,ug:m.ug};
 }
 function arFull(g){const m=g.me,p=arTickSnapshot(g);return Object.assign({n:m.n,j:m.j},m.a?{a:m.a}:{},p)}
-function arTickSnapshot(g){const m=g.me;return {x:Math.round(m.x),y:Math.round(m.y),vx:0,vy:0,r:Math.round(m.r*100)/100,f:0,s:0,h:Math.round(m.h),sd:0,bo:0,iv:1,al:m.al,k:m.k,d:m.d,dz:m.dz,by:m.by,ph:m.ph,rt:m.rt}}
+function arTickSnapshot(g){const m=g.me;return {x:Math.round(m.x),y:Math.round(m.y),vx:0,vy:0,r:Math.round(m.r*100)/100,f:0,s:0,h:Math.round(m.h),sd:0,bo:0,iv:1,al:m.al,k:m.k,d:m.d,dz:m.dz,by:m.by,ph:m.ph,rt:m.rt,md:g.mode,tm:m.tm,tj:m.tj,ug:m.ug}}
 
 // ---------------------------------------------------------------- rete
 function arDbUrl(){
@@ -269,7 +355,7 @@ async function arRoomCount(url,code){
 const AR_T=s=>typeof tr==='function'?tr(s):s;
 const AR_ICO=n=>typeof ico==='function'?ico(n):'';
 let ar=null;
-const arUI={on:false,mx:0,my:0,fire:false,shield:false,cam:{x:0,y:0},sprites:null,feed:[],msg:'',msgT:0,busy:false};
+const arUI={on:false,mx:0,my:0,fire:false,shield:false,missile:false,mode:0,ngLv:null,cam:{x:0,y:0},sprites:null,feed:[],msg:'',msgT:0,busy:false};
 function arEsc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function arEl(id){return typeof document!=='undefined'?document.getElementById(id):null}
 function arShow(id,on){const e=arEl(id);if(e)e.classList.toggle('hidden',!on)}
@@ -283,11 +369,16 @@ function arBuildUI(){
  const s=document.createElement('section');s.id='arena';s.className='arena hidden';s.setAttribute('aria-label','Sfida online');
  s.innerHTML=`
  <div id="arMenu" class="ar-card brief-card">
-  <p class="eyebrow">SFIDA ONLINE · DEATHMATCH</p>
+  <p class="eyebrow">SFIDA ONLINE</p>
   <h2>ARENA SPAZIALE</h2>
-  <p class="ar-desc">Tutti contro tutti, fino a 6 piloti. Vince chi arriva per primo a 10 abbattimenti o chi ne ha di più dopo 5 minuti.</p>
+  <div class="ar-modes" role="radiogroup" aria-label="Modalità">
+   <button id="arModeFfa" class="ar-mode" data-mode="0" role="radio"><b>DEATHMATCH</b><small>TUTTI CONTRO TUTTI</small></button>
+   <button id="arModeTeam" class="ar-mode" data-mode="1" role="radio"><b>TEAM BATTLE</b><small>IMPERIALI CONTRO RIBELLI</small></button>
+  </div>
+  <p id="arDescFfa" class="ar-desc">Tutti contro tutti, fino a 6 piloti. Vince chi arriva per primo a 10 abbattimenti o chi ne ha di più dopo 5 minuti.</p>
+  <p id="arDescTeam" class="ar-desc hidden">Due squadre da 3: gli IMPERIALI volano con le navi nemiche, i RIBELLI con la nave del gioco. Chi entra per primo sceglie la squadra, gli ultimi prendono i posti rimasti. Vince la prima squadra a 15 abbattimenti o quella che ne ha di più dopo 5 minuti.</p>
   <p class="ar-pilot"><span>PILOTA</span> <b id="arName"></b></p>
-  <p class="ar-note ar-up">I tuoi potenziamenti del mercato valgono anche qui: laser, barriera, motori e doppio laser.</p>
+  <p class="ar-note ar-up">I tuoi potenziamenti del mercato valgono anche qui: laser, barriera, motori, doppio laser, iniettori e lanciatore multiplo (missili guidati).</p>
   <button id="arQuick" class="launch-btn"><span>PARTITA VELOCE</span><b>${AR_ICO('play')}</b></button>
   <button id="arCreate" class="launch-btn ar-alt"><span>CREA UNA STANZA</span><b>${AR_ICO('user')}</b></button>
   <div class="ar-join"><input id="arCode" maxlength="4" placeholder="CODICE" aria-label="Codice della stanza" autocomplete="off" spellcheck="false"><button id="arJoinBtn" class="settings-btn"><span>ENTRA</span></button></div>
@@ -296,15 +387,16 @@ function arBuildUI(){
   <button id="arBack" class="text-btn">${AR_ICO('arrow-left')} <span>TORNA ALLA MAPPA</span></button>
  </div>
  <div id="arLobby" class="ar-lobby brief-card hidden">
-  <p class="eyebrow">STANZA</p><h2 id="arRoom"></h2>
+  <p class="eyebrow"><span>STANZA</span> · <span id="arLobbyMode">DEATHMATCH</span></p><h2 id="arRoom"></h2>
   <p class="ar-desc">Condividi il codice con gli amici. Intanto puoi volare e allenarti.</p>
   <ol id="arList" class="ar-list"></ol>
+  <div id="arTeams" class="ar-teams hidden"></div>
   <button id="arStart" class="launch-btn"><span>INIZIA LA SFIDA</span><b>${AR_ICO('chevrons')}</b></button>
   <p id="arWait" class="ar-note"></p>
   <button id="arLeave" class="text-btn">${AR_ICO('arrow-left')} <span>ESCI DALLA STANZA</span></button>
  </div>
  <div id="arHud" class="ar-hud hidden">
-  <div class="ar-top"><span class="ar-chip"><small>STANZA</small><b id="arHudRoom"></b></span><span class="ar-chip"><small id="arPhaseLbl">ALLENAMENTO</small><b id="arTime">--:--</b></span><span class="ar-chip"><small>ABBATTIMENTI</small><b id="arKills">0</b></span></div>
+  <div class="ar-top"><span class="ar-chip"><small>STANZA</small><b id="arHudRoom"></b></span><span class="ar-chip"><small id="arPhaseLbl">ALLENAMENTO</small><b id="arTime">--:--</b></span><span class="ar-chip"><small>ABBATTIMENTI</small><b id="arKills">0</b></span><span id="arTeamChip" class="ar-chip ar-tchip hidden"><small><i class="t1">IMPERIALI</i> · <i class="t2">RIBELLI</i></small><b><i class="t1" id="arT1">0</i> – <i class="t2" id="arT2">0</i></b></span><span id="arMisChip" class="ar-chip hidden"><small>MISSILI</small><b id="arMis">PRONTI</b></span></div>
   <ol id="arBoard" class="ar-board"></ol>
   <div id="arFeed" class="ar-feed"></div>
   <div id="arMsg" class="ar-msg"></div>
@@ -313,10 +405,11 @@ function arBuildUI(){
    <div class="seg"><div class="seg-head"><span>POST-BRUCIATORE</span><b id="arBo">100%</b></div><div class="seg-track"><i id="arBoBar"></i></div></div>
    <div class="seg"><div class="seg-head"><span>BARRIERA</span><b id="arSh">100%</b></div><div class="seg-track"><i id="arShBar"></i></div></div>
   </div>
-  <div class="ar-tip">WASD muovi · MOUSE punta · clic / SPAZIO spara · SHIFT post-bruciatore · MOUSE DX / E barriera · ESC esci</div>
+  <div class="ar-tip">WASD muovi · MOUSE punta · clic / SPAZIO spara · SHIFT post-bruciatore · MOUSE DX / E barriera · Q / ROTELLA missili · ESC esci</div>
  </div>
  <div id="arEnd" class="ar-end hidden"><div class="brief-card">
   <p class="eyebrow">FINE DELLA SFIDA</p><h2 id="arWinner"></h2>
+  <p id="arTeamFinal" class="ar-team-final hidden"></p>
   <ol id="arFinal" class="ar-list ar-final"></ol>
   <p id="arNext" class="ar-note"></p>
   <button id="arEndLeave" class="text-btn">${AR_ICO('arrow-left')} <span>ESCI DALLA STANZA</span></button>
@@ -331,10 +424,20 @@ function arBuildUI(){
  arEl('arLeave').onclick=()=>arLeaveRoom();
  arEl('arEndLeave').onclick=()=>arLeaveRoom();
  arEl('arStart').onclick=()=>{if(ar)ar.wantStart=true;arEl('arStart').blur()};
+ for(const b of s.querySelectorAll('.ar-mode'))b.onclick=()=>arSetMode(+b.dataset.mode);
+ arEl('arTeams').addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('button[data-team]');if(!b||!ar)return;
+  if(arSetTeam(ar,+b.dataset.team))arSyncPanels(true);b.blur()});
+ try{arUI.mode=localStorage.getItem('stellarArenaModo')==='1'?1:0}catch(e){}
+ arSetMode(arUI.mode);
  // pulsante nel menu principale
  const top=document.querySelector('.top-actions'),mk=arEl('marketBtn');
  if(top&&!arEl('arenaBtn')){const b=document.createElement('button');b.id='arenaBtn';b.className='settings-btn arena-btn';b.setAttribute('aria-label','Sfida online');
   b.innerHTML=`${AR_ICO('globe')} <span>SFIDA ONLINE</span>`;b.onclick=()=>arOpen();top.insertBefore(b,mk||top.firstChild)}
+}
+function arSetMode(md){
+ arUI.mode=md===1?1:0;try{localStorage.setItem('stellarArenaModo',String(arUI.mode))}catch(e){}
+ for(const b of document.querySelectorAll('#arena .ar-mode')){const on=+b.dataset.mode===arUI.mode;b.classList.toggle('on',on);b.setAttribute('aria-checked',on?'true':'false')}
+ arShow('arDescFfa',arUI.mode===0);arShow('arDescTeam',arUI.mode===1);
 }
 function arOpen(){
  arBuildUI();if(typeof state!=='undefined'&&state!=='map')return;
@@ -354,14 +457,14 @@ function arExit(){
 }
 function arErr(t){const e=arEl('arErr');if(e)e.textContent=t}
 async function arQuick(){
- const url=arDbUrl();if(!url)return arJoin(ARENA.quick[0]);
+ const url=arDbUrl(),list=arUI.mode===1?ARENA.quickTeam:ARENA.quick;if(!url)return arJoin(list[0]);
  if(arUI.busy)return;arUI.busy=true;arErr(AR_T('RICERCA DI UNA STANZA…'));
  try{
-  const counts=await Promise.all(ARENA.quick.map(c=>arRoomCount(url,c).catch(()=>ARENA.max)));
+  const counts=await Promise.all(list.map(c=>arRoomCount(url,c).catch(()=>ARENA.max)));
   let best=-1;for(let i=0;i<counts.length;i++)if(counts[i]<ARENA.max&&(best<0||(counts[i]>counts[best]&&counts[best]<ARENA.max)))best=i;
   arUI.busy=false;
   if(best<0)return arErr(AR_T('TUTTE LE STANZE SONO PIENE, CREANE UNA'));
-  arJoin(ARENA.quick[best],true);
+  arJoin(list[best],true);
  }catch(e){arUI.busy=false;arErr(AR_T('RETE NON RAGGIUNGIBILE'))}
 }
 async function arJoin(code,checked=false){
@@ -370,7 +473,7 @@ async function arJoin(code,checked=false){
  const url=arDbUrl();
  try{
   if(url&&!checked){const n=await arRoomCount(url,code);if(n>=ARENA.max){arUI.busy=false;return arErr(AR_T('STANZA PIENA'))}}
-  const p=arProfile(),pid=arPid(),g=arNew(pid,p.nome,p.mini,arUpgrades(typeof upg==='function'?upg:null));g.room=code;g.rocks=arRocks(code);arSpawn(g);
+  const p=arProfile(),pid=arPid(),g=arNew(pid,p.nome,p.mini,arUpgrades(typeof upg==='function'?upg:null),arUI.mode);g.room=code;g.rocks=arRocks(code);arSpawn(g);
   const net=url?arNetFirebase(url,code,pid,(t,ch)=>{if(ar===g)arOnState(g,t,ch)}):arNetLocal(code,pid,(t,ch)=>{if(ar===g)arOnState(g,t,ch)});
   g.net=net;ar=g;
   await net.join(arFull(g));
@@ -389,22 +492,42 @@ function arLeaveRoom(){
 }
 function arFmt(t){t=Math.max(0,Math.ceil(t));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')}
 function arPilotRow(g,p,i){
- const c=arColor(g,p.pid),ava=p.a?`<img src="${p.a}" alt="">`:`<em style="background:${c}">${arEsc(p.n[0]||'?')}</em>`;
- return `<li class="${p.me?'me':''}"><span class="ar-pos">${i+1}</span>${ava}<span class="ar-n" style="color:${c}">${arEsc(p.n)}</span><b>${p.k}</b><small>${p.d}</small></li>`;
+ const c=arColor(g,p.pid),tcls=g.mode===1&&p.tm?' t'+p.tm:'',ava=p.a?`<img src="${p.a}" alt="">`:`<em style="background:${c}">${arEsc(p.n[0]||'?')}</em>`;
+ return `<li class="${p.me?'me':''}${tcls}"><span class="ar-pos">${i+1}</span>${ava}<span class="ar-n" style="color:${c}">${arEsc(p.n)}</span><b>${p.k}</b><small>${p.d}</small></li>`;
+}
+function arTeamName(tm){const t=ARENA.teams[tm];return t?AR_T(t.n):''}
+// sala d'attesa della team battle: due colonne, ognuna con i suoi 3 posti
+function arTeamsHtml(g,sc){
+ return [1,2].map(tm=>{
+  const list=sc.filter(p=>p.tm===tm),mine=g.me.tm===tm,free=list.length<ARENA.teamMax,canMove=!mine&&free&&(g.phase==='L'||!g.me.tm);
+  const rows=list.map((p,i)=>arPilotRow(g,p,i)).join('')+Array.from({length:Math.max(0,ARENA.teamMax-list.length)},()=>`<li class="ar-empty"><span class="ar-pos">·</span><span class="ar-n">${arEsc(AR_T('POSTO LIBERO'))}</span></li>`).join('');
+  const btn=mine?`<p class="ar-tmine">${arEsc(AR_T('LA TUA SQUADRA'))}</p>`:`<button class="settings-btn" data-team="${tm}"${canMove?'':' disabled'}><span>${arEsc(free?AR_T('UNISCITI'):AR_T('SQUADRA COMPLETA'))}</span></button>`;
+  return `<div class="ar-team t${tm}${mine?' mine':''}"><h3><span>${arEsc(arTeamName(tm))}</span><small>${list.length}/${ARENA.teamMax}</small></h3><ol class="ar-list">${rows}</ol>${btn}</div>`;
+ }).join('');
 }
 function arSyncPanels(force){
  const g=ar;if(!g)return;
- const sc=arScore(g),key=g.phase+'|'+sc.map(p=>p.pid+p.k+'.'+p.d).join(',')+'|'+g.isHost;
+ const sc=arScore(g),key=g.phase+'|'+g.mode+'|'+g.me.tm+'|'+sc.map(p=>p.pid+p.k+'.'+p.d+'.'+p.tm).join(',')+'|'+g.isHost;
  if(!force&&key===arUI.key)return;arUI.key=key;
  arShow('arLobby',g.phase==='L');arShow('arEnd',g.phase==='E');
+ const team=g.mode===1;
+ const lm=arEl('arLobbyMode');if(lm)lm.textContent=team?'TEAM BATTLE':'DEATHMATCH';
+ arShow('arTeamChip',team);arShow('arList',!team);arShow('arTeams',team);
  if(g.phase==='L'){
+  if(team)arEl('arTeams').innerHTML=arTeamsHtml(g,sc);
   arEl('arList').innerHTML=sc.map((p,i)=>arPilotRow(g,p,i)).join('');
   arShow('arStart',g.isHost);
   arEl('arWait').textContent=g.isHost?(sc.length<2?AR_T('Sei solo: puoi iniziare per provare, o aspettare altri piloti.'):''):AR_T('IN ATTESA CHE L’HOST AVVII LA SFIDA')+' · '+arName(g,arHostPid(g));
  }
  arEl('arBoard').innerHTML=sc.map((p,i)=>arPilotRow(g,p,i)).join('');
  if(g.phase==='E'){
-  const w=sc[0];arEl('arWinner').textContent=w&&w.me?AR_T('VITTORIA!'):(w?AR_T('VINCE')+' '+w.n:'');
+  const w=sc[0];
+  if(team){
+   const wt=arWinTeam(g),ts=arTeamScore(g);
+   arEl('arWinner').textContent=wt===0?AR_T('PAREGGIO'):(wt===g.me.tm?AR_T('VITTORIA!')+' ':'')+(wt===1?AR_T('VINCONO GLI IMPERIALI'):AR_T('VINCONO I RIBELLI'));
+   const tf=arEl('arTeamFinal');if(tf)tf.innerHTML=`<i class="t1">${arEsc(arTeamName(1))} ${ts[1]}</i> – <i class="t2">${ts[2]} ${arEsc(arTeamName(2))}</i>`;
+  }else arEl('arWinner').textContent=w&&w.me?AR_T('VITTORIA!'):(w?AR_T('VINCE')+' '+w.n:'');
+  arShow('arTeamFinal',team);
   arEl('arFinal').innerHTML=sc.map((p,i)=>arPilotRow(g,p,i)).join('');
  }
 }
@@ -414,7 +537,7 @@ function arHandleEvents(g){
  for(const e of g.events){
   if(e.type==='phase'){
    if(e.ph==='C')arMessage(AR_T('LA SFIDA STA PER INIZIARE'),2.5);
-   if(e.ph==='P'){arMessage(AR_T('VIA!'),1.4);if(typeof sfx==='function')try{sfx('warp')}catch(x){}}
+   if(e.ph==='P'){arMessage(AR_T('VIA!')+(g.mode===1&&g.me.tm?' · '+arTeamName(g.me.tm):''),1.6);if(typeof sfx==='function')try{sfx('warp')}catch(x){}}
    if(e.ph==='L')arMessage(AR_T('ALLENAMENTO LIBERO'),2);
   }
   else if(e.type==='death'){
@@ -426,23 +549,28 @@ function arHandleEvents(g){
   else if(e.type==='kill'){arMessage(AR_T('BERSAGLIO ABBATTUTO')+' · '+arName(g,e.victim),1.6)}
   else if(e.type==='join')arFeed(`<i>${arEsc(e.n)}</i> ${arEsc(AR_T('È ENTRATO NELL’ARENA'))}`);
   else if(e.type==='left')arFeed(`<i>${arEsc(e.n)}</i> ${arEsc(AR_T('HA LASCIATO L’ARENA'))}`);
+  else if(e.type==='team'){arMessage((e.moved?AR_T('SQUADRA COMPLETA')+' · ':'')+AR_T('LA TUA SQUADRA')+': '+arTeamName(e.tm),2.2);arSyncPanels(true)}
+  else if(e.type==='mode')arSyncPanels(true);
+  else if(e.type==='lock')arFeedLock(g);
+  else if(e.type==='missile'){if(typeof sfx==='function')try{sfx('missile')}catch(x){}}
   else if(e.type==='shot'){if(typeof sfx==='function')try{sfx('shoot')}catch(x){}}
   else if(e.type==='hit'){if(typeof sfx==='function')try{sfx('hit')}catch(x){}}
  }
  g.events=[];
  for(const pid of g.drop)if(g.net)g.net.drop(pid);g.drop=[];
 }
+function arFeedLock(g){if(!arUI.lockT||g.time-arUI.lockT>2){arUI.lockT=g.time;arMessage(AR_T('MISSILE IN ARRIVO!'),1.4);if(typeof sfx==='function')try{sfx('ui')}catch(x){}}}
 function arInput(g){
  const k=typeof keys!=='undefined'&&keys?keys:{},z=arZoom();
  const sx=W/2+(g.me.x-arUI.cam.x)*z,sy=H/2+(g.me.y-arUI.cam.y)*z;
  const inp={ax:(k.KeyD||k.ArrowRight?1:0)-(k.KeyA||k.ArrowLeft?1:0),ay:(k.KeyW||k.ArrowUp?1:0)-(k.KeyS||k.ArrowDown?1:0),
-  aim:Math.atan2(arUI.my-sy,arUI.mx-sx),fire:arUI.fire||!!k.Space,boost:!!(k.ShiftLeft||k.ShiftRight),shield:arUI.shield||!!k.KeyE};
+  aim:Math.atan2(arUI.my-sy,arUI.mx-sx),fire:arUI.fire||!!k.Space,missile:arUI.missile||!!k.KeyQ,boost:!!(k.ShiftLeft||k.ShiftRight),shield:arUI.shield||!!k.KeyE};
  if(Math.hypot(arUI.mx-sx,arUI.my-sy)<8)inp.aim=g.me.r;
  // touch: le frecce del pad muovono nella direzione indicata, la mira cerca il pilota più vicino
  if(typeof document!=='undefined'&&document.body&&document.body.classList.contains('touch')){
   const wx=(k.ArrowRight?1:0)-(k.ArrowLeft?1:0),wy=(k.ArrowDown?1:0)-(k.ArrowUp?1:0),l=Math.hypot(wx,wy)||1;
   inp.world=true;inp.wx=wx/l;inp.wy=wy/l;inp.aim=(wx||wy)?Math.atan2(wy,wx):g.me.r;
-  let best=null,bd=750;for(const pid in g.others){const o=g.others[pid];if(!o.s.al)continue;const d=Math.hypot(o.x-g.me.x,o.y-g.me.y);if(d<bd){bd=d;best=o}}
+  let best=null,bd=750;for(const pid in g.others){const o=g.others[pid];if(!o.s.al||arAlly(g,pid,g.pid))continue;const d=Math.hypot(o.x-g.me.x,o.y-g.me.y);if(d<bd){bd=d;best=o}}
   if(best&&inp.fire)inp.aim=Math.atan2(best.y-g.me.y,best.x-g.me.x);
  }
  return inp;
@@ -461,6 +589,8 @@ function arUpdate(dt){
  const bar=(id,v)=>{const e=arEl(id);if(e)e.style.width=Math.max(0,Math.min(100,v))+'%'};
  set('arPhaseLbl',AR_T(g.phase==='P'?'TEMPO':g.phase==='C'?'VIA TRA':g.phase==='E'?'NUOVA SFIDA TRA':'ALLENAMENTO'));
  set('arTime',g.phase==='L'?'--:--':arFmt(g.rt));set('arKills',String(m.k));
+ if(g.mode===1){const ts=arTeamScore(g);set('arT1',String(ts[1]));set('arT2',String(ts[2]))}
+ arShow('arMisChip',!!g.up.salvo);if(g.up.salvo)set('arMis',g.misCd>0?Math.ceil(g.misCd)+' s':AR_T('PRONTI'));
  set('arHp',Math.round(m.h)+'%');bar('arHpBar',m.h);set('arBo',Math.round(ar.boost)+'%');bar('arBoBar',ar.boost);set('arSh',Math.round(ar.shield)+'%');bar('arShBar',ar.shield);
  const hb=arEl('arHpBar');if(hb&&typeof hpColor==='function')try{hb.style.background=hpColor(m.h)}catch(e){}
  if(g.phase==='E')set('arNext',AR_T('NUOVA SFIDA TRA')+' '+Math.ceil(g.rt)+' s');
@@ -485,10 +615,23 @@ function arRockSprites(g){
  arUI.sprites={room:g.room,list};return list;
 }
 function arShipObj(x,y,a,s){return {x,y,angle:a,forward:+s.f||0,strafe:+s.s||0,boostState:s.bo?'active':'ready',barrier:!!s.sd,vx:+s.vx||0,vy:+s.vy||0,health:+s.h||0,shield:100}}
+// nave di un pilota: team battle → imperiali con la nave nemica, ribelli con la nave del gioco;
+// deathmatch → io con la nave del gioco, gli altri con quella nemica. I pezzi dei potenziamenti
+// (nave-gadget.js) compaiono sulle navi del gioco con i livelli di quel pilota.
+function arHostile(g,pid){if(g.mode===1){const t=arTeamOf(g,pid);if(t)return t===1}return pid!==g.pid}
+function arDrawPilot(g,pid,ship,s,color){
+ const hostile=arHostile(g,pid);arUI.ngLv=hostile?null:arUgDecode(s.ug);
+ try{arDrawShip(ship,hostile,color)}finally{arUI.ngLv=null}
+}
 function arDrawShip(ship,hostile,color){
  try{drawShip(ship,hostile)}catch(e){
   ctx.save();ctx.translate(ship.x,ship.y);ctx.rotate(ship.angle);ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(24,0);ctx.lineTo(-14,-13);ctx.lineTo(-8,0);ctx.lineTo(-14,13);ctx.closePath();ctx.fill();ctx.restore();
  }
+}
+// nome del pilota sotto la nave (con un contorno scuro per leggerlo sopra stelle e asteroidi)
+function arDrawName(n,x,y,color,ally){
+ ctx.save();ctx.textAlign='center';ctx.textBaseline='top';ctx.font="700 12px 'Chakra Petch',sans-serif";
+ const t=(ally?'◆ ':'')+n;ctx.lineWidth=3.5;ctx.strokeStyle='rgba(2,6,12,.85)';ctx.lineJoin='round';ctx.strokeText(t,x,y+34);ctx.fillStyle=color;ctx.fillText(t,x,y+34);ctx.restore();
 }
 function arDraw(){
  const g=ar;
@@ -507,22 +650,25 @@ function arDraw(){
  const sp=arRockSprites(g);g.rocks.forEach((o,i)=>{const s=sp[i];if(s)ctx.drawImage(s.c,o.x-s.s/2,o.y-s.s/2);else{ctx.fillStyle='#555a66';ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,6.28);ctx.fill()}});
  // colpi
  ctx.lineCap='round';
- for(const b of g.bullets){const l=Math.hypot(b.vx,b.vy)||1;ctx.strokeStyle=b.c;ctx.globalAlpha=Math.min(1,b.life*3);ctx.lineWidth=b.big?5:3.2;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x-b.vx/l*22,b.y-b.vy/l*22);ctx.stroke();ctx.strokeStyle='#fff';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x-b.vx/l*12,b.y-b.vy/l*12);ctx.stroke()}
+ for(const b of g.bullets){const l=Math.hypot(b.vx,b.vy)||1;
+  if(b.mis){ctx.globalAlpha=1;ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Math.atan2(b.vy,b.vx));ctx.fillStyle='#dfe9ef';ctx.fillRect(-9,-2.2,15,4.4);ctx.fillStyle=b.c;ctx.beginPath();ctx.moveTo(6,-2.2);ctx.lineTo(11,0);ctx.lineTo(6,2.2);ctx.closePath();ctx.fill();ctx.fillRect(-9,-4,4,8);ctx.fillStyle='#ffd27a';ctx.beginPath();ctx.arc(-10,0,2.6+Math.random()*1.5,0,6.283);ctx.fill();ctx.restore();continue}
+  ctx.strokeStyle=b.c;ctx.globalAlpha=Math.min(1,b.life*3);ctx.lineWidth=b.big?5:3.2;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x-b.vx/l*22,b.y-b.vy/l*22);ctx.stroke();ctx.strokeStyle='#fff';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x-b.vx/l*12,b.y-b.vy/l*12);ctx.stroke()}
  ctx.globalAlpha=1;
  // altri piloti
  ctx.textAlign='center';ctx.font="600 12px 'Chakra Petch',sans-serif";
  for(const pid in g.others){const o=g.others[pid],s=o.s;if(!s.al)continue;const c=arColor(g,pid);
   if(s.iv&&Math.floor(now*10)%2)ctx.globalAlpha=.4;
   ctx.strokeStyle=c;ctx.globalAlpha*=.5;ctx.lineWidth=2;ctx.beginPath();ctx.arc(o.x,o.y,27,0,6.283);ctx.stroke();ctx.globalAlpha=s.iv&&Math.floor(now*10)%2?.4:1;
-  arDrawShip(arShipObj(o.x,o.y,o.r,s),true,c);ctx.globalAlpha=1;
+  arDrawPilot(g,pid,arShipObj(o.x,o.y,o.r,s),s,c);ctx.globalAlpha=1;
   if(s.sd){ctx.strokeStyle='rgba(120,220,255,.7)';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(o.x,o.y,30,0,6.283);ctx.stroke()}
-  ctx.fillStyle=c;ctx.fillText(arCleanName(s.n),o.x,o.y-40);
-  ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(o.x-20,o.y-34,40,4);ctx.fillStyle=typeof hpColor==='function'?hpColor(+s.h||0):'#9dff6a';ctx.fillRect(o.x-20,o.y-34,40*Math.max(0,Math.min(1,(+s.h||0)/100)),4);
+  arDrawName(arCleanName(s.n),o.x,o.y,c,arAlly(g,pid,g.pid));
+  ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(o.x-20,o.y-38,40,4);ctx.fillStyle=typeof hpColor==='function'?hpColor(+s.h||0):'#9dff6a';ctx.fillRect(o.x-20,o.y-38,40*Math.max(0,Math.min(1,(+s.h||0)/100)),4);
  }
  // la mia nave
  const m=g.me;
- if(m.al){if(g.inv>0&&Math.floor(now*10)%2)ctx.globalAlpha=.45;arDrawShip(arShipObj(m.x,m.y,m.r,m),false,'#51e6ff');ctx.globalAlpha=1;
-  if(m.sd){ctx.strokeStyle='rgba(120,220,255,.8)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(m.x,m.y,31,0,6.283);ctx.stroke()}}
+ if(m.al){if(g.inv>0&&Math.floor(now*10)%2)ctx.globalAlpha=.45;arDrawPilot(g,g.pid,arShipObj(m.x,m.y,m.r,m),m,arColor(g,g.pid));ctx.globalAlpha=1;
+  if(m.sd){ctx.strokeStyle='rgba(120,220,255,.8)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(m.x,m.y,31,0,6.283);ctx.stroke()}
+  arDrawName(m.n,m.x,m.y,arColor(g,g.pid),false)}
  // particelle
  ctx.globalCompositeOperation='lighter';
  for(const p of g.parts){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.283);ctx.fill()}
@@ -537,6 +683,18 @@ function arDraw(){
  try{drawVignette()}catch(e){}
 }
 
+// pezzi dei potenziamenti sulle navi degli altri piloti: una coppia di immagini per ogni combinazione di livelli
+if(typeof ngSprites==='function'&&typeof ngPaint==='function'&&typeof ngUnder==='function'&&typeof ngOver==='function'&&typeof NG_IDS!=='undefined'){
+ const ngBase=ngSprites,ngAr=new Map();
+ ngSprites=function(){
+  const lv=arUI.on&&ar?arUI.ngLv:null;if(!lv)return ngBase.apply(this,arguments);
+  const k=typeof ngRes==='function'?ngRes():2.5,key=NG_IDS.map(id=>lv[id]|0).join('')+'@'+k.toFixed(2);
+  let c=ngAr.get(key);if(c)return c;
+  c={key,lv,under:null,over:null,empty:NG_IDS.every(id=>!(lv[id]|0))};
+  if(!c.empty)try{c.under=ngPaint(k,x=>ngUnder(x,lv));c.over=ngPaint(k,x=>ngOver(x,lv))}catch(e){c.empty=true}
+  if(ngAr.size>24)ngAr.clear();ngAr.set(key,c);return c;
+ };
+}
 // ---------------------------------------------------------------- aggancio al gioco
 if(typeof update==='function'&&typeof draw==='function'){
  const arOrig={update,draw};
@@ -547,9 +705,9 @@ if(typeof musLevel==='function'){const o=musLevel;musLevel=function(){return arU
 if(typeof musTheme==='function'){const o=musTheme;musTheme=function(l){return arUI.on&&ar?'spazio':o(l)}}
 if(typeof addEventListener==='function'&&typeof document!=='undefined'){
  addEventListener('mousemove',e=>{arUI.mx=e.clientX;arUI.my=e.clientY});
- addEventListener('mousedown',e=>{if(!arUI.on||!ar)return;const t=e.target;if(t&&t.closest&&t.closest('button,input,a,select'))return;if(e.button===0)arUI.fire=true;if(e.button===2)arUI.shield=true});
- addEventListener('mouseup',e=>{if(e.button===0)arUI.fire=false;if(e.button===2)arUI.shield=false});
- addEventListener('blur',()=>{arUI.fire=false;arUI.shield=false});
+ addEventListener('mousedown',e=>{if(!arUI.on||!ar)return;const t=e.target;if(t&&t.closest&&t.closest('button,input,a,select'))return;if(e.button===0)arUI.fire=true;if(e.button===1){arUI.missile=true;e.preventDefault()}if(e.button===2)arUI.shield=true});
+ addEventListener('mouseup',e=>{if(e.button===0)arUI.fire=false;if(e.button===1)arUI.missile=false;if(e.button===2)arUI.shield=false});
+ addEventListener('blur',()=>{arUI.fire=false;arUI.shield=false;arUI.missile=false});
  addEventListener('keydown',e=>{if(!arUI.on)return;
   if(e.code==='Escape'){if(ar)arLeaveRoom();else arExit();return}
   const t=e.target;if(t&&t.tagName==='INPUT')return;
@@ -565,7 +723,7 @@ if(typeof I18N_ROWS!=='undefined'){
   ["SFIDA ONLINE · DEATHMATCH","ONLINE BATTLE · DEATHMATCH","DÉFI EN LIGNE · DEATHMATCH","DESAFÍO ONLINE · DEATHMATCH","ОНЛАЙН-БИТВА · ДЕЗМАТЧ","在线对战 · 死亡竞赛","オンライン対戦 · デスマッチ"],
   ["ARENA SPAZIALE","SPACE ARENA","ARÈNE SPATIALE","ARENA ESPACIAL","КОСМИЧЕСКАЯ АРЕНА","太空竞技场","宇宙アリーナ"],
   ["Tutti contro tutti, fino a 6 piloti. Vince chi arriva per primo a 10 abbattimenti o chi ne ha di più dopo 5 minuti.","Free for all, up to 6 pilots. The first to reach 10 kills wins, or whoever has the most after 5 minutes.","Chacun pour soi, jusqu’à 6 pilotes. Le premier à 10 victoires gagne, ou celui qui en a le plus après 5 minutes.","Todos contra todos, hasta 6 pilotos. Gana el primero en llegar a 10 derribos o quien tenga más tras 5 minutos.","Каждый сам за себя, до 6 пилотов. Побеждает первый, кто сбьёт 10 врагов, или тот, у кого больше побед через 5 минут.","混战模式，最多 6 名飞行员。率先击落 10 架者获胜，或 5 分钟后击落最多者获胜。","最大6人のバトルロイヤル。先に10機撃墜するか、5分後に撃墜数が最も多いパイロットの勝利。"],
-  ["I tuoi potenziamenti del mercato valgono anche qui: laser, barriera, motori e doppio laser.","Your market upgrades work here too: laser, barrier, engines and twin laser.","Tes améliorations du marché valent aussi ici : laser, barrière, moteurs et double laser.","Tus mejoras del mercado también valen aquí: láser, barrera, motores y doble láser.","Улучшения из магазина действуют и здесь: лазер, барьер, двигатели и двойной лазер.","你在商店购买的升级在这里同样有效：激光、护盾、引擎和双激光。","マーケットで買った強化はここでも有効：レーザー、バリア、エンジン、ダブルレーザー。"],
+  ["I tuoi potenziamenti del mercato valgono anche qui: laser, barriera, motori, doppio laser, iniettori e lanciatore multiplo (missili guidati).","Your market upgrades work here too: laser, barrier, engines, twin laser, injectors and multi-launcher (homing missiles).","Tes améliorations du marché valent aussi ici : laser, barrière, moteurs, double laser, injecteurs et lanceur multiple (missiles guidés).","Tus mejoras del mercado también valen aquí: láser, barrera, motores, doble láser, inyectores y lanzador múltiple (misiles guiados).","Улучшения из магазина действуют и здесь: лазер, барьер, двигатели, двойной лазер, инжекторы и мультипусковая установка (самонаводящиеся ракеты).","你在商店购买的升级在这里同样有效：激光、护盾、引擎、双激光、喷射器和多联发射器（追踪导弹）。","マーケットで買った強化はここでも有効：レーザー、バリア、エンジン、ダブルレーザー、インジェクター、マルチランチャー（誘導ミサイル）。"],
   ["PILOTA","PILOT","PILOTE","PILOTO","ПИЛОТ","飞行员","パイロット"],
   ["PARTITA VELOCE","QUICK MATCH","PARTIE RAPIDE","PARTIDA RÁPIDA","БЫСТРАЯ ИГРА","快速匹配","クイックマッチ"],
   ["CREA UNA STANZA","CREATE A ROOM","CRÉER UN SALON","CREAR UNA SALA","СОЗДАТЬ КОМНАТУ","创建房间","ルームを作成"],
@@ -584,7 +742,7 @@ if(typeof I18N_ROWS!=='undefined'){
   ["SCAFO","HULL","COQUE","CASCO","КОРПУС","船体","船体"],
   ["POST-BRUCIATORE","AFTERBURNER","POSTCOMBUSTION","POSCOMBUSTOR","ФОРСАЖ","加力燃烧","アフターバーナー"],
   ["BARRIERA","BARRIER","BARRIÈRE","BARRERA","БАРЬЕР","护盾","バリア"],
-  ["WASD muovi · MOUSE punta · clic / SPAZIO spara · SHIFT post-bruciatore · MOUSE DX / E barriera · ESC esci","WASD move · MOUSE aim · click / SPACE fire · SHIFT afterburner · RIGHT MOUSE / E barrier · ESC leave","WASD bouger · SOURIS viser · clic / ESPACE tirer · MAJ postcombustion · CLIC DROIT / E barrière · ÉCHAP quitter","WASD mover · RATÓN apuntar · clic / ESPACIO disparar · MAYÚS poscombustor · CLIC DCHO / E barrera · ESC salir","WASD движение · МЫШЬ прицел · клик / ПРОБЕЛ огонь · SHIFT форсаж · ПКМ / E барьер · ESC выход","WASD 移动 · 鼠标 瞄准 · 点击 / 空格 射击 · SHIFT 加力 · 右键 / E 护盾 · ESC 离开","WASD 移動 · マウス 照準 · クリック / スペース 射撃 · SHIFT アフターバーナー · 右クリック / E バリア · ESC 退出"],
+  ["WASD muovi · MOUSE punta · clic / SPAZIO spara · SHIFT post-bruciatore · MOUSE DX / E barriera · Q / ROTELLA missili · ESC esci","WASD move · MOUSE aim · click / SPACE fire · SHIFT afterburner · RIGHT MOUSE / E barrier · Q / WHEEL missiles · ESC leave","WASD bouger · SOURIS viser · clic / ESPACE tirer · MAJ postcombustion · CLIC DROIT / E barrière · Q / MOLETTE missiles · ÉCHAP quitter","WASD mover · RATÓN apuntar · clic / ESPACIO disparar · MAYÚS poscombustor · CLIC DCHO / E barrera · Q / RUEDA misiles · ESC salir","WASD движение · МЫШЬ прицел · клик / ПРОБЕЛ огонь · SHIFT форсаж · ПКМ / E барьер · Q / КОЛЕСО ракеты · ESC выход","WASD 移动 · 鼠标 瞄准 · 点击 / 空格 射击 · SHIFT 加力 · 右键 / E 护盾 · Q / 滚轮 导弹 · ESC 离开","WASD 移動 · マウス 照準 · クリック / スペース 射撃 · SHIFT アフターバーナー · 右クリック / E バリア · Q / ホイール ミサイル · ESC 退出"],
   ["FINE DELLA SFIDA","END OF THE BATTLE","FIN DU DÉFI","FIN DEL DESAFÍO","КОНЕЦ БИТВЫ","对战结束","対戦終了"],
   ["VITTORIA!","VICTORY!","VICTOIRE !","¡VICTORIA!","ПОБЕДА!","胜利！","勝利！"],
   ["VINCE","WINNER:","VAINQUEUR :","GANA","ПОБЕДИТЕЛЬ:","获胜者：","勝者："],
@@ -607,7 +765,23 @@ if(typeof I18N_ROWS!=='undefined'){
   ["RETE NON RAGGIUNGIBILE","NETWORK UNREACHABLE","RÉSEAU INACCESSIBLE","RED NO DISPONIBLE","СЕТЬ НЕДОСТУПНА","无法连接网络","ネットワークに接続できません"],
   ["IL CODICE HA 4 LETTERE","THE CODE HAS 4 LETTERS","LE CODE A 4 LETTRES","EL CÓDIGO TIENE 4 LETRAS","В КОДЕ 4 БУКВЫ","代码为 4 个字母","コードは4文字です"],
   ["COLLEGAMENTO…","CONNECTING…","CONNEXION…","CONECTANDO…","ПОДКЛЮЧЕНИЕ…","正在连接…","接続中…"],
-  ["STANZA PIENA","ROOM FULL","SALON PLEIN","SALA LLENA","КОМНАТА ЗАПОЛНЕНА","房间已满","ルームは満員です"]
+  ["STANZA PIENA","ROOM FULL","SALON PLEIN","SALA LLENA","КОМНАТА ЗАПОЛНЕНА","房间已满","ルームは満員です"],
+  // team battle (2026-11-09)
+  ["Modalità","Mode","Mode","Modo","Режим","模式","モード"],
+  ["TUTTI CONTRO TUTTI","FREE FOR ALL","CHACUN POUR SOI","TODOS CONTRA TODOS","КАЖДЫЙ САМ ЗА СЕБЯ","混战","バトルロイヤル"],
+  ["IMPERIALI CONTRO RIBELLI","IMPERIALS VS REBELS","IMPÉRIAUX CONTRE REBELLES","IMPERIALES CONTRA REBELDES","ИМПЕРЦЫ ПРОТИВ МЯТЕЖНИКОВ","帝国军对叛军","帝国軍 対 反乱軍"],
+  ["IMPERIALI","IMPERIALS","IMPÉRIAUX","IMPERIALES","ИМПЕРЦЫ","帝国军","帝国軍"],
+  ["Due squadre da 3: gli IMPERIALI volano con le navi nemiche, i RIBELLI con la nave del gioco. Chi entra per primo sceglie la squadra, gli ultimi prendono i posti rimasti. Vince la prima squadra a 15 abbattimenti o quella che ne ha di più dopo 5 minuti.","Two teams of 3: the IMPERIALS fly the enemy ships, the REBELS fly the game's ship. The first to join pick their team, latecomers take the remaining seats. The first team to 15 kills wins, or the team with the most after 5 minutes.","Deux équipes de 3 : les IMPÉRIAUX pilotent les vaisseaux ennemis, les REBELLES le vaisseau du jeu. Les premiers arrivés choisissent leur équipe, les derniers prennent les places restantes. La première équipe à 15 victoires gagne, ou celle qui en a le plus après 5 minutes.","Dos equipos de 3: los IMPERIALES vuelan con las naves enemigas, los REBELDES con la nave del juego. Los primeros en entrar eligen equipo, los últimos ocupan los puestos libres. Gana el primer equipo en llegar a 15 derribos o el que tenga más tras 5 minutos.","Две команды по 3: ИМПЕРЦЫ летают на вражеских кораблях, МЯТЕЖНИКИ — на корабле игры. Кто вошёл первым, выбирает команду, опоздавшие занимают оставшиеся места. Побеждает команда, первой сбившая 15 врагов, или та, у кого больше побед через 5 минут.","两队各 3 人：帝国军驾驶敌方战舰，叛军驾驶游戏中的飞船。先进入的玩家选择队伍，后来者只能接受剩余位置。率先击落 15 架的队伍获胜，或 5 分钟后击落最多的队伍获胜。","3人ずつの2チーム：帝国軍は敵の艦、反乱軍はゲームの機体で飛びます。先に入った人がチームを選び、後から来た人は残りの席に入ります。先に15機撃墜したチーム、または5分後に撃墜数が多いチームの勝利。"],
+  ["POSTO LIBERO","FREE SEAT","PLACE LIBRE","PUESTO LIBRE","СВОБОДНОЕ МЕСТО","空位","空き席"],
+  ["LA TUA SQUADRA","YOUR TEAM","TON ÉQUIPE","TU EQUIPO","ТВОЯ КОМАНДА","你的队伍","あなたのチーム"],
+  ["UNISCITI","JOIN","REJOINDRE","UNIRSE","ВСТУПИТЬ","加入","参加する"],
+  ["SQUADRA COMPLETA","TEAM FULL","ÉQUIPE COMPLÈTE","EQUIPO COMPLETO","КОМАНДА ЗАПОЛНЕНА","队伍已满","チームは満員"],
+  ["PAREGGIO","DRAW","ÉGALITÉ","EMPATE","НИЧЬЯ","平局","引き分け"],
+  ["VINCONO GLI IMPERIALI","THE IMPERIALS WIN","LES IMPÉRIAUX GAGNENT","GANAN LOS IMPERIALES","ПОБЕДИЛИ ИМПЕРЦЫ","帝国军获胜","帝国軍の勝利"],
+  ["VINCONO I RIBELLI","THE REBELS WIN","LES REBELLES GAGNENT","GANAN LOS REBELDES","ПОБЕДИЛИ МЯТЕЖНИКИ","叛军获胜","反乱軍の勝利"],
+  ["MISSILI","MISSILES","MISSILES","MISILES","РАКЕТЫ","导弹","ミサイル"],
+  ["PRONTI","READY","PRÊTS","LISTOS","ГОТОВЫ","就绪","準備完了"],
+  ["MISSILE IN ARRIVO!","INCOMING MISSILE!","MISSILE EN APPROCHE !","¡MISIL ENTRANTE!","РАКЕТА НА ПОДЛЁТЕ!","导弹来袭！","ミサイル接近！"]
  ];
  for(const r of rows)if(!I18N_ROWS.some(x=>x[0]===r[0]))I18N_ROWS.push(r);
  if(typeof i18nBuild==='function')i18nBuild();
