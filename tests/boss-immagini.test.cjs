@@ -45,3 +45,13 @@ assert(val('pf.boss.y<PF_FLOOR-20'),'il drago vola durante l attacco');assert(va
 run('pfBossSet(pf.boss,"stordito")');for(let i=0;i<55;i++)run('pfUpdateBoss(1/60)');
 assert.equal(Math.round(val('pf.boss.y')),val('PF_FLOOR'),'da fermo appoggia le zampe a terra');
 console.log('PASS: drago di UMBRA in volo, fuoco e appoggio a terra');
+
+// LEVIATANO (millepiedi): si impenna, si accorcia prima della carica e si allunga nello scatto
+{
+ const pose=(st,t)=>JSON.parse(val(`(()=>{const B={x:0,y:0,face:1,state:"${st}",t:${t},hp:1,max:2,rage:false,kind:"mare",shots:1};pf={boss:B};for(let k=0;k<90;k++)bMillepiediImg(ctx,B,5+k/30);const p=biLevSpine(B,8,B._lev);const r=JSON.stringify({gy:PF_BOSS.mare.gun.y,h:B.h,len:p.reduce((s,q)=>s+q.step,0)});pf=null;return r})()`));
+ const calm=pose('stordito',.2),roar=pose('ruggito',.5),coil=pose('carica',.75),dash=pose('carica',1.2);
+ assert(roar.gy>calm.gy+60,'col ruggito la testa (e la bocca da fuoco) si alza: '+calm.gy+' -> '+roar.gy);
+ assert(roar.h>110,'la sagoma colpibile cresce con l’impennata');
+ assert(coil.len<calm.len*.9&&dash.len>calm.len*1.05,'si accorcia per caricare e si allunga nello scatto');
+ console.log('PASS: leviatano si impenna, si allunga e si accorcia');
+}
