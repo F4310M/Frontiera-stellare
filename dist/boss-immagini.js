@@ -1,6 +1,7 @@
 // Conex — BOSS DALLE IMMAGINI DI FABIO (2026-11-08).
-//  LYRA (mare):     il millepiedi meccanico; il corpo ondeggia a segmenti mentre striscia, per sparare
-//                   alza la testa come un cobra e spara dalle mandibole.
+//  LYRA (mare):     il millepiedi meccanico (LEVIATANO K-3); il corpo si piega lungo una spina, gli anelli
+//                   si stringono e si allargano mentre striscia, si accorcia prima della carica e si allunga
+//                   nello scatto; si impenna come un cobra per guardarsi intorno, ruggire e sparare dalle mandibole.
 //  VESPER (deserto): lo scorpione meccanico arrugginito; coda col pungiglione laser che mira e colpisce,
 //                   chele che si aprono e si chiudono. Immagine specchiata: guarda a destra come gli altri boss.
 //  NIMBUS (tempesta): la sfera robotica con l'occhio incandescente; vola, ruota per guardare il pilota
@@ -21,7 +22,7 @@ const BI={
   eyes:[[1005,660],[890,630],[1055,625]]
  },
  millepiedi:{
-  kind:'mare',dir:'boss-immagini/millepiedi/',S:.2,O:[1075,640],raise:50,strips:42,
+  kind:'mare',dir:'boss-immagini/millepiedi/',S:.2,O:[1075,640],raise:50,strips:42,spine:430,
   parts:{corpo:[27,115,2097,529],zampe:[27,115,2097,529]},
   mouth:[1986,600],eyes:[[1981,500],[1901,480]]
  },
@@ -132,41 +133,99 @@ function bSferaImg(c,B,now){
  c.restore();
 }
 
-// ---------------------------------------------------------------- millepiedi (LYRA)
-// L'immagine si disegna a strisce verticali: ogni striscia sale e scende con un'onda che corre
-// dalla coda alla testa, e la parte davanti si alza quando spara.
-function biCentRaise(B,now){
- const st=B.state,t=B.t||0,D=BI.millepiedi;
- if(st==='raffica')return D.raise*biEase(t/.45);
- if(st==='carica'&&t<.8)return 30*biEase(t/.8)+Math.sin(now*30)*2;
- if(st==='ruggito'||st==='caduta')return 35+Math.sin(now*8)*6;
- if(st==='missili')return 20;
- return 4+Math.sin(now*2)*3;
+// ---------------------------------------------------------------- millepiedi (LYRA) = LEVIATANO K-3
+// L'immagine si disegna a strisce verticali messe in fila lungo una "spina dorsale" che si piega:
+//  - ogni striscia ruota con la spina, così la parte davanti si impenna come un cobra (fermo si
+//    solleva ogni tanto per guardarsi intorno, per sparare si alza alto, prima della carica si drizza);
+//  - il passo tra le strisce cambia: un'onda di contrazione corre dalla coda alla testa (gli anelli si
+//    stringono e si allargano come in un vero millepiedi) e tutto il corpo si accorcia per caricare
+//    e si allunga nello scatto; dove gli anelli si stringono il dorso si inarca un poco.
+// La bocca da fuoco e l'altezza della sagoma seguono la testa.
+function biLevTarget(B,now){
+ const st=B.state,t=B.t||0;
+ // R impennata 0..1, L lunghezza del corpo, c forza della contrazione, w velocità dell'onda
+ let R=0,L=1,c=.08,w=2.2;
+ switch(st){
+  case'passi':R=.12+.08*Math.sin(now*1.7);L=1+.06*Math.sin(now*3.2);c=.2;w=6.5;break;
+  case'raffica':R=.15+.7*biEase(t/.45);L=.94;c=.05;w=1.5;break;
+  case'carica':if(t<.8){R=.85*biEase(t/.5);L=1-.16*biEase(t/.8);c=.04;w=1}else{R=0;L=1.13;c=.12;w=11}break;
+  case'onda':if(!B.shots){R=.35*biEase(t/.5);L=1-.14*biEase(t/.5)}else if(B.shots===1){R=.25;L=1.1}else{R=0;L=.95};c=.06;break;
+  case'ruggito':case'caduta':R=.92+.08*Math.sin(now*2.6);L=1.04;c=.1;w=3;break;
+  case'missili':R=.45;L=.97;c=.08;break;
+  case'stordito':R=0;L=1.03;c=0;w=0;break;
+  case'distrutto':R=.5*Math.max(0,1-t/1.2);L=1+.03*Math.sin(now*9);c=.05;w=4;break;
+  default:{const s=Math.sin(now*1.15+.6);R=s>.25?.6*biEase((s-.25)/.75):0;L=1+.05*Math.sin(now*1.9);c=.1;w=2.4}
+ }
+ if(B.rage&&st!=='stordito'){c*=1.3;w*=1.25}
+ return{R,L,c,w};
+}
+// la posa insegue quella voluta con una molla, così tra un attacco e l'altro non scatta
+function biLevPose(B,now){
+ const T=biLevTarget(B,now),P=B._lev,dt=P?now-P.now:-1;
+ if(!P||!(dt>=0&&dt<.5)){B._lev=Object.assign({now,ph:now*T.w},T);return B._lev}
+ const k=1-Math.exp(-dt*7);
+ for(const key of ['R','L','c','w'])P[key]+=(T[key]-P[key])*k;
+ P.ph+=dt*P.w;P.now=now;return P;
+}
+// la spina: per ogni striscia posizione del piede, angolo, passo e quanto si inarca
+function biLevSpine(B,now,P){
+ const D=BI.millepiedi,[px,,pw]=D.parts.corpo,n=D.strips,sw=pw/n,S=D.S,st=B.state;
+ const amp=st==='stordito'?0:st==='passi'?2.5:1,pts=[];
+ let x=(px-D.O[0])*S,y=(D.spine-D.O[1])*S;
+ for(let i=0;i<n;i++){
+  const xn=(i+.5)/n,wave=Math.sin(P.ph-xn*9.4),step=sw*S*P.L*(1+P.c*wave);
+  let a=-P.R*1.45*biEase((xn-.45)/.4)+P.R*.95*biEase((xn-.86)/.14)+P.R*.12*Math.sin(now*2.3)*biEase((xn-.55)/.45);
+  if(st==='stordito')a+=.06*Math.sin(now*18)*biEase((xn-.7)/.3);
+  const lift=Math.max(0,-wave)*P.c*30+Math.sin(now*3-xn*12)*amp*(1-P.R*biEase((xn-.5)/.3));
+  pts.push({x,y,a,step,lift,xn});
+  x+=Math.cos(a)*step;y+=Math.sin(a)*step;
+ }
+ // il centro del corpo resta dov'era: coda e testa si allontanano e si avvicinano
+ const m=pts[n>>1],dx=(px+(n>>1)*sw-D.O[0])*S-m.x;
+ for(const p of pts)p.x+=dx;
+ return pts;
+}
+// un punto dell'immagine originale portato sul corpo piegato
+function biLevPoint(pts,ix,iy){
+ const D=BI.millepiedi,[px,,pw]=D.parts.corpo,n=D.strips,sw=pw/n;
+ const j=Math.max(0,Math.min(n-1,Math.floor((ix-px)/sw))),p=pts[j],u=(ix-px-j*sw)/sw*p.step;let v;
+ const ca=Math.cos(p.a),sa=Math.sin(p.a);v=(iy-D.spine)*D.S;
+ return[p.x+ca*u-sa*v,p.y-p.lift+sa*u+ca*v];
 }
 function bMillepiediImg(c,B,now){
  if(!biOrig.ready.millepiedi)return biOrig.draw.mare&&biOrig.draw.mare(c,B,now);
  const N='millepiedi',D=BI[N],st=B.state,t=B.t||0,img=biOrig.img[N].corpo,legs=biOrig.img[N].zampe,[px,py,pw,ph]=D.parts.corpo;
- const iw=img.naturalWidth||img.width||1,ih=img.naturalHeight||img.height||1,kx=iw/pw,ky=ih/ph;
- let speed=st==='passi'?9:st==='carica'&&t>=.8?22:3,amp=st==='passi'?4:st==='carica'&&t>=.8?6:1.5,hump=0;
- if(st==='onda'){hump=B.shots===2?0:22*biEase(t/.5)}
- if(st==='stordito'){speed=0;amp=0}
- const raise=biCentRaise(B,now),n=D.strips,sw=pw/n;
- const off=xn=>Math.sin(now*speed-xn*12)*amp-raise*biEase((xn-.5)/.5)-hump*Math.sin(Math.PI*xn);
+ const iw=img.naturalWidth||img.width||1,ih=img.naturalHeight||img.height||1,kx=iw/pw;
+ const P=biLevPose(B,now),pts=biLevSpine(B,now,P),n=D.strips,sw=pw/n,top=(py-D.spine)*D.S,hgt=ph*D.S;
+ const walking=st==='passi'||(st==='carica'&&t>=.8),legPh=P.ph*1.6;
+ let minY=0;
  for(let i=0;i<n;i++){
-  const xn=(i+.5)/n,sx=i*sw,[dx,dy]=biP(D,px+sx,py);
-  // zampe: avanti e indietro a onda, una sì e una no
-  const st2=Math.sin(now*(speed?speed*1.6:0)-xn*70),lx=st2*(amp?2.5:0)+(amp?0:.6*Math.sin(now*3-xn*70)),ly=-Math.max(0,Math.cos(now*speed*1.6-xn*70))*(amp>2?2.5:.8);
-  c.drawImage(legs,sx*kx,0,(sw+2)*kx,ih,dx+lx,dy+off(xn)+ly,(sw+2)*D.S,ph*D.S);
-  c.drawImage(img,sx*kx,0,(sw+2)*kx,ih,dx,dy+off(xn),(sw+2)*D.S,ph*D.S);
+  // la spina passa a metà corpo: nelle curve le strisce si allargano un poco per non lasciare fessure
+  const p=pts[i],sx=i*sw,da=Math.abs(p.a-(pts[i+1]||p).a),dw=p.step*(sw+2)/sw+da*hgt*.6;
+  // zampe: avanti e indietro a onda; quelle sollevate dall'impennata scalciano nell'aria
+  const air=P.R*biEase((p.xn-.55)/.3),q=legPh-p.xn*70;
+  const lx=Math.sin(q)*(P.w>.3?2.5:.6)+air*2.2*Math.sin(now*9-p.xn*40);
+  const ly=-Math.max(0,Math.cos(q))*(walking?2.5:.8)-air*1.5*Math.max(0,Math.sin(now*9-p.xn*40));
+  c.save();c.translate(p.x,p.y-p.lift);c.rotate(p.a);
+  c.drawImage(legs,sx*kx,0,(sw+2)*kx,ih,lx,top+ly,dw,hgt);
+  c.drawImage(img,sx*kx,0,(sw+2)*kx,ih,0,top,dw,hgt);
+  c.restore();
+  minY=Math.min(minY,p.y-p.lift+top*Math.cos(p.a));
  }
  c.save();c.globalCompositeOperation='lighter';
- const yHead=off((D.eyes[0][0]-px)/pw),heat=st==='raffica'?Math.min(1,t/.45):0,rec=biRecoil(B);
+ const heat=st==='raffica'?Math.min(1,t/.45):0,rec=biRecoil(B);
  const eye=st==='carica'&&t<.8?(Math.floor(now*16)%2?1.4:.5):.5+.2*Math.sin(now*4)+(B.rage?.4:0);
- for(const [x,y] of D.eyes){const [ex,ey]=biP(D,x,y);biGlow(c,ex,ey+yHead,9,'255,40,30',eye*.6)}
- const [mx,my]=biP(D,...D.mouth);
- if(heat>0)biGlow(c,mx+6,my+yHead,8+heat*12,'255,90,40',.3+heat*.6);
- if(rec>0)biGlow(c,mx+10,my+yHead,20+rec*16,'255,170,110',rec);
+ for(const [x,y] of D.eyes){const [ex,ey]=biLevPoint(pts,x,y);biGlow(c,ex,ey,9,'255,40,30',eye*.6)}
+ const [mx,my]=biLevPoint(pts,...D.mouth);
+ if(heat>0)biGlow(c,mx+6,my,8+heat*12,'255,90,40',.3+heat*.6);
+ if(rec>0)biGlow(c,mx+10,my,20+rec*16,'255,170,110',rec);
  c.restore();
+ // i colpi partono dalla bocca dov'è adesso; la sagoma che si può colpire cresce con l'impennata
+ if(typeof pf!=='undefined'&&pf&&pf.boss===B&&typeof PF_BOSS!=='undefined'&&PF_BOSS.mare){
+  const I=PF_BOSS.mare;I.gun.x=Math.round(mx);I.gun.y=Math.round(-my);
+  // solo metà dell'altezza in più: la sagoma è un rettangolo largo quanto tutto il corpo, la coda resta bassa
+  B.h=Math.max(I.h,Math.round(I.h+(-minY-I.h)*.5));
+ }
 }
 
 // ---------------------------------------------------------------- drago (UMBRA)
