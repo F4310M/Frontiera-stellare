@@ -122,3 +122,10 @@
 .planet-node.omega .node-label,.planet-node.omega.distant .node-label{top:calc(100% + 6px)!important}
 .planet-node.omega .risk,.planet-node.omega.distant .risk{top:calc(100% + 17px)!important}
 @media(max-width:850px){.planet-node.omega,.planet-node.omega.distant{scale:1.4}.planet-node.omega .node-label,.planet-node.omega .risk,.planet-node.omega .free-tag,.planet-node.omega.distant .node-label,.planet-node.omega.distant .risk{transform:translateX(-50%) scale(.714)}}
+
+/* 2026-11-10: etichetta LIBERATO evidenziata nel pannello informativo del pianeta (mappa.js) */
+#mapScreen .planet-panel .planet-preview{position:relative}
+.panel-free-tag{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-8deg);z-index:3;padding:8px 22px;border-radius:6px;background:#3dff9c;color:#03140b;border:3px solid #eafff3;font:800 clamp(16px,1.6vw,24px) 'Chakra Petch',monospace;letter-spacing:4px;white-space:nowrap;pointer-events:none;box-shadow:0 0 26px #2fe08acc,0 0 6px #000;animation:free-pop 1s ease-in-out infinite alternate}
+.panel-free-tag.on{display:block}
+@keyframes free-pop{to{box-shadow:0 0 40px #2fe08a,0 0 6px #000}}
+@media(max-width:850px){.panel-free-tag{padding:4px 10px;font-size:12px;letter-spacing:2px;border-width:2px}}

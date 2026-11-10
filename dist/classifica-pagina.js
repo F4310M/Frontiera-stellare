@@ -71,7 +71,7 @@ async function bpMe(){
   const ok=typeof arkLoad==='function';
   if(on)on.classList.toggle('hidden',!ok);if(det)det.classList.toggle('hidden',!ok);
   if(!ok)return;
-  const r=arkLoad(),mine=r&&(!n||r.n===n)?r:null,pts=mine?arkPoints(mine):0;
+  const r=arkLoad(),mine=r&&(!n||r.n===n)?r:null,pts=typeof arkBestPoints==='function'?arkBestPoints():(mine?arkPoints(mine):0);
   $$('bpOnlinePts').textContent=scoreFmt(pts);
   $$('bpOnlineM').textContent=scoreFmt(mine?mine.m:0);
   $$('bpOnlineV').textContent=scoreFmt(mine?mine.v:0);
