@@ -369,14 +369,14 @@ async function profCreateClick(){
 function profBuild(){
  if(!profUI)return;
  const I=n=>typeof ico==='function'?ico(n):'',H=profHtml();
- // in alto nella mappa: pilota e SALVA PROGRESSI
+ // in alto nella mappa: il pilota
  const top=$('settingsBtn')&&$('settingsBtn').parentNode;
  if(top&&top.insertBefore&&!$('profChip')){
   const c=document.createElement('button');c.id='profChip';c.className='settings-btn prof-chip hidden';c.setAttribute('aria-label','Profilo del pilota');
   c.innerHTML='<img id="profChipImg" alt=""><span id="profChipName"></span>';c.onclick=()=>profOpenPanel();
-  const s=document.createElement('button');s.id='profSaveBtn';s.className='settings-btn prof-save hidden';s.setAttribute('aria-label','Salva progressi sul PC');
-  s.innerHTML=I('save')+' <span>SALVA PROGRESSI</span><em class="prof-dot"></em>';s.onclick=()=>profSaveClick();
-  top.insertBefore(s,top.firstChild);top.insertBefore(c,s);
+  // 2026-11-10: niente più tasto SALVA PROGRESSI in alto, il gioco salva da solo
+  // (il file .sfsave resta nel pannello del pilota)
+  top.insertBefore(c,top.firstChild);
  }
  // fine gioco: pilota al posto della casella del nome
  const entry=$('scoreEntry');

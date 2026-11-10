@@ -145,7 +145,7 @@ async function vetOnlineRender(){
    const mine=typeof arkIsMe==='function'&&arkIsMe(r);
    return `<div class="map-board-row${i<3?' top'+(i+1):''}${mine?' me':''}"><span class="pos">${boardRank(i+1)}</span><span class="name board-name">${boardName(r,esc(r.n),'map-ava')}</span><span class="pts">${scoreFmt(r.p)}</span></div>`;
   }).join('');
-  const me=document.getElementById('mapBoardMeOn'),mine=typeof arkLoad==='function'?arkLoad():null,pts=mine?arkPoints(mine):0;
+  const me=document.getElementById('mapBoardMeOn'),mine=typeof arkLoad==='function'?arkLoad():null,pts=typeof arkBestPoints==='function'?arkBestPoints():(mine?arkPoints(mine):0);
   let rank=0;
   if(me&&pts>0&&!offline){
    if(vetMeOn.p===pts&&Date.now()-vetMeOn.t<60000)rank=vetMeOn.rank;

@@ -482,6 +482,7 @@ const I18N_ROWS=[
 ["MONDO","WORLD","MONDE","MUNDO","МИР","世界","ワールド"],
 ["La classifica è salvata in questo browser.","The leaderboard is saved in this browser.","Le classement est enregistré dans ce navigateur.","La clasificación se guarda en este navegador.","Рейтинг хранится в этом браузере.","排行榜保存在此浏览器中。","ランキングはこのブラウザに保存されます。"],
 ["PIANETA LIBERATO","PLANET FREED","PLANÈTE LIBÉRÉE","PLANETA LIBERADO","ПЛАНЕТА СВОБОДНА","星球已解放","惑星解放済み"],
+["LIBERATO","FREED","LIBÉRÉE","LIBERADO","ОСВОБОЖДЕНА","已解放","解放済み"],
 ["LIBERA TUTTI I PIANETI","FREE ALL PLANETS FIRST","LIBÈRE TOUTES LES PLANÈTES","LIBERA TODOS LOS PLANETAS","ОСВОБОДИ ВСЕ ПЛАНЕТЫ","先解放所有星球","全惑星を解放せよ"],
 ["NUOVA PARTITA","NEW GAME","NOUVELLE PARTIE","NUEVA PARTIDA","НОВАЯ ИГРА","新游戏","ニューゲーム"],
 ["BLOCCATO","LOCKED","VERROUILLÉ","BLOQUEADO","ЗАКРЫТО","已锁定","ロック中"],

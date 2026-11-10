@@ -20,7 +20,7 @@ const step=(sec,dt=1/60)=>run(`for(let i=0;i<${Math.round(sec/dt)};i++)update(${
 run('soundEnabled=false');
 const btn=nodes.get('launchBtn'),span={textContent:''};btn.querySelector=()=>span;
 for(const id of ['landBtn','returnBtn']){const n=nodes.get(id),s={textContent:''};n.querySelector=()=>s}
-const free=()=>mapNodes.map(n=>n.extra.includes('FREE'));
+const free=()=>mapNodes.map(n=>n.extra.includes('LIBERATO'));
 const briefTitle=()=>nodes.get('briefTitle').textContent;
 
 // OMEGA è sempre sulla mappa, ma bloccato e lontano

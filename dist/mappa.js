@@ -28,7 +28,7 @@ initMap=function(){
   const p=planets[j];if(!p||!n.classList)return;
   const freed=mapFreed(p),locked=mapLocked(p);
   n.classList.toggle('freed',freed);n.classList.toggle('distant',locked);
-  if(freed&&n.insertAdjacentHTML)n.insertAdjacentHTML('beforeend','<span class="free-tag">FREE</span>');
+  if(freed&&n.insertAdjacentHTML)n.insertAdjacentHTML('beforeend','<span class="free-tag">LIBERATO</span>');
   if(locked){const r=n.querySelector('.risk');if(r)r.textContent='BLOCCATO'}
  });
 };
@@ -43,6 +43,9 @@ selectPlanet=function(i){
  if(label)label.textContent=text;
  btn.disabled=!done&&(freed||locked);
  if(btn.classList)btn.classList.toggle('done',!done&&(freed||locked));
+ // 2026-11-10: etichetta LIBERATO evidenziata nel pannello informativo del pianeta
+ const box=document.querySelector&&document.querySelector('#planetPanel .planet-preview');
+ if(box&&box.appendChild){let t=$('planetFreeTag');if(!t){t=document.createElement('div');t.id='planetFreeTag';t.className='panel-free-tag';t.textContent='LIBERATO';box.appendChild(t)}t.classList.toggle('on',!!freed)}
  if(freed)$('planetDesc').textContent=p.desc+' '+'Colonia liberata: questa missione è conclusa e non si può ripetere.';
  else if(locked){
   $('planetDesc').textContent='Avvistato in lontananza. Libera tutti e cinque i pianeti per aprire la rotta verso OMEGA.';
