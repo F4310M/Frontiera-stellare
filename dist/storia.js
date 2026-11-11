@@ -583,7 +583,7 @@ if(typeof document!=='undefined'&&document.querySelector&&document.body){
 // Prestazioni: la stazione si disegna UNA volta su una tela in memoria (per dimensione dello schermo);
 // a ogni fotogramma si copia l'immagine e si aggiunge il bagliore dell'Iride (altra tela in memoria)
 // con qualche linea per i raggi. Niente ctx.filter né shadowBlur.
-const ST_STAZ={giro:18,carica:13.6,raggi:2.4,fuoco:.9,entra:2.5};
+const ST_STAZ={giro:18,carica:13.6,raggi:2.4,fuoco:.9,entra:0};
 function stStazVec(lat,lon){return[Math.cos(lat)*Math.sin(lon),Math.sin(lat),Math.cos(lat)*Math.cos(lon)]}
 function stStazSprite(R){
  R=Math.max(8,Math.round(R));
@@ -598,7 +598,7 @@ function stStazSprite(R){
  const nor=a=>{const n=Math.hypot(a[0],a[1],a[2])||1;return[a[0]/n,a[1]/n,a[2]/n]};
  const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
  // l'Iride: centro, e due direzioni sulla superficie per costruire l'esagono
- const DL=.5,DO=-.52,DA=.27,dc=stStazVec(DL,DO);
+ const DL=.72,DO=-.42,DA=.25,dc=stStazVec(DL,DO);
  const est=nor(cross([0,1,0],dc)),nord=cross(dc,est);
  const suDisco=(a,ang)=>{const s=Math.sin(a),k=Math.cos(a);return[dc[0]*k+(est[0]*Math.cos(ang)+nord[0]*Math.sin(ang))*s,dc[1]*k+(est[1]*Math.cos(ang)+nord[1]*Math.sin(ang))*s,dc[2]*k+(est[2]*Math.cos(ang)+nord[2]*Math.sin(ang))*s]};
  const angD=m=>Math.acos(Math.max(-1,Math.min(1,m[0]*dc[0]+m[1]*dc[1]+m[2]*dc[2])));
@@ -610,13 +610,13 @@ function stStazSprite(R){
  g.fillStyle='#0b0f15';g.fillRect(0,0,S,S);
  const col=(v,k)=>{const l=Math.max(0,luce(v)),a=.06+Math.pow(l,.9)*.94;return'rgb('+Math.round(150*a*k)+','+Math.round(160*a*k)+','+Math.round(174*a*k)+')'};
  // piastre: fasce di latitudine, piastre di larghezza simile, ognuna con la sua luce (effetto sfaccettato)
- const dLat=.075,luci=[];
+ const dLat=Math.max(.032,Math.min(.075,.075*170/R)),luci=[];
  for(let la=-Math.PI/2+dLat*.5;la<Math.PI/2-dLat*.4;la+=dLat){
   const n=Math.max(6,Math.round(Math.PI*2*Math.cos(la)/dLat)),dLon=Math.PI*2/n,off=rnd()*dLon;
   for(let i=0;i<n;i++){
    const lo=off+i*dLon,mc=stStazVec(la,lo+dLon/2),vc=V(mc);if(vc[2]<-.05)continue;
    if(Math.abs(la)<.05)continue; // la cintura scavata
-   if(angD(mc)<DA*1.04)continue; // l'Iride
+   if(angD(mc)<DA*.86)continue; // l'Iride
    const g1=.035,lst=[[la-dLat/2+g1*dLat,lo+g1*dLon],[la-dLat/2+g1*dLat,lo+dLon-g1*dLon],[la+dLat/2-g1*dLat,lo+dLon-g1*dLon],[la+dLat/2-g1*dLat,lo+g1*dLon]];
    const k=.72+rnd()*.42+(rnd()<.06?.25:0);
    g.fillStyle=col(vc,k);g.beginPath();
@@ -624,6 +624,8 @@ function stStazSprite(R){
    // ogni tanto una piastra con un pannello più scuro dentro
    if(rnd()<.18){const ql=la+(rnd()-.5)*dLat*.4,qo=lo+dLon*(.3+rnd()*.4),p=P(V(stStazVec(ql,qo)));
     g.fillStyle='rgba(0,0,0,.35)';const w=R*dLat*.35*Math.max(.2,vc[2]);g.fillRect(p[0]-w,p[1]-w*.5,w*2,w)}
+   if(R>220&&rnd()<.3){const p=P(V(stStazVec(la+(rnd()-.5)*dLat*.5,lo+dLon*(.2+rnd()*.6)))),w=R*dLat*.5*Math.max(.25,vc[2]);
+    g.fillStyle=rnd()<.5?'rgba(0,0,0,.28)':'rgba(255,255,255,.07)';g.fillRect(p[0]-w*.5,p[1]-w*.12,w,w*.24)}
    if(rnd()<.11)luci.push(stStazVec(la+(rnd()-.5)*dLat*.7,lo+rnd()*dLon));
   }
  }
@@ -688,7 +690,7 @@ function stStazSprite(R){
  g.strokeStyle='rgba(205,225,245,.55)';g.lineWidth=Math.max(1,R*.012);g.beginPath();g.arc(cx,cy,R-g.lineWidth/2,Math.PI*.9,Math.PI*1.62);g.stroke();
  g.strokeStyle='rgba(205,225,245,.18)';g.lineWidth=Math.max(1,R*.006);g.beginPath();g.arc(cx,cy,R-g.lineWidth/2,Math.PI*.7,Math.PI*1.85);g.stroke();
  // bagliore dell'Iride (tela a parte, si accende piano mentre carica)
- const GR=Math.max(8,Math.round(R*.75)),gl=document.createElement('canvas');gl.width=gl.height=GR*2;const h=gl.getContext('2d');
+ const GR=Math.max(8,Math.round(Math.min(R*.75,90+R*.25))),gl=document.createElement('canvas');gl.width=gl.height=GR*2;const h=gl.getContext('2d');
  if(h){const gr=h.createRadialGradient(GR,GR,0,GR,GR,GR);gr.addColorStop(0,'rgba(255,220,190,.95)');gr.addColorStop(.12,'rgba(255,70,40,.75)');gr.addColorStop(.4,'rgba(200,20,10,.22)');gr.addColorStop(1,'rgba(120,0,0,0)');h.fillStyle=gr;h.fillRect(0,0,GR*2,GR*2)}
  // punto focale dei sei raggi, davanti al cratere (lungo la sua normale)
  const fv=add(dv,dv,.28),fp=[cx+R*fv[0],cy-R*fv[1]];
@@ -705,21 +707,22 @@ function stStazFase(t){
 }
 function stStazDisegna(g,B,dt){
  if(!B.sz){
-  const R=Math.min(B.W,B.H)*.105;
+  const R=B.pl.width*.42;
   B.sz={sp:stStazSprite(R),t:0};
  }
  const Z=B.sz,sp=Z.sp;Z.t+=dt;
- const a=Math.max(0,Math.min(1,(Z.t-ST_STAZ.entra)/3.5));if(a<=0)return;
- // in alto a sinistra, lontana: scivola piano verso destra
- const x=B.W*.17+Math.min(Z.t,150)*.9*B.d-sp.S/2,y=B.H*.22+Math.min(Z.t,150)*.25*B.d-sp.S/2;
+ const a=Math.max(0,Math.min(1,(Z.t-ST_STAZ.entra)/1.2));if(a<=0)return;
+ // dove prima c'era LYRA: in basso a destra, sale piano
+ const P=B.pl.width,x=B.W-P*.62+P/2-sp.S/2,y=B.H-P*.4-Math.min(B.t,150)*1.1*B.d+P/2-sp.S/2;
  g.globalAlpha=a;g.drawImage(sp.cv,x,y);
- const F=stStazFase(Z.t-ST_STAZ.entra);
+ const F=stStazFase(Z.t-ST_STAZ.entra-3);
  g.globalCompositeOperation='lighter';
  const pul=.85+.15*Math.sin(Z.t*7),s=(.35+F.c*.9)*pul;
  g.globalAlpha=a*Math.min(1,.18+F.c*.8);g.drawImage(sp.glow,x+sp.gx-sp.GR*s,y+sp.gy-sp.GR*s,sp.GR*2*s,sp.GR*2*s);
  if(F.raggi>0){
   const fx=x+sp.fx,fy=y+sp.fy,k=Math.min(1,F.raggi*1.4);
-  for(const [w,al] of [[sp.R*.03,.18],[sp.R*.009,.9]]){g.strokeStyle='rgba(255,'+(al>.5?150:60)+','+(al>.5?110:40)+','+(al*a).toFixed(2)+')';g.lineWidth=Math.max(1,w);
+  const Rb=Math.min(sp.R,200);
+  for(const [w,al] of [[Rb*.03,.18],[Rb*.009,.9]]){g.strokeStyle='rgba(255,'+(al>.5?150:60)+','+(al>.5?110:40)+','+(al*a).toFixed(2)+')';g.lineWidth=Math.max(1,w);
    g.beginPath();for(const v of sp.vx){const vx=x+v[0],vy=y+v[1];g.moveTo(vx,vy);g.lineTo(vx+(fx-vx)*k,vy+(fy-vy)*k)}g.stroke()}
   if(F.raggi>.6){const q=(F.raggi-.6)/.4*sp.GR*.5;g.globalAlpha=a;g.drawImage(sp.glow,fx-q,fy-q,q*2,q*2)}
  }
@@ -727,19 +730,26 @@ function stStazDisegna(g,B,dt){
   // il colpo: un raggio rosso che parte dal fuoco e sparisce oltre il bordo dello schermo
   const fx=x+sp.fx,fy=y+sp.fy,d=sp.dir,len=Math.max(B.W,B.H)*1.5,e=Math.sin(Math.PI*Math.min(1,F.fuoco));
   const ex=fx+d[0]*len*Math.min(1,F.fuoco*3),ey=fy+d[1]*len*Math.min(1,F.fuoco*3);
-  for(const [w,c] of [[sp.R*.09,'rgba(255,40,20,'],[sp.R*.04,'rgba(255,110,70,'],[sp.R*.012,'rgba(255,235,220,']]){
+  const Rb=Math.min(sp.R,200);
+  for(const [w,c] of [[Rb*.09,'rgba(255,40,20,'],[Rb*.04,'rgba(255,110,70,'],[Rb*.012,'rgba(255,235,220,']]){
    g.strokeStyle=c+(.85*e*a).toFixed(2)+')';g.lineWidth=Math.max(1,w*(.6+.4*e));g.lineCap='round';g.beginPath();g.moveTo(fx,fy);g.lineTo(ex,ey);g.stroke()}
   const q=sp.GR*(.6+e*.5);g.globalAlpha=a*e;g.drawImage(sp.glow,fx-q,fy-q,q*2,q*2);
  }
  g.globalCompositeOperation='source-over';g.globalAlpha=1;
 }
-// la stazione si aggiunge al cielo dopo LYRA: sta in alto a sinistra, lontano dal pianeta
-{
- const _stDis=stDisegna;
- stDisegna=function(dt){
-  const c=typeof document!=='undefined'&&document.getElementById?document.getElementById('storiaCanvas'):null;
-  const B0=STORIA.bg,r=_stDis.apply(this,arguments),B=STORIA.bg;
-  if(c&&B&&c.getContext){const g=c.getContext('2d');if(g)try{if(B!==B0&&B0)B0.sz=null;stStazDisegna(g,B,dt)}catch(e){}}
-  return r;
- };
-}
+// NEMESI prende il posto di LYRA in basso a destra (Fabio, 11-11): stesso punto, stessa grandezza,
+// sale piano come faceva il pianeta. LYRA qui non si disegna e la sua mappa non si calcola più
+// (il codice di LYRA resta sopra, pronto se servisse di nuovo).
+stLyraTex=function(){};
+stDisegna=function(dt){
+ const c=$('storiaCanvas');if(!c||!c.getContext)return;
+ const w=innerWidth,h=innerHeight;
+ if(!STORIA.bg||STORIA.bg.cw!==w||STORIA.bg.ch!==h){STORIA.bg=stSfondo(w,h);STORIA.bg.cw=w;STORIA.bg.ch=h;STORIA.bg.t=0;c.width=STORIA.bg.W;c.height=STORIA.bg.H}
+ const B=STORIA.bg,g=c.getContext('2d');if(!g)return;
+ B.t+=dt;
+ g.drawImage(B.base,0,0);
+ for(const [L,v] of [[B.far,4],[B.mid,9],[B.near,18]]){
+  const y=(B.t*v*B.d)%B.H;g.drawImage(L,0,y-B.H);g.drawImage(L,0,y);
+ }
+ try{stStazDisegna(g,B,dt)}catch(e){}
+};
