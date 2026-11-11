@@ -583,7 +583,7 @@ if(typeof document!=='undefined'&&document.querySelector&&document.body){
 // Prestazioni: la stazione si disegna UNA volta su una tela in memoria (per dimensione dello schermo);
 // a ogni fotogramma si copia l'immagine e si aggiunge il bagliore dell'Iride (altra tela in memoria)
 // con qualche linea per i raggi. Niente ctx.filter né shadowBlur.
-const ST_STAZ={giro:18,carica:13.6,raggi:2.4,fuoco:.9,entra:0};
+const ST_STAZ={giro:18,carica:13.6,raggi:2.4,fuoco:.9,entra:2.5};
 function stStazVec(lat,lon){return[Math.cos(lat)*Math.sin(lon),Math.sin(lat),Math.cos(lat)*Math.cos(lon)]}
 function stStazSprite(R){
  R=Math.max(8,Math.round(R));
@@ -707,15 +707,15 @@ function stStazFase(t){
 }
 function stStazDisegna(g,B,dt){
  if(!B.sz){
-  const R=B.pl.width*.42;
+  const R=Math.min(B.W,B.H)*.105;
   B.sz={sp:stStazSprite(R),t:0};
  }
  const Z=B.sz,sp=Z.sp;Z.t+=dt;
- const a=Math.max(0,Math.min(1,(Z.t-ST_STAZ.entra)/1.2));if(a<=0)return;
- // dove prima c'era LYRA: in basso a destra, sale piano
- const P=B.pl.width,x=B.W-P*.62+P/2-sp.S/2,y=B.H-P*.4-Math.min(B.t,150)*1.1*B.d+P/2-sp.S/2;
+ const a=Math.max(0,Math.min(1,(Z.t-ST_STAZ.entra)/3.5));if(a<=0)return;
+ // in alto a sinistra, lontana: scivola piano verso destra
+ const x=B.W*.17+Math.min(Z.t,150)*.9*B.d-sp.S/2,y=B.H*.22+Math.min(Z.t,150)*.25*B.d-sp.S/2;
  g.globalAlpha=a;g.drawImage(sp.cv,x,y);
- const F=stStazFase(Z.t-ST_STAZ.entra-3);
+ const F=stStazFase(Z.t-ST_STAZ.entra);
  g.globalCompositeOperation='lighter';
  const pul=.85+.15*Math.sin(Z.t*7),s=(.35+F.c*.9)*pul;
  g.globalAlpha=a*Math.min(1,.18+F.c*.8);g.drawImage(sp.glow,x+sp.gx-sp.GR*s,y+sp.gy-sp.GR*s,sp.GR*2*s,sp.GR*2*s);
@@ -737,19 +737,6 @@ function stStazDisegna(g,B,dt){
  }
  g.globalCompositeOperation='source-over';g.globalAlpha=1;
 }
-// NEMESI prende il posto di LYRA in basso a destra (Fabio, 11-11): stesso punto, stessa grandezza,
-// sale piano come faceva il pianeta. LYRA qui non si disegna e la sua mappa non si calcola più
-// (il codice di LYRA resta sopra, pronto se servisse di nuovo).
-stLyraTex=function(){};
-stDisegna=function(dt){
- const c=$('storiaCanvas');if(!c||!c.getContext)return;
- const w=innerWidth,h=innerHeight;
- if(!STORIA.bg||STORIA.bg.cw!==w||STORIA.bg.ch!==h){STORIA.bg=stSfondo(w,h);STORIA.bg.cw=w;STORIA.bg.ch=h;STORIA.bg.t=0;c.width=STORIA.bg.W;c.height=STORIA.bg.H}
- const B=STORIA.bg,g=c.getContext('2d');if(!g)return;
- B.t+=dt;
- g.drawImage(B.base,0,0);
- for(const [L,v] of [[B.far,4],[B.mid,9],[B.near,18]]){
-  const y=(B.t*v*B.d)%B.H;g.drawImage(L,0,y-B.H);g.drawImage(L,0,y);
- }
- try{stStazDisegna(g,B,dt)}catch(e){}
-};
+// Nella storia in basso a destra resta LYRA (Fabio, 11-11). NEMESI per ora NON si disegna:
+// il codice qui sopra è conservato per usi futuri. Per rimetterla nel cielo basta aggiungere, dopo
+// aver disegnato lo sfondo in stDisegna, la riga: try{stStazDisegna(g,STORIA.bg,dt)}catch(e){}

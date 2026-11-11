@@ -43,5 +43,6 @@ assert(!/\.filter=|shadowBlur/.test(src.replace(/^\/\/.*$/gm,'')),'niente filter
 assert(/function stStazSprite/.test(src)&&/function stStazDisegna/.test(src),'stazione disegnata in memoria e poi copiata');
 {const f=t=>run('stStazFase('+t+')');assert.equal(f(0).c,0);assert(f(6).c>0&&f(6).c<1,'si carica piano');
  assert(f(14.5).raggi>0,'i sei raggi convergono');assert(f(16.3).fuoco>0,'poi parte il colpo');assert.equal(f(17.9).fuoco,0);}
-assert(/stLyraTex=function\(\)\{\};/.test(src)&&/const R=B\.pl\.width\*\.42;/.test(src),'NEMESI al posto di LYRA in basso a destra');
+assert(!/stLyraTex=function\(\)\{\};/.test(src)&&!/stLyraP=function/.test(src),'in basso a destra c’è LYRA');
+assert.equal((src.replace(/^\/\/.*$/gm,'').match(/stStazDisegna\(/g)||[]).length,1,'NEMESI conservata ma non disegnata');
 console.log('PASS: storia di Conex');
