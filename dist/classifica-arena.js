@@ -9,9 +9,16 @@
 
 const ARK={KEY:'stellarArena',kill:100,win:500,play:50,maxKills:15,maxBatch:5,size:100};
 function arkPoints(t){return ARK.kill*(t.b||0)+ARK.win*(t.v||0)+ARK.play*(t.m||0)}
+// stellarArena = {n, v, b, m (totali di questo browser, per mostrarli subito), pm, pv, pb (sfide non ancora inviate),
+//   id, k (vecchia riga con chiave segreta, da chiudere passando i totali alla riga nuova), d}
 function arkLoad(){
  try{const r=JSON.parse(localStorage.getItem(ARK.KEY)||'null');
-  if(r&&typeof r.n==='string'&&[r.v,r.b,r.m].every(x=>Number.isInteger(x)&&x>=0))return Object.assign({id:'',k:'',sm:0,sv:0,sb:0},r);
+  if(r&&typeof r.n==='string'&&[r.v,r.b,r.m].every(x=>Number.isInteger(x)&&x>=0)){
+   const o=Object.assign({id:'',k:'',sm:0,sv:0,sb:0},r);
+   if(!Number.isInteger(o.pm)){o.pm=Math.max(0,o.m-o.sm);o.pv=Math.max(0,o.v-o.sv);o.pb=Math.max(0,o.b-o.sb)}   // formato di prima
+   o.pv=Number.isInteger(o.pv)?Math.max(0,o.pv):0;o.pb=Number.isInteger(o.pb)?Math.max(0,o.pb):0;o.pm=Math.max(0,o.pm);
+   return o;
+  }
  }catch(e){}
  return null;
 }
@@ -26,8 +33,8 @@ function arkResult(sc){
 // Aggiunge la sfida ai totali locali del pilota (riga nuova se il nome del pilota è cambiato).
 function arkAdd(name,res){
  const n=typeof cleanName==='function'?cleanName(name):String(name||'');if(!n||!res)return null;
- let r=arkLoad();if(!r||r.n!==n)r={n,id:'',k:'',v:0,b:0,m:0,sm:0,sv:0,sb:0};
- r.m++;r.v+=res.v;r.b+=res.b;r.d=new Date().toISOString().slice(0,10);
+ let r=arkLoad();if(!r||r.n!==n)r={n,id:'',k:'',v:0,b:0,m:0,pm:0,pv:0,pb:0};
+ r.m++;r.v+=res.v;r.b+=res.b;r.pm++;r.pv+=res.v;r.pb+=res.b;r.d=new Date().toISOString().slice(0,10);
  arkSave(r);return r;
 }
 function arkName(){
@@ -39,46 +46,67 @@ function arkMini(n){
  const p=typeof prof!=='undefined'&&prof?prof:null,a=p&&p.nome===n&&p.mini?p.mini:'';
  return a&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(a)&&a.length<=8000?a:'';
 }
-function arkFields(r,extra){
- const f={n:{stringValue:r.n},p:{integerValue:String(arkPoints(r))},v:{integerValue:String(r.v)},b:{integerValue:String(r.b)},m:{integerValue:String(r.m)}},a=arkMini(r.n);
+function arkFields(t,extra){
+ const f={n:{stringValue:t.n},p:{integerValue:String(arkPoints(t))},v:{integerValue:String(t.v)},b:{integerValue:String(t.b)},m:{integerValue:String(t.m)}},a=arkMini(t.n);
  if(a)f.a={stringValue:a};
  for(const k in extra)f[k]={stringValue:extra[k]};
  return f;
 }
-function arkSecret(){return typeof recSecret==='function'?recSecret():Array.from(crypto.getRandomValues(new Uint8Array(24)),x=>x.toString(16).padStart(2,'0')).join('')}
-async function arkHash(k){return typeof recHash==='function'?recHash(k):Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(k))),x=>x.toString(16).padStart(2,'0')).join('')}
-async function arkPatch(id,fields){
- const ctl=typeof AbortController==='function'?new AbortController():null,t=ctl?setTimeout(()=>ctl.abort(),8000):0;
- try{
-  const r=await fetch(coUrl('/arena/'+encodeURIComponent(id))+'&currentDocument.exists=true',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields}),signal:ctl?ctl.signal:undefined});
-  if(!r.ok)throw new Error('firestore '+r.status);
-  return await r.json();
- }finally{clearTimeout(t)}
-}
-let arkQ=Promise.resolve(),arkCache=null,arkCacheT=0,arkMyId='';
-// Prossimo blocco da inviare: le regole accettano al massimo 5 sfide nuove per volta
-// (con 15 abbattimenti e 1 vittoria al massimo per sfida). Il resto parte col blocco dopo.
-function arkBatch(r){
- const dm=Math.min(ARK.maxBatch,r.m-r.sm);
- return {n:r.n,m:r.sm+dm,v:r.sv+Math.min(dm,r.v-r.sv),b:r.sb+Math.min(ARK.maxKills*dm,r.b-r.sb)};
-}
-// Porta online i totali locali: crea la riga la prima volta, poi la aggiorna con la chiave.
+let arkQ=Promise.resolve(),arkCache=null,arkCacheT=0,arkMyId='',arkTimer=0;
+const arkNum=(d,k)=>Number(d&&d.fields&&d.fields[k]&&d.fields[k].integerValue)||0;
+const arkWait=30000;   // le regole vogliono almeno 30 secondi per ogni sfida aggiunta
+// riprova più tardi (troppo presto per le regole, oppure rete giù)
+function arkLater(ms){if(arkTimer||typeof setTimeout!=='function')return;arkTimer=setTimeout(()=>{arkTimer=0;arkSync()},ms)}
+// Porta online le sfide non ancora inviate: la riga del pilota ha id = nome in minuscolo.
+// La prima volta chiude la vecchia riga (con chiave segreta) e ne porta i totali nella nuova.
 function arkSync(){
  arkQ=arkQ.then(async()=>{
   let r=arkLoad();
-  for(let i=0;coOn&&r&&r.m>r.sm&&i<20;i++){
-   if(r.id){
-    const s=arkBatch(r),k2=arkSecret(),h2=await arkHash(k2);
-    try{await arkPatch(r.id,arkFields(s,{k:r.k,h:h2}));Object.assign(r,{k:k2,sm:s.m,sv:s.v,sb:s.b});arkSave(r);arkMyId=r.id;arkCache=null;continue}
-    catch(e){if(!/firestore 4\d\d/.test(String(e&&e.message)))throw e;Object.assign(r,{id:'',k:'',sm:0,sv:0,sb:0});arkSave(r)}   // chiave non più valida (es. backup vecchio): riga nuova
+  if(!coOn||!r||typeof CX==='undefined'||!CX.on)return r;
+  const own=await CX.nomeMio(r.n);
+  if(own==='altrui'){if(typeof recAltrui==='function')recAltrui(r.n);return r}
+  if(own!=='mio'){arkLater(60000);return r}
+  const key=CX.chiaveNome(r.n);
+  for(let i=0;i<8;i++){
+   r=arkLoad();if(!r||!(r.pm>0))break;
+   let doc=await CX.leggi('arena',key);
+   if(!doc&&r.id&&r.k&&r.id!==key){
+    // la vecchia riga di questo pilota: si chiude e i suoi totali passano nella riga nuova
+    const old=await CX.leggi('arena',r.id).catch(()=>null),f=old&&old.fields;
+    if(f&&f.n&&f.n.stringValue===r.n&&!f.x&&!f.t){
+     try{
+      await CX.commit([{col:'arena',id:r.id,fields:{n:{stringValue:r.n},p:{integerValue:'0'},x:{stringValue:key},k:{stringValue:r.k}},tempo:false},
+                       {col:'arena',id:key,fields:arkFields({n:r.n,v:arkNum(old,'v'),b:arkNum(old,'b'),m:arkNum(old,'m')},{o:r.id}),nuovo:true}]);
+      // le sfide già inviate alla vecchia riga sono nel totale portato: restano da inviare solo quelle dopo
+      Object.assign(r,{pm:Math.max(0,r.m-arkNum(old,'m')),pv:Math.max(0,r.v-arkNum(old,'v')),pb:Math.max(0,r.b-arkNum(old,'b'))});
+     }catch(e){if(!/firestore 4\d\d/.test(String(e&&e.message)))throw e}
+    }
+    r.id='';r.k='';arkSave(r);arkMyId=key;arkCache=null;arkLater(arkWait+5000);
+    continue;
    }
-   const s=arkBatch(r),k=arkSecret(),h=await arkHash(k);
-   const j=await coReq('/arena',{fields:arkFields(s,{h})});
-   const id=String(j&&j.name||'').split('/').pop();if(!id)break;
-   Object.assign(r,{id,k,sm:s.m,sv:s.v,sb:s.b});arkSave(r);arkMyId=id;arkCache=null;
+   const dm0=Math.min(ARK.maxBatch,r.pm);
+   if(!doc){
+    const t={n:r.n,m:dm0,v:Math.min(dm0,r.pv),b:Math.min(ARK.maxKills*dm0,r.pb)};
+    try{await CX.commit([{col:'arena',id:key,fields:arkFields(t),nuovo:true}])}
+    catch(e){if(/firestore 4\d\d/.test(String(e&&e.message))){arkLater(arkWait);break}throw e}   // creata intanto da un altro PC: si riprova
+    Object.assign(r,{pm:r.pm-t.m,pv:r.pv-t.v,pb:r.pb-t.b,id:'',k:''});arkSave(r);arkMyId=key;arkCache=null;
+    if(r.pm>0)arkLater(arkWait+5000);
+    break;
+   }
+   // quante sfide si possono aggiungere adesso (30 secondi ciascuna dall'ultima scrittura)
+   const last=Date.parse(doc.fields&&doc.fields.t&&doc.fields.t.timestampValue||'')||0;
+   const dm=Math.min(dm0,Math.floor((Date.now()-last-3000)/arkWait));
+   if(!(dm>=1)){arkLater(Math.max(5000,last+arkWait+3000-Date.now()));break}
+   const cur={n:r.n,m:arkNum(doc,'m'),v:arkNum(doc,'v'),b:arkNum(doc,'b')};
+   const t={n:r.n,m:cur.m+dm,v:cur.v+Math.min(dm,r.pv),b:cur.b+Math.min(ARK.maxKills*dm,r.pb)};
+   try{await CX.commit([{col:'arena',id:key,fields:arkFields(t),nuovo:false,maschera:true}])}
+   catch(e){if(/firestore 4\d\d/.test(String(e&&e.message))){arkLater(arkWait);break}throw e}
+   Object.assign(r,{pm:r.pm-dm,pv:r.pv-(t.v-cur.v),pb:r.pb-(t.b-cur.b)});arkSave(r);arkMyId=key;arkCache=null;
+   if(r.pm>0)arkLater(arkWait+5000);
+   break;
   }
-  return r;
- }).catch(()=>arkLoad());
+  return arkLoad();
+ }).catch(()=>{arkLater(60000);return arkLoad()});
  return arkQ;
 }
 function arkRow(doc){
@@ -98,7 +126,7 @@ async function arkRank(points){
  if(!Number.isFinite(c))throw new Error('conteggio');
  return c+1;
 }
-function arkIsMe(r){const l=arkLoad();return !!(arkMyId&&r.id===arkMyId)||!!(l&&l.id&&r.id===l.id)}
+function arkIsMe(r){const l=arkLoad();return !!(arkMyId&&r.id===arkMyId)||!!(l&&l.id&&r.id===l.id)||!!(l&&typeof CX!=='undefined'&&r.id===CX.chiaveNome(l.n))}
 function arkRows(b){
  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  return '<div class="board-row head"><span>POS.</span><span>NOME</span><span>PUNTI</span><span>VITTORIE · ABBATTIMENTI</span></div>'+
@@ -167,7 +195,7 @@ function arkMatchEnd(g){
  arkLine(base);
  if(!coOn)return;
  arkSync().then(async s=>{
-  if(!s||s.m>s.sm){arkLine(base+' · '+AR_T('VERRÀ SALVATO PIÙ TARDI'));return}
+  if(!s||s.pm>0){arkLine(base+' · '+AR_T('VERRÀ SALVATO PIÙ TARDI'));return}
   try{const rank=await arkRank(arkPoints(s));arkLine(base+' · '+AR_T('CLASSIFICA ARENA')+' '+AR_T('POSIZIONE')+' '+scoreFmt(rank))}catch(e){}
  });
 }
@@ -185,7 +213,7 @@ if(typeof arEnterPhase==='function'){
  };
 }
 // all'avvio: se ci sono sfide non ancora inviate, partono
-if(typeof coOn!=='undefined'&&coOn&&typeof setTimeout==='function')setTimeout(()=>{const r=arkLoad();if(r&&r.m>r.sm)arkSync()},4000);
+if(typeof coOn!=='undefined'&&coOn&&typeof setTimeout==='function')setTimeout(()=>{const r=arkLoad();if(r&&r.pm>0)arkSync()},4000);
 
 // traduzioni
 if(typeof I18N_ROWS!=='undefined'){

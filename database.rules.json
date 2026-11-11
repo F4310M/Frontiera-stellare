@@ -5,23 +5,30 @@
     "arena": {
       "_t": {
         "$id": {
-          ".write": "$id.matches(/^[a-z0-9]{10}$/)",
+          ".write": "auth != null && $id.matches(/^[a-z0-9]{10}$/)",
           ".validate": "!newData.exists() || newData.val() == now"
         }
       },
       "$room": {
-        ".read": "$room.matches(/^[A-Z]{4}$/)",
+        ".read": "auth != null && $room.matches(/^[A-Z]{4}$/)",
         "p": {
           "$pid": {
-            ".write": "$room.matches(/^[A-Z]{4}$/) && $pid.matches(/^[a-z0-9]{10}$/)",
-            ".validate": "!newData.exists() || (newData.hasChildren(['n', 'j', 'x', 'y', 't']) && newData.child('t').val() == now)",
+            ".write": "auth != null && $room.matches(/^[A-Z]{4}$/) && $pid.matches(/^[a-z0-9]{10}$/) && (!data.exists() || data.child('u').val() === auth.uid || (!newData.exists() && data.child('t').val() < now - 5000))",
+            ".validate": "!newData.exists() || (newData.hasChildren(['n', 'j', 'x', 'y', 't', 'u']) && newData.child('t').val() == now)",
+            "u": { ".validate": "newData.val() === auth.uid" },
             "n": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 16" },
-            "a": { ".validate": "newData.isString() && newData.val().length < 6000 && newData.val().beginsWith('data:image/')" },
+            "a": { ".validate": "newData.isString() && newData.val().length < 6000 && newData.val().matches(/^data:image\\/(jpeg|png|webp);base64,[A-Za-z0-9+\\/]+=*$/)" },
             "j": { ".validate": "newData.isNumber()" },
             "t": { ".validate": true },
             "by": { ".validate": "newData.isString() && newData.val().length <= 10" },
             "ph": { ".validate": "newData.isString() && newData.val().matches(/^[LCPE]$/)" },
-            "sh": { ".validate": "newData.hasChildren() || newData.isString()" },
+            "sh": {
+              ".validate": "newData.hasChildren() || (newData.isString() && newData.val().length <= 10)",
+              "$i": {
+                ".validate": "$i.matches(/^[0-9]{1,2}$/) && newData.hasChildren()",
+                "$j": { ".validate": "$j.matches(/^[0-9]$/) && (newData.isNumber() || (newData.isString() && newData.val().length <= 12))" }
+              }
+            },
             "$num": { ".validate": "newData.isNumber() && newData.val() > -1000000 && newData.val() < 1000000" }
           }
         }

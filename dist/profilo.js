@@ -357,7 +357,10 @@ async function profCreateClick(){
  const ph=profNewPhoto||profPhotos(profEmblem(nome));
  $('profCreate').disabled=true;profMsg('profNewMsg','UN MOMENTO…',true);
  try{
+  // nomi unici in classifica (accesso.js): un nome già preso da un altro pilota non si può usare
+  if(typeof CX!=='undefined'&&CX.on&&await CX.nomeLibero(nome)===false)return profMsg('profNewMsg','QUESTO NOME È GIÀ USATO DA UN ALTRO PILOTA: SCEGLINE UN ALTRO');
   await profCreate(nome,pw,ph.foto,ph.mini,profModo);
+  if(typeof CX!=='undefined'&&CX.on)CX.nomeMio(prof.nome);
   $('profPw').value=$('profPw2').value='';profMsg('profNewMsg','');
   prof.snap=profModo==='pc'?'':profSnapKey();profStore();
   show('profNew',false);profRefresh();
