@@ -165,7 +165,10 @@ function saveHome(){
 // Il solo percorso valido e RIPRENDI PARTITA; NUOVA PARTITA passa dalla conferma dedicata.
 if(typeof selectPlanet==='function'){
  const saveSelectPlanet=selectPlanet;
- selectPlanet=function(i){const s=saveLoad(),locked=savePlanetIndex(s);return saveSelectPlanet(s&&locked>=0?locked:i)};
+ // 2026-11-11: il blocco vale solo finché il pianeta salvato è ancora da giocare. Appena liberato
+ // (es. LYRA) la mappa sceglie il prossimo pianeta: senza questo controllo il pannello mostrava
+ // il nuovo pianeta (VESPER) con i dati e la scritta LIBERATO di quello appena concluso.
+ selectPlanet=function(i){const s=saveLoad(),locked=savePlanetIndex(s);const ok=locked>=0&&(typeof mapPlayable!=='function'||mapPlayable(planets[locked]));return saveSelectPlanet(s&&ok?locked:i)};
 }
 if(typeof brief==='function'){
  const saveBrief=brief;brief=function(){if(saveLoad())return;return saveBrief.apply(this,arguments)};

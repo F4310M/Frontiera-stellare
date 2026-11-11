@@ -29,5 +29,14 @@ assert(run("stStima('x'.repeat(140),false)")>=8000,'senza voce resta il tempo di
 const html=fs.readFileSync('dist/index.html','utf8');
 assert(/<script src="storia\.js"><\/script>\s*<script src="esci\.js"><\/script>\s*<\/body>/.test(html),'storia.js prima di esci.js');
 assert(html.indexOf('profilo.js')<html.indexOf('storia.js')&&html.indexOf('i18n.js')<html.indexOf('storia.js'),'dopo profilo e lingue');
+// LYRA dettagliata nello sfondo (11-11): usa la superficie di pianeti-dettaglio.js con più risoluzione
+run(fs.readFileSync('dist/pianeti-dettaglio.js','utf8').replace(/^const /gm,'var '));
+assert.equal(run('stLyraOk()'),true,'pianeti-dettaglio.js disponibile');
+assert.equal(run('stLyraP().theme'),'mare','LYRA è il mondo oceanico');
+assert(run('ST_LYRA.TW')>=2048&&run('ST_LYRA.TH')*2===run('ST_LYRA.TW'),'mappa grande e proporzionata');
+{const r=run("(()=>{const g=pdTexStart({theme:'mare',code:'HX–01',name:'LYRA'});return stLyraRows(g,150,152)})()");
+ assert.equal(r.col.length,2*768*4);assert(r.col.some((v,i)=>i%4===3&&v>0),'c’è del mare');assert(new Set(r.col).size>40,'superficie varia');}
+{const u=run('stLyraLut(64,768,384)');assert(Math.abs(u.n-Math.PI*32*32)<120,'disco pieno');assert(u.vrow.every(v=>v%768===0))}
+assert(/try\{stLyraTex\(\)\}catch/.test(src),'la mappa parte quando si apre la storia');
 assert(!/\.filter=|shadowBlur/.test(src.replace(/^\/\/.*$/gm,'')),'niente filter o shadowBlur');
 console.log('PASS: storia di Conex');

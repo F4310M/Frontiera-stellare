@@ -34,7 +34,7 @@ if(typeof ECO_ITEMS!=='undefined'&&!ECO_ITEMS.some(it=>it.id==='jetpack'))ECO_IT
  id:'jetpack',icon:'jetpack',name:'JETPACK POTENZIATO',
  desc:'Nelle missioni a terra il jetpack del pilota vola più veloce e resta acceso più a lungo prima di surriscaldarsi.',
  levels:['VELOCITÀ +15% · DURATA +30%','VELOCITÀ +30% · DURATA +60%','VELOCITÀ +45% · DURATA +100%'],
- prices:[2200,4600,8200]
+ prices:[750,1600,2850]
 });
 function mkJetLv(){return Math.max(0,Math.min(3,typeof ecoUpgrade==='function'?ecoUpgrade('jetpack')|0:0))}
 

@@ -52,14 +52,14 @@ console.log('PASS: pianeta di destinazione');
 // Doppio laser, prezzi e guadagni
 run('eco.balance=20000;eco.upgrades={};selected=0;startGame();arrivalRemaining=0;bullets=[];player.fire=0;shoot()');
 assert.equal(val('bullets.length'),1);
-assert.equal(val('ecoBuy("twin")'),true,'Il doppio laser si compra al mercato');assert.equal(val('eco.balance'),10999,'9.000 CR (più 1 CR del primo colpo)');
+assert.equal(val('ecoBuy("twin")'),true,'Il doppio laser si compra al mercato');assert.equal(val('eco.balance'),16850,'3.150 CR (il primo colpo da 0,5 CR si paga col prossimo)');
 run('bullets=[];player.fire=0;shoot()');assert.equal(val('bullets.length'),2,'Due raggi a ogni colpo');
 assert(val('Math.hypot(bullets[0].x-bullets[1].x,bullets[0].y-bullets[1].y)')>10,'Raggi paralleli separati');
 assert.equal(val('eco.run.count.laser'),3,'Ogni raggio costa un colpo');
 run('abort();selected=0;startPlatform()');step(3.5);run('pf.phase="missione";pf.shots=[];pf.pilot.fire=0;pfShoot()');assert.equal(val('pf.shots.length'),2,'Doppio laser anche a terra');
 run('abort();eco.upgrades={}');
-assert(val('ECO_ITEMS.every(i=>i.prices[0]>=1400)'),'Potenziamenti più cari');
-assert.equal(val('ECO_BOUNTY[1]'),4);assert.equal(val('ecoPlanetReward(planets[4])'),6000);
+assert(val('ECO_ITEMS.every(i=>i.prices[0]<=3200)'),'Potenziamenti economici (2026-11-11)');
+assert.equal(val('ECO_BOUNTY[1]'),10);assert.equal(val('ecoPlanetReward(planets[4])'),15000);
 console.log('PASS: doppio laser, prezzi e guadagni');
 
 // Coloni liberati corrono indietro verso la nave

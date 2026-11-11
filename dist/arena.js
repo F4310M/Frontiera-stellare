@@ -19,7 +19,8 @@ const ARENA={R:5000,max:6,dur:300,win:10,respawn:3,hz:12,hp:100,dmg:10,bulletSpe
  quickTeam:['AURA','DUNA','ZETA','KAPA','RIGA','TERA','VOLT','ONDA'],teamMax:3,teamWin:15,teamWait:1.5,
  teams:{1:{n:'IMPERIALI',c:'#ff5268',fa:'I'},2:{n:'RIBELLI',c:'#51e6ff',fa:'R'}},
  // missili del LANCIATORE MULTIPLO (mercato): 1 + livello missili guidati sui nemici più vicini
- mis:{speed:560,turn:3.4,life:3,dmg:20,cd:6,range:1500}};
+ // (2026-11-11) come nel gioco in singolo: il mirino aggancia i nemici sullo schermo in lock secondi, il missile insegue solo chi è agganciato
+ mis:{speed:560,turn:3.4,life:3,dmg:20,cd:6,range:1500,lock:.8}};
 const AR_FACTIONS={R:{id:'R',name:'RIBELLI',color:'#51e6ff'},I:{id:'I',name:'IMPERO GALATTICO',color:'#ff5268'}};
 function arFaction(v){
  if(v==='I'||v==='R')return v;
@@ -237,12 +238,37 @@ function arOnState(g,tree,changed){
   }
  }
 }
-// missili del lanciatore multiplo: uno sul nemico più vicino, gli altri sui successivi
+// missili del lanciatore multiplo: ogni missile va su un bersaglio agganciato (senza aggancio vola dritto)
 function arTargets(g,n){
- const m=g.me,list=[];
- for(const pid in g.others){const o=g.others[pid];if(!o.s.al||o.s.iv||arAlly(g,pid,g.pid))continue;const d=Math.hypot(o.x-m.x,o.y-m.y);if(d<ARENA.mis.range)list.push({pid,d})}
- list.sort((a,b)=>a.d-b.d);const out=[];for(let i=0;i<n;i++)out.push(list.length?list[i%list.length].pid:'');return out;
+ const L=(g.locks||[]).filter(l=>l.p>=1).map(l=>l.pid),out=[];
+ for(let i=0;i<n;i++)out.push(L.length?L[i%L.length]:'');return out;
 }
+// ---------------------------------------------------------------- aggancio dei missili guidati (2026-11-11)
+// Chi aggancia manda lk0..lk2 = codice numerico del pilota agganciato (le regole del database accettano solo numeri):
+// chi riceve il proprio codice sa di essere nel mirino e vede il bordo dello schermo rosso che pulsa.
+function arLockCode(pid){return pid?arHash(pid)%999983+1:0}
+function arLockView(){if(typeof W!=='number'||typeof H!=='number')return{w:1e9,h:1e9};const z=arZoom();return{w:W/2/z+30,h:H/2/z+30}}
+function arLockOk(g,pid,v){const o=g.others[pid],m=g.me;if(!o||!o.s.al||o.s.iv||arAlly(g,pid,g.pid))return false;
+ return Math.abs(o.x-m.x)<v.w&&Math.abs(o.y-m.y)<v.h&&Math.hypot(o.x-m.x,o.y-m.y)<ARENA.mis.range}
+function arLockTick(g,dt){
+ const m=g.me,n=1+(g.up.salvo|0);
+ if(!m.al||g.phase==='C'||g.phase==='E')g.locks=[];
+ else{
+  const v=arLockView(),L=(g.locks||[]).filter(l=>arLockOk(g,l.pid,v));
+  if(L.length<n){const taken=new Set(L.map(l=>l.pid)),free=[];
+   for(const pid in g.others)if(!taken.has(pid)&&arLockOk(g,pid,v))free.push({pid,d:Math.hypot(g.others[pid].x-m.x,g.others[pid].y-m.y)});
+   free.sort((a,b)=>a.d-b.d);for(const f of free.slice(0,n-L.length))L.push({pid:f.pid,p:0,snd:false})}
+  g.locks=L.slice(0,n);
+  for(const l of g.locks){l.p=Math.min(1,l.p+dt/ARENA.mis.lock);if(l.p>=1&&!l.snd){l.snd=true;g.events.push({type:'locked'})}}
+ }
+ // chi ha agganciato me, e i missili che mi inseguono
+ const code=arLockCode(g.pid);let by=0;
+ if(m.al)for(const pid in g.others){const s=g.others[pid].s;if(!s.al||arAlly(g,pid,g.pid))continue;if(+s.lk0===code||+s.lk1===code||+s.lk2===code)by++}
+ const inc=m.al&&g.bullets.some(b=>b.mis&&b.tg===g.pid&&b.o!==g.pid);
+ if((by>0||inc)&&!(g.lockedBy>0||g.misIn))g.events.push({type:'targeted'});
+ g.lockedBy=by;g.misIn=inc;
+}
+function arLockSend(g){const L=(g.locks||[]).filter(l=>l.p>=1);return{lk0:L[0]?arLockCode(L[0].pid):0,lk1:L[1]?arLockCode(L[1].pid):0,lk2:L[2]?arLockCode(L[2].pid):0}}
 function arLaunch(g){
  const lv=g.up.salvo|0;if(g.misCd>0)return false;
  const m=g.me,n=lv+1,tgs=arTargets(g,n);
@@ -419,6 +445,7 @@ function arTick(g,dt,inp){
  for(const pid in g.others){const o=g.others[pid],s=o.s,age=Math.min(.3,g.time-o.seen),tx=s.x+(+s.vx||0)*age,ty=s.y+(+s.vy||0)*age;
   if(Math.hypot(tx-o.x,ty-o.y)>320){o.x=tx;o.y=ty}else{const k=Math.min(1,dt*12);o.x+=(tx-o.x)*k;o.y+=(ty-o.y)*k}
   const da=((+s.r||0)-o.r+Math.PI*3)%(Math.PI*2)-Math.PI;o.r+=da*Math.min(1,dt*14)}
+ arLockTick(g,dt);
  g.shots=g.shots.filter(s=>g.time-s.t<.6);
  g.sendT-=dt;
  if(g.sendT>0)return null;
@@ -427,10 +454,10 @@ function arTick(g,dt,inp){
  const mt=g.isHost&&g.meteor?g.meteor:null;const rb=arRockMask(g);
  return {x:Math.round(m.x),y:Math.round(m.y),vx:Math.round(m.vx),vy:Math.round(m.vy),r:Math.round(m.r*100)/100,f:m.f,s:m.s,
   h:Math.round(m.h),sd:m.sd,bo:m.bo,iv:m.iv,al:m.al,k:m.k,d:m.d,dz:m.dz,by:m.by,sh:g.shots.map(s=>s.sh),ph:m.ph,rt:m.rt,
-  mx:mt?Math.round(mt.x):0,my:mt?Math.round(mt.y):0,mvx:mt?Math.round(mt.vx):0,mvy:mt?Math.round(mt.vy):0,mw:mt?Math.round(mt.w*10)/10:0,ml:mt?Math.round(mt.life*10)/10:0,ms:g.meteorSeq,rb0:rb[0],rb1:rb[1],rb2:rb[2],rb3:rb[3],rb4:rb[4],rb5:rb[5],md:g.mode,tm:m.tm,tj:m.tj,ug:m.ug,fa:arFaNum(m.fa),cg:m.cg||0};
+  mx:mt?Math.round(mt.x):0,my:mt?Math.round(mt.y):0,mvx:mt?Math.round(mt.vx):0,mvy:mt?Math.round(mt.vy):0,mw:mt?Math.round(mt.w*10)/10:0,ml:mt?Math.round(mt.life*10)/10:0,ms:g.meteorSeq,rb0:rb[0],rb1:rb[1],rb2:rb[2],rb3:rb[3],rb4:rb[4],rb5:rb[5],md:g.mode,tm:m.tm,tj:m.tj,ug:m.ug,fa:arFaNum(m.fa),cg:m.cg||0,...arLockSend(g)};
 }
 function arFull(g){const m=g.me,p=arTickSnapshot(g);return Object.assign({n:m.n,j:m.j,fa:arFaNum(m.fa)},m.a?{a:m.a}:{},p)}
-function arTickSnapshot(g){const m=g.me;return {x:Math.round(m.x),y:Math.round(m.y),vx:0,vy:0,r:Math.round(m.r*100)/100,f:0,s:0,h:Math.round(m.h),sd:0,bo:0,iv:1,al:m.al,k:m.k,d:m.d,dz:m.dz,by:m.by,ph:m.ph,rt:m.rt,mx:0,my:0,mvx:0,mvy:0,mw:0,ml:0,ms:0,rb0:0,rb1:0,rb2:0,rb3:0,rb4:0,rb5:0,cg:0,md:g.mode,tm:m.tm,tj:m.tj,ug:m.ug}}
+function arTickSnapshot(g){const m=g.me;return {x:Math.round(m.x),y:Math.round(m.y),vx:0,vy:0,r:Math.round(m.r*100)/100,f:0,s:0,h:Math.round(m.h),sd:0,bo:0,iv:1,al:m.al,k:m.k,d:m.d,dz:m.dz,by:m.by,ph:m.ph,rt:m.rt,mx:0,my:0,mvx:0,mvy:0,mw:0,ml:0,ms:0,rb0:0,rb1:0,rb2:0,rb3:0,rb4:0,rb5:0,cg:0,md:g.mode,tm:m.tm,tj:m.tj,ug:m.ug,lk0:0,lk1:0,lk2:0}}
 
 // ---------------------------------------------------------------- rete
 function arDbUrl(){
@@ -723,6 +750,8 @@ function arHandleEvents(g){
   else if(e.type==='team'){arMessage((e.moved?AR_T('SQUADRA COMPLETA')+' · ':'')+AR_T('LA TUA SQUADRA')+': '+arTeamName(e.tm),2.2);arSyncPanels(true)}
   else if(e.type==='mode')arSyncPanels(true);
   else if(e.type==='lock')arFeedLock(g);
+  else if(e.type==='locked'){if(typeof sfx==='function')try{sfx('lock')}catch(x){}}
+  else if(e.type==='targeted'){arMessage(AR_T('SEI AGGANCIATO!'),1.6);if(typeof tone==='function')try{tone(760,.12,'square',.03,1180)}catch(x){}}
   else if(e.type==='rock'){if(typeof sfx==='function'&&Math.hypot(e.x-g.me.x,e.y-g.me.y)<1400)try{sfx('boom')}catch(x){}}
   else if(e.type==='comet'){arMessage(AR_T('COMETA IN ARRIVO!'),2.4);if(typeof sfx==='function')try{sfx('ui')}catch(x){}}
   else if(e.type==='missile'){if(typeof sfx==='function')try{sfx('missile')}catch(x){}}
@@ -771,7 +800,9 @@ function arUpdate(dt){
  set('arPhaseLbl',AR_T(g.phase==='P'?'TEMPO':g.phase==='C'?'VIA TRA':g.phase==='E'?'NUOVA SFIDA TRA':'ALLENAMENTO'));
  set('arTime',g.phase==='L'?'--:--':arFmt(g.rt));set('arKills',String(m.k));
  if(g.mode===1){const ts=arTeamScore(g);set('arT1',String(ts[1]));set('arT2',String(ts[2]))}
- arShow('arMisChip',true);set('arMis',g.misCd>0?Math.ceil(g.misCd)+' s':AR_T('PRONTI'));
+ arShow('arMisChip',true);{const L=g.locks||[],done=L.filter(l=>l.p>=1).length;set('arMis',g.misCd>0?Math.ceil(g.misCd)+' s':done?AR_T('AGGANCIATI')+' '+done+'/'+(1+(g.up.salvo|0)):AR_T('PRONTI'))}
+ // allarme: bip finché un nemico ti tiene agganciato, più fitto se il missile è già partito
+ if(g.lockedBy>0||g.misIn){arUI.beep=(arUI.beep||0)-dt;if(arUI.beep<=0){arUI.beep=g.misIn?.24:.5;if(typeof tone==='function')try{tone(g.misIn?1240:920,.06,'square',.016)}catch(x){}}}else arUI.beep=0;
  set('arHp',Math.round(m.h)+'%');bar('arHpBar',m.h);set('arBo',Math.round(ar.boost)+'%');bar('arBoBar',ar.boost);set('arSh',Math.round(ar.shield)+'%');bar('arShBar',ar.shield);
  const hb=arEl('arHpBar');if(hb&&typeof hpColor==='function')try{hb.style.background=hpColor(m.h)}catch(e){}
  if(g.phase==='E')set('arNext',AR_T('NUOVA SFIDA TRA')+' '+Math.ceil(g.rt)+' s');
@@ -957,6 +988,7 @@ function arDraw(){
   if(m.sd)arDrawBarrier(m.x,m.y,g.shieldHit/.55,now);
   arDrawName(m.n,m.x,m.y,arColor(g,g.pid),false);
   if(m.cg>0)arDrawCharge(m.x,m.y,m.r,Math.min(1,m.cg),now)}
+ arDrawLocks(g,now);
  // particelle
  const dp=typeof drawParticle==='function'?drawParticle:null;
  ctx.globalCompositeOperation='lighter';
@@ -971,7 +1003,34 @@ function arDraw(){
  try{arDrawRadar(g,now)}catch(e){}
  if(g.edge>0){ctx.fillStyle=`rgba(255,40,70,${g.edge*.5})`;ctx.fillRect(0,0,W,H)}
  try{drawVignette()}catch(e){}
+ arDrawLockWarn(g,now);
  arDrawCrosshair();
+}
+// mirini di aggancio sui nemici (come drawTargetLock di missili-nemici.js, senza shadowBlur)
+function arDrawLocks(g,now){
+ const m=g.me;if(!m.al)return;
+ for(const l of g.locks||[]){const o=g.others[l.pid];if(!o)continue;
+  const p=l.p,sm=p*p*(3-2*p),x=m.x+(o.x-m.x)*sm,y=m.y+(o.y-m.y)*sm,locked=p>=1,beat=locked?.5+.5*Math.sin(now*14):0,blink=locked&&Math.floor(now*5)%2===0;
+  const r=ARENA.shipR+16+(1-p)*16+beat*5;
+  ctx.save();ctx.strokeStyle=locked?(blink?'#ff6a4d':'#ffb567'):'#8ce9ec';ctx.fillStyle=ctx.strokeStyle;
+  ctx.lineWidth=locked?2+beat:1.5;ctx.globalAlpha=locked?.6+.4*beat:.85;
+  ctx.beginPath();for(const sx of [-1,1])for(const sy of [-1,1]){ctx.moveTo(x+sx*r,y+sy*(r-10));ctx.lineTo(x+sx*r,y+sy*r);ctx.lineTo(x+sx*(r-10),y+sy*r)}ctx.stroke();
+  ctx.beginPath();ctx.arc(x,y,r+6,-Math.PI/2,-Math.PI/2+p*Math.PI*2);ctx.stroke();
+  if(locked){const w=(now*1.6)%1;ctx.globalAlpha=(1-w)*.6;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y,r+6+w*26,0,6.283);ctx.stroke();ctx.globalAlpha=1;ctx.beginPath();ctx.arc(x,y,2.5,0,6.283);ctx.fill()}
+  ctx.globalAlpha=locked?(blink?1:.45):.85;ctx.font="600 10px 'Chakra Petch',sans-serif";ctx.textAlign='center';ctx.fillText(AR_T(locked?'AGGANCIATO':'AGGANCIO'),x,y-r-14);
+  ctx.restore()}
+}
+// sei nel mirino di un nemico: il bordo dello schermo diventa rosso e pulsa (più veloce col missile in arrivo)
+function arDrawLockWarn(g,now){
+ if(!g||!g.me.al||!(g.lockedBy>0||g.misIn))return;
+ const k=.5+.5*Math.sin(now*(g.misIn?17:9)),a=.32+.48*k,t=Math.max(40,Math.min(W,H)*(.07+.03*k));
+ ctx.save();
+ const edge=(x0,y0,x1,y1,rx,ry,rw,rh)=>{const gr=ctx.createLinearGradient(x0,y0,x1,y1);gr.addColorStop(0,`rgba(255,28,48,${a})`);gr.addColorStop(1,'rgba(255,28,48,0)');ctx.fillStyle=gr;ctx.fillRect(rx,ry,rw,rh)};
+ edge(0,0,0,t,0,0,W,t);edge(0,H,0,H-t,0,H-t,W,t);edge(0,0,t,0,0,0,t,H);edge(W,0,W-t,0,W-t,0,t,H);
+ ctx.strokeStyle=`rgba(255,60,76,${.45+.5*k})`;ctx.lineWidth=3+3*k;ctx.strokeRect(2,2,W-4,H-4);
+ ctx.globalAlpha=.55+.45*k;ctx.fillStyle='#ff4a5e';ctx.font="700 15px 'Chakra Petch',sans-serif";ctx.textAlign='center';
+ ctx.fillText(AR_T(g.misIn?'MISSILE IN ARRIVO!':'SEI AGGANCIATO!'),W/2,Math.max(70,H*.13));
+ ctx.restore();
 }
 // mirino come nel gioco in singolo (.crosshair di style.css), disegnato sulla posizione del mouse
 function arAimOn(){return !!(ar&&arUI.on&&!(typeof document!=='undefined'&&document.body&&document.body.classList.contains('touch')))}
@@ -1114,6 +1173,8 @@ if(typeof I18N_ROWS!=='undefined'){
   ["VINCONO I RIBELLI","THE REBELS WIN","LES REBELLES GAGNENT","GANAN LOS REBELDES","ПОБЕДИЛИ МЯТЕЖНИКИ","叛军获胜","反乱軍の勝利"],
   ["MISSILI","MISSILES","MISSILES","MISILES","РАКЕТЫ","导弹","ミサイル"],
   ["PRONTI","READY","PRÊTS","LISTOS","ГОТОВЫ","就绪","準備完了"],
+  ["SEI AGGANCIATO!","YOU ARE LOCKED ON!","TU ES VERROUILLÉ !","¡TE HAN FIJADO!","ТЕБЯ ЗАХВАТИЛИ!","你已被锁定！","ロックオンされた！"],
+  ["AGGANCIATI","LOCKED","VERROUILLÉS","FIJADOS","ЗАХВАЧЕНО","已锁定","ロック"],
   ["MISSILE IN ARRIVO!","INCOMING MISSILE!","MISSILE EN APPROCHE !","¡MISIL ENTRANTE!","РАКЕТА НА ПОДЛЁТЕ!","导弹来袭！","ミサイル接近！"]
  ];
  for(const r of rows)if(!I18N_ROWS.some(x=>x[0]===r[0]))I18N_ROWS.push(r);

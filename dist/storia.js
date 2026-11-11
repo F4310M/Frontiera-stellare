@@ -153,6 +153,143 @@ function stSfondo(w,h){
   mid:stLayer(W,H,Math.round(W*H/9000),.7*d,1.5*d,.35,23,'#ffd7a0'),
   near:stLayer(W,H,Math.round(W*H/32000),1.1*d,2.2*d,.5,37,'#bfe8ff')};
 }
+// ---- LYRA dettagliata (2026-11-11): il pianeta in sottofondo è LYRA, una sfera vera come nella home
+// (stessa superficie di pianeti-dettaglio.js: oceani, continenti, montagne, nuvole, luci delle città),
+// ma con una mappa molto più grande (2560x1280) e dettagli fini in più, perché qui il pianeta è enorme.
+// La mappa si calcola UNA volta, divisa fra più worker (il gioco non scatta), e resta in memoria
+// per le volte successive. Il pianeta gira piano: si ridisegna 8 volte al secondo con una tabella
+// già pronta (solo putImageData + drawImage, niente filter o shadowBlur).
+// Finché la mappa non è pronta resta il pianeta scuro di prima, poi LYRA compare in dissolvenza.
+const ST_LYRA={TW:2560,TH:1280,tex:null,busy:false,secs:360,fps:8,maxD:1400,lut:null};
+function stLyraP(){
+ const p=typeof planets!=='undefined'&&planets&&planets.find?planets.find(q=>q&&q.name==='LYRA'):null;
+ return p||{name:'LYRA',code:'HX–01',theme:'mare'};
+}
+function stLyraOk(){return typeof pdTexStart==='function'&&typeof pdTexel==='function'&&typeof pdNoise==='function'&&typeof PD_THEMES!=='undefined'}
+// righe [a,b) della mappa, con un po' di dettaglio fine in più (rocce, coste, filamenti delle nuvole)
+function stLyraRows(g,a,b){
+ const TW=g.TW,TH=g.TH,n=(b-a)*TW,col=new Uint8ClampedArray(n*4),emit=new Uint8Array(n),cloud=new Uint8Array(n),N=g.N;
+ for(let v=a;v<b;v++){
+  g.prevH=undefined;const lat=(.5-(v+.5)/TH)*Math.PI,cl=Math.cos(lat),y=Math.sin(lat);
+  for(let u=0;u<TW;u++){
+   const lon=(u+.5)/TW*Math.PI*2,x=cl*Math.cos(lon),z=cl*Math.sin(lon),o=pdTexel(g,x,y,z,lat,lon),i=(v-a)*TW+u;
+   let f=1;
+   if(o[3]<.5){f=1+(N.n3(x*170+3,y*170,z*170)-.5)*.14+(N.n3(x*420,y*420+7,z*420)-.5)*.05*(1-o[0]/320)}
+   else f=1+(N.n3(x*140,y*140,z*140+5)-.5)*.05;
+   let c=o[5];if(c>0)c*=.7+.6*N.fbm(x*16+11,y*26,z*16,3);
+   col[i*4]=o[0]*f;col[i*4+1]=o[1]*f;col[i*4+2]=o[2]*f;col[i*4+3]=o[3]*255;
+   emit[i]=Math.min(255,o[4]*255);cloud[i]=Math.min(255,c*255);
+  }
+ }
+ return{col,emit,cloud};
+}
+function stLyraTex(){
+ if(ST_LYRA.tex||ST_LYRA.busy||!stLyraOk())return;
+ const P=stLyraP(),p={theme:P.theme||'mare',code:P.code,name:P.name},TW=ST_LYRA.TW,TH=ST_LYRA.TH;
+ let url=null;
+ try{
+  if(typeof Worker==='function'&&typeof Blob==='function'&&typeof URL!=='undefined'&&URL.createObjectURL){
+   const src=[`const PD={TW:${TW},TH:${TH}};`,`const PD_THEMES=${JSON.stringify(PD_THEMES)};`,
+    'const pdHex='+pdHex,'const pdMix='+pdMix,'const pdSmooth='+pdSmooth,
+    pdNoise,pdRamp,pdSeed,pdTexStart,pdTexel,stLyraRows,
+    'onmessage=e=>{const g=pdTexStart(e.data.p);g.col=g.emit=g.cloud=null;const r=stLyraRows(g,e.data.a,e.data.b);postMessage({a:e.data.a,b:e.data.b,col:r.col,emit:r.emit,cloud:r.cloud},[r.col.buffer,r.emit.buffer,r.cloud.buffer])};'].join('\n');
+   url=URL.createObjectURL(new Blob([src],{type:'text/javascript'}));
+  }
+ }catch(e){url=null}
+ if(!url)return;
+ const hc=typeof navigator!=='undefined'&&navigator.hardwareConcurrency||4,nw=Math.max(2,Math.min(6,hc-1));
+ const T=PD_THEMES[p.theme]||PD_THEMES.mare;
+ const tex={TW,TH,T,col:new Uint8ClampedArray(TW*TH*4),emit:new Uint8Array(TW*TH),cloud:new Uint8Array(TW*TH),cc:pdHex(T.cloud[2]),atm:pdHex(T.atm),glow:pdHex(T.glow),ready:false};
+ let left=nw;const ws=[];ST_LYRA.busy=true;
+ const finito=ok=>{for(const w of ws)try{w.terminate()}catch(e){}ws.length=0;ST_LYRA.busy=false;try{URL.revokeObjectURL(url)}catch(e){}if(ok){tex.ready=true;ST_LYRA.tex=tex}};
+ for(let k=0;k<nw;k++){
+  const a=Math.floor(TH*k/nw),b=Math.floor(TH*(k+1)/nw);let w;
+  try{w=new Worker(url)}catch(e){finito(false);return}
+  ws.push(w);
+  w.onmessage=e=>{const d=e.data,o=d.a*TW;tex.col.set(d.col,o*4);tex.emit.set(d.emit,o);tex.cloud.set(d.cloud,o);if(--left===0)finito(true)};
+  w.onerror=e=>{if(e&&e.preventDefault)e.preventDefault();finito(false)};
+  w.postMessage({p,a,b});
+ }
+}
+// mappa da usare: quella grande, altrimenti quella della home (più piccola) se è già pronta
+function stLyraUsa(){
+ if(ST_LYRA.tex)return ST_LYRA.tex;
+ if(typeof PD==='undefined'||!PD.tex)return null;
+ const P=stLyraP(),g=PD.tex.get(P.code||P.name);
+ if(!g||!g.ready||ST_LYRA.busy)return null;
+ return{TW:PD.TW,TH:PD.TH,T:g.T,col:g.col,emit:g.emit,cloud:g.cloud,cc:g.cc,atm:pdHex(g.T.atm),glow:pdHex(g.T.glow),ready:true};
+}
+// tabella per ogni pixel del disco (luce da in alto a sinistra: la notte resta in basso a destra, come prima)
+function stLyraLut(D,TW,TH){
+ const k=D+'x'+TW;if(ST_LYRA.lut&&ST_LYRA.lut.k===k)return ST_LYRA.lut;
+ const R=D/2,L0=[-.66,-.6,.45],ln=Math.hypot(...L0),L=L0.map(v=>v/ln),H0=[L[0],L[1],L[2]+1],hn=Math.hypot(...H0),H=H0.map(v=>v/hn);
+ const tilt=.42,ct=Math.cos(tilt),st=Math.sin(tilt),lean=-.32,cl=Math.cos(lean),sl=Math.sin(lean);
+ let n=0;for(let py=0;py<D;py++){const ny=(py+.5-R)/R;for(let px=0;px<D;px++){const nx=(px+.5-R)/R;if(nx*nx+ny*ny<=1)n++}}
+ const idx=new Uint32Array(n),vrow=new Uint32Array(n),lon0=new Float32Array(n),lit=new Float32Array(n),spc=new Float32Array(n),rim=new Float32Array(n),night=new Float32Array(n),edge=new Float32Array(n);
+ let j=0;
+ for(let py=0;py<D;py++)for(let px=0;px<D;px++){
+  const nx=(px+.5-R)/R,ny=(py+.5-R)/R,q=nx*nx+ny*ny;if(q>1)continue;
+  const nz=Math.sqrt(1-q);
+  let x=nx*cl-ny*sl,y=nx*sl+ny*cl,z=nz;const y2=y*ct-z*st,z2=y*st+z*ct;y=y2;z=z2;
+  const lat=Math.asin(Math.max(-1,Math.min(1,-y))),lon=Math.atan2(z,x);
+  const dl=nx*L[0]+ny*L[1]+nz*L[2],day=pdSmooth(-.1,.3,dl);
+  idx[j]=py*D+px;vrow[j]=Math.min(TH-1,Math.max(0,Math.floor((.5-lat/Math.PI)*TH)))*TW;
+  lon0[j]=((lon/(Math.PI*2))*TW+TW)%TW;
+  lit[j]=.025+.975*day*(.45+.55*Math.max(0,dl));
+  spc[j]=Math.pow(Math.max(0,nx*H[0]+ny*H[1]+nz*H[2]),110)*day*.6;
+  rim[j]=Math.pow(1-nz,2.6)*(.12+.88*day);
+  night[j]=1-day;edge[j]=Math.min(1,(1-Math.sqrt(q))*R/1.3);
+  j++;
+ }
+ ST_LYRA.lut={k,D,n,idx,vrow,lon0,lit,spc,rim,night,edge};
+ return ST_LYRA.lut;
+}
+function stLyraRender(B,t){
+ const X=B.ly,tex=X.tex,D=X.D,TW=tex.TW,U=stLyraLut(D,TW,tex.TH);
+ const {n,idx,vrow,lon0,lit,spc,rim,night,edge}=U,col=tex.col,em=tex.emit,cld=tex.cloud,out=X.img.data,cc=tex.cc,atm=tex.atm,glow=tex.glow;
+ const turn=(t/ST_LYRA.secs)%1,offG=(1-turn)*TW+TW*.62,offC=(1-(turn*1.18%1))*TW+TW*.3,sh=TW*.004;
+ for(let j=0;j<n;j++){
+  const row=vrow[j],l0=lon0[j];
+  const u=((l0+offG)|0)%TW,w=((l0+offC)|0)%TW,ws=((l0+offC+sh)|0)%TW,ti=row+u,k=ti*4;
+  let r=col[k],gg=col[k+1],b=col[k+2];
+  const c=cld[row+w]/255,cs=cld[row+ws]/255,shade=1-cs*.45;r*=shade;gg*=shade;b*=shade;
+  r+=(cc[0]-r)*c;gg+=(cc[1]-gg)*c;b+=(cc[2]-b)*c;
+  const Lt=lit[j];r*=Lt;gg*=Lt;b*=Lt;
+  const sp=spc[j]*col[k+3]/255*(1-c);if(sp>0){r+=255*sp*.9;gg+=245*sp*.9;b+=225*sp*.9}
+  const e=em[ti]/255*(1-c*.8)*night[j];if(e>0){r+=glow[0]*e;gg+=glow[1]*e;b+=glow[2]*e}
+  const a=rim[j]*.8;r+=(atm[0]-r)*a;gg+=(atm[1]-gg)*a;b+=(atm[2]-b)*a;
+  const o=idx[j]*4;out[o]=r;out[o+1]=gg;out[o+2]=b;out[o+3]=255*edge[j];
+ }
+ X.ctx.putImageData(X.img,0,0);X.drawn=true;
+}
+// prepara (una volta per dimensione) la tela del disco e l'alone, poi aggiorna la rotazione
+function stLyraDisegna(g,B,px,py,dt){
+ if(!B.ly){
+  const tex=stLyraUsa();if(!tex)return 0;
+  const P=B.pl.width,r=P*.42,D=Math.max(8,Math.min(ST_LYRA.maxD,Math.round(r*2)));
+  const cv=document.createElement('canvas');cv.width=cv.height=D;const ctx=cv.getContext('2d');
+  if(!ctx||!ctx.createImageData)return 0;
+  const halo=document.createElement('canvas');halo.width=halo.height=P;const h=halo.getContext('2d');
+  if(h){const A=tex.atm,cx=P/2;
+   const gr=h.createRadialGradient(cx,cx,r*.94,cx,cx,r*1.19);
+   gr.addColorStop(0,'rgba('+A+',.34)');gr.addColorStop(.35,'rgba('+A+',.12)');gr.addColorStop(1,'rgba('+A+',0)');
+   h.fillStyle=gr;h.fillRect(0,0,P,P);
+   // bordo illuminato sottile dal lato del sole
+   h.strokeStyle='rgba(170,230,255,.5)';h.lineWidth=Math.max(1,P*.003);h.beginPath();h.arc(cx,cx,r-h.lineWidth*.6,Math.PI*.92,Math.PI*1.62);h.stroke();
+  }
+  B.ly={tex,D,cv,ctx,img:ctx.createImageData(D,D),halo,r,a:0,t:0,last:-1,drawn:false};
+ }
+ const X=B.ly;
+ // se nel frattempo è arrivata la mappa grande, si passa a quella
+ if(ST_LYRA.tex&&X.tex!==ST_LYRA.tex){X.tex=ST_LYRA.tex;X.last=-1}
+ X.t+=dt;
+ if(X.last<0||X.t-X.last>=1/ST_LYRA.fps){X.last=X.t;stLyraRender(B,X.t+40)}
+ if(!X.drawn)return 0;
+ X.a=Math.min(1,X.a+dt/1.6);
+ const P=B.pl.width,c=P/2;
+ g.globalAlpha=X.a;g.drawImage(X.halo,px,py);g.drawImage(X.cv,px+c-X.r,py+c-X.r,X.r*2,X.r*2);g.globalAlpha=1;
+ return X.a;
+}
 function stDisegna(dt){
  const c=$('storiaCanvas');if(!c||!c.getContext)return;
  const w=innerWidth,h=innerHeight;
@@ -165,7 +302,10 @@ function stDisegna(dt){
   const y=(B.t*v*B.d)%B.H;g.drawImage(L,0,y-B.H);g.drawImage(L,0,y);
  }
  const P=B.pl.width,px=B.W-P*.62,py=B.H-P*.4-Math.min(B.t,150)*1.1*B.d;
- g.drawImage(B.pl,px,py);
+ // LYRA dettagliata sopra il pianeta scuro: quando è del tutto visibile il vecchio non si disegna più
+ const la=B.ly&&B.ly.drawn?B.ly.a:0;
+ if(la<1)g.drawImage(B.pl,px,py);
+ try{stLyraDisegna(g,B,px,py,dt)}catch(e){}
 }
 
 // ---- testo che scorre: la posizione segue la frase che la voce sta leggendo
@@ -296,6 +436,7 @@ function storiaApri(){
  stBuild();
  const s=$('storiaScreen');if(!s)return;
  if(STORIA.on)storiaStop();
+ try{stLyraTex()}catch(e){}
  STORIA.on=true;const tok=++STORIA.tok;STORIA.ratio=1;STORIA.last=0;
  show('storiaScelta',false);
  STORIA.cr={el:s.querySelector('.st-crawl'),tilt:s.querySelector('.st-tilt'),idx:-1,tops:[],fine:0,attesa:false};

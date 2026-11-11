@@ -6,7 +6,7 @@ vm.runInContext(fs.readFileSync('dist/economia.js','utf8').split('// Pulsanti: m
 vm.runInContext(fs.readFileSync('dist/upgrade-disponibili.js','utf8'),sandbox);
 const val=s=>vm.runInContext(s,sandbox);
 assert.equal(val('eco.balance=0;eco.upgrades={};udAffordable().length'),0,'Senza crediti niente upgrade');
-assert.deepEqual(val('eco.balance=1400;udAffordable().map(i=>i.id)'),['grenades'],'1.400 CR: solo la cintura granate');
+assert.deepEqual(val('eco.balance=500;udAffordable().map(i=>i.id)'),['grenades'],'500 CR: solo la cintura granate');
 assert.equal(val('eco.upgrades={grenades:3};udAffordable().length'),0,'Livello massimo non conta');
 assert.equal(val('eco.balance=100000;eco.upgrades={};udAffordable().length'),7,'Tutti acquistabili');
 const src=fs.readFileSync('dist/upgrade-disponibili.js','utf8');

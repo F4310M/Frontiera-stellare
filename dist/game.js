@@ -22,11 +22,11 @@ let shipDebris=[],deathTimer=0,deathFlash=0,deathBlasts=0;
 const DEATH_SECONDS=3;
 let phaseOneComplete=localStorage.getItem('frontieraPhaseOneComplete')==='yes';
 const planets=[
- {name:'LYRA',code:'HX–01',x:24,y:68,color:'#3ca8d5',glow:'#39c8ff',theme:'mare',difficulty:1,distance:126000,threat:'BASSA',reward:'600 CR',desc:'Un mondo oceanico ai confini della nebulosa.'},
- {name:'VESPER',code:'KQ–17',x:42,y:28,color:'#d6a43a',glow:'#ffcf4a',theme:'deserto',difficulty:2,distance:189000,threat:'MODERATA',reward:'1.200 CR',desc:'Deserti incandescenti e pattuglie di confine.'},
- {name:'NIMBUS',code:'AR–09',x:57,y:61,color:'#7763c9',glow:'#9a83ff',theme:'tempesta',difficulty:3,distance:286500,threat:'ELEVATA',reward:'2.000 CR',desc:'Gigante gassoso cinto da relitti titanici.'},
- {name:'KHEPRI',code:'VX–44',x:76,y:35,color:'#7aab54',glow:'#9ded6c',theme:'foresta',difficulty:4,distance:400500,threat:'CRITICA',reward:'3.400 CR',desc:'Mondo di foreste aliene sorvegliato da forme di vita colossali.'},
- {name:'UMBRA',code:'ZZ–Ω',x:82,y:76,color:'#a52a2f',glow:'#ff4a3a',theme:'lava',difficulty:5,distance:585000,threat:'ESTREMA',reward:'6.000 CR',desc:'Un pianeta di lava nel cuore del territorio nemico.'}
+ {name:'LYRA',code:'HX–01',x:24,y:68,color:'#3ca8d5',glow:'#39c8ff',theme:'mare',difficulty:1,distance:126000,threat:'BASSA',reward:'1.500 CR',desc:'Un mondo oceanico ai confini della nebulosa.'},
+ {name:'VESPER',code:'KQ–17',x:42,y:28,color:'#d6a43a',glow:'#ffcf4a',theme:'deserto',difficulty:2,distance:189000,threat:'MODERATA',reward:'3.000 CR',desc:'Deserti incandescenti e pattuglie di confine.'},
+ {name:'NIMBUS',code:'AR–09',x:57,y:61,color:'#7763c9',glow:'#9a83ff',theme:'tempesta',difficulty:3,distance:286500,threat:'ELEVATA',reward:'5.000 CR',desc:'Gigante gassoso cinto da relitti titanici.'},
+ {name:'KHEPRI',code:'VX–44',x:76,y:35,color:'#7aab54',glow:'#9ded6c',theme:'foresta',difficulty:4,distance:400500,threat:'CRITICA',reward:'8.500 CR',desc:'Mondo di foreste aliene sorvegliato da forme di vita colossali.'},
+ {name:'UMBRA',code:'ZZ–Ω',x:82,y:76,color:'#a52a2f',glow:'#ff4a3a',theme:'lava',difficulty:5,distance:585000,threat:'ESTREMA',reward:'15.000 CR',desc:'Un pianeta di lava nel cuore del territorio nemico.'}
 ];
 // Render above native resolution (supersampling) for sharper edges; lowered automatically if frames get slow.
 let renderQuality=1,frameSamples=[],vignette=null,starGlow=null;
@@ -83,7 +83,7 @@ function closeSettings(){
  $('settingsBtn').focus();
  sfx('ui');
 }
-function brief(){const p=planets[selected];$('briefTitle').textContent='ROTTA PER '+p.name;$('briefText').textContent=`Distanza ${p.distance.toLocaleString('it-IT')} km. Minaccia ${p.threat.toLowerCase()}. Elimina le guardie orbitali, rallenta con F e mantieni la posizione per 5 secondi per conquistare il pianeta. Il campo roccioso forma un labirinto irregolare. Rocce marroni: fragili; azzurre: resistenti; viola: molto resistenti ed esplosive. Gli urti consumano molta barriera e le rocce distrutte rilasciano frammenti pericolosi. Usa F, S e A/D per attraversare i passaggi. Costi: colpo 1 CR, missile 25 CR, carburante 2 CR per unità.`;show('briefing');}
+function brief(){const p=planets[selected];$('briefTitle').textContent='ROTTA PER '+p.name;$('briefText').textContent=`Distanza ${p.distance.toLocaleString('it-IT')} km. Minaccia ${p.threat.toLowerCase()}. Elimina le guardie orbitali, rallenta con F e mantieni la posizione per 5 secondi per conquistare il pianeta. Il campo roccioso forma un labirinto irregolare. Rocce marroni: fragili; azzurre: resistenti; viola: molto resistenti ed esplosive. Gli urti consumano molta barriera e le rocce distrutte rilasciano frammenti pericolosi. Usa F, S e A/D per attraversare i passaggi. Costi: colpo 0,5 CR, missile 6 CR, carburante 1 CR per unità.`;show('briefing');}
 function syncFullscreenButton(){const full=!!document.fullscreenElement,button=$('fullscreenBtn');if(!button)return;button.querySelector('b').innerHTML=ico(full?'minimize':'maximize');button.querySelector('span').textContent=full?'FINESTRA':'SCHERMO INTERO';button.setAttribute('aria-label',full?'Ripristina visuale Windows':'Passa a schermo intero')}
 function enterGameFullscreen(){if(!document.fullscreenElement&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().then(syncFullscreenButton).catch(()=>{syncFullscreenButton();status('SCHERMO INTERO NON DISPONIBILE',1800)})}
 function leaveGameFullscreen(){if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().then(syncFullscreenButton).catch(()=>syncFullscreenButton());else syncFullscreenButton()}

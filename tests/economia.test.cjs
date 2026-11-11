@@ -15,33 +15,34 @@ assert.equal(val('ecoFmt(12000)'),'12.000');assert.equal(val('ecoFmt(-1500)'),'�
 
 // Fase 1: colpi, missili e carburante si pagano in tempo reale.
 run('selected=0;startGame()');
-run('player.fire=0;shoot()');assert.equal(val('eco.balance'),2499,'Colpo laser: −1 CR');
-run('launchMissile()');assert.equal(val('eco.balance'),2474,'Missile: −25 CR');
+run('player.fire=0;shoot()');assert.equal(val('eco.balance'),2500,'Colpo laser: mezzo credito, ancora da pagare');
+run('player.fire=0;shoot()');assert.equal(val('eco.balance'),2499,'Due colpi laser: −1 CR');
+run('launchMissile()');assert.equal(val('eco.balance'),2493,'Missile: −6 CR');
 run('missile=null;keys={KeyD:true};for(let i=0;i<60;i++)update(1/60);keys={}');
 assert(val('eco.run.count.fuel')>.9,'Il carburante viene contato');assert(val('eco.run.spent.fuel')>=1,'Il carburante costa crediti');
 const before=val('eco.balance');run('kills=4');run('finish(false)');
 const r1=JSON.parse(val('JSON.stringify(eco.last)'));
-assert.equal(val('eco.earned'),16,'si accumulano le entrate prima delle spese');
-assert.equal(store.frontieraGuadagni,'16','guadagni persistenti');
-assert.equal(r1.rows[0].qty,1);assert.equal(r1.rows[1].qty,1);assert.equal(r1.rows[3].amount,16,'Taglia: 4 nemici × 4 CR');
-assert.equal(val('eco.balance'),before+16,'La taglia viene accreditata a fine fase');
+assert.equal(val('eco.earned'),40,'si accumulano le entrate prima delle spese');
+assert.equal(store.frontieraGuadagni,'40','guadagni persistenti');
+assert.equal(r1.rows[0].qty,2);assert.equal(r1.rows[1].qty,1);assert.equal(r1.rows[3].amount,40,'Taglia: 4 nemici × 10 CR');
+assert.equal(val('eco.balance'),before+40,'La taglia viene accreditata a fine fase');
 console.log('PASS: spese in tempo reale e riepilogo della fase 1');
 
 // Missili senza crediti sufficienti non partono; laser e carburante possono andare in debito.
-run('abort();eco.balance=10;startGame();missile=null;launchMissile()');assert.equal(val('missile'),null,'Senza crediti niente missile');
-run('player.fire=0;for(let i=0;i<20;i++){player.fire=0;shoot()}');assert(val('eco.balance')<0,'Il laser può andare in debito');
+run('abort();eco.balance=3;startGame();missile=null;launchMissile()');assert.equal(val('missile'),null,'Senza crediti niente missile');
+run('player.fire=0;for(let i=0;i<30;i++){player.fire=0;shoot()}');assert(val('eco.balance')<0,'Il laser può andare in debito');
 run('abort()');
 console.log('PASS: crediti insufficienti e debito');
 
 // Mercato: acquisti, livelli, saldo, persistenza.
 run('eco.balance=20000;eco.upgrades={}');
-assert.equal(val('ecoBuy("salvo")'),true);assert.equal(val('ecoUpgrade("salvo")'),1);assert.equal(val('eco.balance'),13500);
+assert.equal(val('ecoBuy("salvo")'),true);assert.equal(val('ecoUpgrade("salvo")'),1);assert.equal(val('eco.balance'),17700);
 assert.equal(val('ecoBuy("salvo")'),true);assert.equal(val('ecoUpgrade("salvo")'),2);assert.equal(val('ecoBuy("salvo")'),false,'Livello massimo');
 run('eco.balance=100');assert.equal(val('ecoBuy("laser")'),false,'Crediti insufficienti');assert.equal(val('ecoUpgrade("laser")'),0);
 assert(JSON.parse(store.frontieraPotenziamenti).salvo===2,'Potenziamenti salvati');
 console.log('PASS: mercato');
-assert.equal(val('ecoNewlyAffordable({missionStart:1000,balance:2500}).map(it=>it.id).join(",")'),'speed,fuel,grenades');
-assert.equal(val('ecoNewlyAffordable({missionStart:2500,balance:2500}).length'),0);
+assert.equal(val('ecoNewlyAffordable({missionStart:600,balance:1000}).map(it=>it.id).join(",")'),'shield,speed,fuel');
+assert.equal(val('ecoNewlyAffordable({missionStart:1000,balance:1000}).length'),0);
 run(`
  const originalTone=tone,originalFrame=requestAnimationFrame;
  let nextFrame;
@@ -84,9 +85,9 @@ run(`
  openSummary();
  const orbitReward=state==='won'&&!hidden.missionReward&&hidden.rewardActions&&eco.last.phase===1;
  nextFrame(1750);nextFrame(2500);
- globalThis.rewardOrbit=orbitReward&&!hidden.rewardActions&&!hidden.rewardLandBtn&&$('rewardCredits').textContent==='20 CR';
+ globalThis.rewardOrbit=orbitReward&&!hidden.rewardActions&&!hidden.rewardLandBtn&&$('rewardCredits').textContent==='50 CR';
  $('rewardLandBtn').onclick();
- globalThis.rewardLanding=hidden.missionReward&&state==='platform'&&eco.run.earlierIncome===20;
+ globalThis.rewardLanding=hidden.missionReward&&state==='platform'&&eco.run.earlierIncome===50;
  abort();
  delete globalThis.queueMicrotask;
  drawPlatform=originalDraw;
@@ -104,7 +105,7 @@ run(`
  for(let i=0;i<90;i++)pfUpdateRifle(pf.pilot,1/60,true);
  globalThis.rifleHeld=pf.shots.length===1&&pf.pilot.rifleCharge===PF_RIFLE_FULL;
  mouse.down=false;pfUpdateRifle(pf.pilot,1/60,true);
- globalThis.rifleRelease=pf.shots.length===2&&pf.shots[1].dmg>pf.shots[0].dmg&&balance-eco.balance===7;
+ globalThis.rifleRelease=pf.shots.length===2&&pf.shots[1].dmg>pf.shots[0].dmg&&balance-eco.balance>=3&&balance-eco.balance<=4;// 7 colpi da 0,5 CR
  abort();
 `);
 assert(val('rifleHeld'),'Premendo a lungo parte un colpo normale e si carica il fucile');
@@ -113,7 +114,7 @@ assert(val('rifleRelease'),'Al rilascio parte un colpo piu potente e vengono add
 
 // Potenziamenti in gioco.
 run('eco.balance=5000;eco.upgrades={salvo:2,laser:2,speed:3,shield:2,grenades:2};startGame();enemies=[];missile=null;launchMissile()');
-assert.equal(val('wingMissiles.length'),2,'Tre missili insieme');assert.equal(val('eco.balance'),5000-75,'Tre missili: −75 CR');
+assert.equal(val('wingMissiles.length'),2,'Tre missili insieme');assert.equal(val('eco.balance'),5000-18,'Tre missili: −18 CR');
 run('missile=null;wingMissiles=[];eco.upgrades.salvo=1;launchMissile()');assert.equal(val('wingMissiles.length'),1,'Due missili insieme');
 run('player.fire=0;shoot()');assert.equal(val('bullets[bullets.length-1].dmg'),2,'Laser potenziato');
 run('player.vx=0;player.vy=0;applyShipThrust(1,0,false,10)');assert(val('player.vx')>240*1.3,'Motori più veloci');
@@ -129,14 +130,14 @@ console.log('PASS: potenziamenti nello spazio e a terra');
 
 // Fase 2: granate pagate, premio missione solo con robot distrutto.
 run('eco.balance=1000;selected=0;startPlatform()');step(3.5);
-assert.equal(val('eco.run.spent.fuel'),30,'Carburante della discesa');
-run('pf.phase="missione";pfThrowGrenade()');assert.equal(val('eco.run.spent.granata'),20,'Granata: −20 CR');
+assert.equal(val('eco.run.spent.fuel'),15,'Carburante della discesa');
+run('pf.phase="missione";pfThrowGrenade()');assert.equal(val('eco.run.spent.granata'),5,'Granata: −5 CR');
 const b2=val('eco.balance');run('pf.rescued=3;pf.kills=6;pf.phase="vittoria";pfFinish(true)');
 const r2=JSON.parse(val('JSON.stringify(eco.last)'));
-assert.equal(r2.prize,600+3*60,'Premio: ricompensa del pianeta + bonus ostaggi');
-assert.equal(val('eco.balance'),b2+36+780,'Premio e taglia accreditati');
+assert.equal(r2.prize,1500+3*150,'Premio: ricompensa del pianeta + bonus ostaggi');
+assert.equal(val('eco.balance'),b2+6*15+1950,'Premio e taglia accreditati');
 run('abort();eco.balance=1000;startPlatform()');step(3.5);const b3=val('eco.balance');run('pf.kills=2;pfFinish(false)');
-assert.equal(val('eco.last.prize'),0,'Nessun premio se la missione fallisce');assert.equal(val('eco.balance'),b3+12);
+assert.equal(val('eco.last.prize'),0,'Nessun premio se la missione fallisce');assert.equal(val('eco.balance'),b3+2*15);
 run('abort()');
 console.log('PASS: premio della missione e riepilogo della fase 2');
 

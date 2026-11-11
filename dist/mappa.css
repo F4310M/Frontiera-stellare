@@ -129,3 +129,8 @@
 .panel-free-tag.on{display:block}
 @keyframes free-pop{to{box-shadow:0 0 40px #2fe08a,0 0 6px #000}}
 @media(max-width:850px){.panel-free-tag{padding:4px 10px;font-size:12px;letter-spacing:2px;border-width:2px}}
+/* 2026-11-11 pianeti dettagliati (pianeti-dettaglio.js): sfera disegnata su tela sopra la texture di prima */
+.mp-rot .pd-globe{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;pointer-events:none;opacity:0;transition:opacity .6s}
+.mp-rot.pd-on .pd-globe{opacity:1}
+.mp-rot.pd-on .mp-surf{animation-play-state:paused}
+.mp-rot.pd-on .mp-shade{opacity:0;transition:opacity .6s}
