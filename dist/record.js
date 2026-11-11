@@ -8,47 +8,104 @@
 // Se su Firebase ci sono ancora le regole vecchie, la posizione si vede lo stesso e il punteggio
 // parte a fine gioco, come prima.
 
-const REC_KEY='stellarRecord';
-let recOld=false,recQ=Promise.resolve(),recEnded=false;
-function recLoad(){try{const r=JSON.parse(localStorage.getItem(REC_KEY)||'null');return r&&typeof r.id==='string'&&/^[A-Za-z0-9]{1,40}$/.test(r.id)&&typeof r.k==='string'&&typeof r.n==='string'?r:null}catch(e){return null}}
+const REC_KEY='stellarRecord',REC_RESTO='stellarRecordResto';
+// Tetti delle regole di Firebase (firestore.rules): alla creazione al massimo 80.000 punti, ogni aggiornamento
+// al massimo +120.000 e non prima di 15 secondi, in tutto 80.000 + 150 punti per ogni secondo dalla creazione.
+// Se la partita va più veloce, la riga sale fino al tetto e il resto arriva poco dopo (REC_RESTO).
+const REC={crea:80000,passo:120000,ritmo:150,attesa:15000};
+let recQ=Promise.resolve(),recEnded=false,recAltruiDetto='';
+// stellarRecord = {id, n, s (punti sulla riga), c (ora di creazione, in questo PC), t (ultima scrittura)}
+function recLoad(){try{const r=JSON.parse(localStorage.getItem(REC_KEY)||'null');return r&&typeof r.id==='string'&&/^[A-Za-z0-9]{1,40}$/.test(r.id)&&typeof r.n==='string'&&Number.isFinite(r.s)&&r.c>0?r:null}catch(e){return null}}
 function recSave(r){if(r)localStorage.setItem(REC_KEY,JSON.stringify(r));else localStorage.removeItem(REC_KEY)}
-function recSecret(){const b=new Uint8Array(24);crypto.getRandomValues(b);return Array.from(b,x=>x.toString(16).padStart(2,'0')).join('')}
-async function recHash(k){const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(k));return Array.from(new Uint8Array(d),x=>x.toString(16).padStart(2,'0')).join('')}
+function recNewId(){const L='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',b=new Uint8Array(20);crypto.getRandomValues(b);return Array.from(b,x=>L[x%62]).join('')}
 function recName(){return(typeof prof!=='undefined'&&prof&&prof.nome)||''}
 function recMini(n){return typeof prof!=='undefined'&&prof&&prof.nome===n&&prof.mini?prof.mini:''}
 function recToday(){return new Date().toISOString().slice(0,10)}
-function recFields(n,s,extra){
- const f={n:{stringValue:n},s:{integerValue:String(s)},d:{stringValue:recToday()}},a=recMini(n);
+function recFields(n,s,d){
+ const f={n:{stringValue:n},s:{integerValue:String(s)},d:{stringValue:d||recToday()}},a=recMini(n);
  if(a&&(typeof profImgOk!=='function'||profImgOk(a,typeof PROF_MINI_MAX!=='undefined'?PROF_MINI_MAX:8000)))f.a={stringValue:a};
- for(const k in extra)f[k]={stringValue:extra[k]};
  return f;
 }
 function recIs403(e){return /firestore 4\d\d/.test(String(e&&e.message))}
-async function recPatch(id,fields){
- const ctl=typeof AbortController==='function'?new AbortController():null,t=ctl?setTimeout(()=>ctl.abort(),8000):0;
- try{
-  const r=await fetch(coUrl('/classifica/'+encodeURIComponent(id))+'&currentDocument.exists=true',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields}),signal:ctl?ctl.signal:undefined});
-  if(!r.ok)throw new Error('firestore '+r.status);
-  return await r.json();
- }finally{clearTimeout(t)}
+const recWait=ms=>new Promise(f=>setTimeout(f,ms));
+// il nome del pilota è suo? (nomi unici, accesso.js)
+function recAltrui(n){
+ if(recAltruiDetto===n)return;recAltruiDetto=n;
+ if(typeof profToast==='function')profToast(CX_ALTRUI);
 }
+async function recOwn(n){
+ if(typeof CX==='undefined'||!CX.on)throw new Error('offline');
+ const m=await CX.nomeMio(n);
+ if(m==='altrui'){recAltrui(n);return false}
+ if(m!=='mio')throw new Error('offline');
+ return true;
+}
+// quanti punti la riga può avere adesso, secondo le regole (con un po' di margine sull'orologio)
+function recCap(r,pts){
+ const sec=Math.max(0,Date.now()-r.c-5000)/1000;
+ return Math.max(r.s,Math.min(pts,r.s+REC.passo,Math.floor(REC.crea+sec*REC.ritmo*.95)));
+}
+async function recCreate(n,pts,d){
+ const id=recNewId(),s=Math.min(Math.round(pts),REC.crea);
+ await CX.commit([{col:'classifica',id,fields:recFields(n,s,d),nuovo:true,creazione:true}]);
+ if(typeof coCache!=='undefined')coCache=null;
+ return {id,n,s,c:Date.now(),t:Date.now()};
+}
+async function recPush(r,pts){
+ const wait=r.t+REC.attesa+1500-Date.now();
+ if(wait>0)await recWait(Math.min(wait,REC.attesa+1500));
+ const s=recCap(r,pts);if(s<=r.s)return r.s;
+ await CX.commit([{col:'classifica',id:r.id,fields:recFields(r.n,s),nuovo:false,maschera:true}]);
+ r.s=s;r.t=Date.now();if(typeof coCache!=='undefined')coCache=null;
+ return s;
+}
+// righe che devono ancora salire fino ai loro punti (partita più veloce del tetto)
+function recResto(){try{const b=JSON.parse(localStorage.getItem(REC_RESTO)||'[]');return Array.isArray(b)?b.filter(r=>r&&typeof r.id==='string'&&Number.isFinite(r.o)&&r.c>0):[]}catch(e){return[]}}
+function recRestoSave(b){if(b.length)localStorage.setItem(REC_RESTO,JSON.stringify(b.slice(-5)));else localStorage.removeItem(REC_RESTO)}
+function recRestoAdd(r,pts){
+ const b=recResto().filter(x=>x.id!==r.id);
+ if(pts>r.s)b.push({id:r.id,n:r.n,s:r.s,c:r.c,t:r.t,o:Math.round(pts)});
+ recRestoSave(b);
+}
+let recRestoBusy=false;
+async function recRestoTick(){
+ if(recRestoBusy||typeof coOn==='undefined'||!coOn)return;recRestoBusy=true;
+ try{
+  const cur=recLoad();
+  for(const x of recResto()){
+   if(cur&&cur.id===x.id)continue;                     // la riga della partita in corso sale a fine missione
+   if(Date.now()-x.c>3*86400000){recRestoSave(recResto().filter(y=>y.id!==x.id));continue}
+   try{await recPush(x,x.o)}catch(e){if(!recIs403(e))break;if(!/firestore 403/.test(String(e.message)))x.s=x.o}
+   const b=recResto().filter(y=>y.id!==x.id);if(x.s<x.o)b.push(x);recRestoSave(b);
+  }
+ }catch(e){}
+ recRestoBusy=false;
+}
+if(typeof setInterval==='function'&&typeof coOn!=='undefined'&&coOn)setInterval(recRestoTick,40000);
 // Scrive i punti della partita sulla riga del pilota (la crea se serve). Restituisce l'id della riga, oppure '' se non si può.
 async function recWrite(n,pts){
+ pts=Math.round(pts);
+ if(!(await recOwn(n)))return '';
  let r=recLoad();
  if(r&&r.n!==n){recSave(null);r=null}
  if(r){
   if(pts<=r.s)return r.id;
-  const k2=recSecret(),h2=await recHash(k2);
-  try{await recPatch(r.id,recFields(n,pts,{k:r.k,h:h2}));recSave({id:r.id,k:k2,n,s:pts});coCache=null;return r.id}
-  catch(e){if(!recIs403(e))throw e;recSave(null)}   // chiave non più valida (es. backup vecchio): si riparte con una riga nuova
+  try{await recPush(r,pts);recSave(r);recRestoAdd(r,pts);return r.id}
+  catch(e){
+   if(!recIs403(e))throw e;
+   if(/firestore 403/.test(String(e.message))){recRestoAdd(r,pts);return r.id}  // troppo presto o sopra il tetto: riprova più tardi
+   recSave(null);                                                              // riga sparita: se ne crea una nuova
+  }
  }
- if(recOld)return '';
- const k=recSecret(),h=await recHash(k);
- try{
-  const j=await coReq('/classifica',{fields:recFields(n,pts,{h})});
-  const id=String(j&&j.name||'').split('/').pop();
-  if(id)recSave({id,k,n,s:pts});coCache=null;return id;
- }catch(e){if(recIs403(e)){recOld=true;return ''}throw e}
+ r=await recCreate(n,pts);recSave(r);recRestoAdd(r,pts);
+ return r.id;
+}
+// invio classico (fine partita senza riga, punteggi rimasti in attesa): riga nuova, con il resto che arriva dopo
+if(typeof coSend==='function'){
+ coSend=async function(row){
+  if(!(await recOwn(row.n)))throw new Error('firestore 403');
+  const r=await recCreate(row.n,row.s,row.d);recRestoAdd(r,row.s);return r.id;
+ };
 }
 
 // ---- riquadro nella schermata del risultato: foto, posizione mondiale, punti

@@ -37,6 +37,8 @@ function arRand(seed){let a=seed>>>0;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul
 function arCode(rnd=Math.random){const L='ABCDEFGHJKLMNPQRSTUVWXYZ';let s='';for(let i=0;i<4;i++)s+=L[Math.floor(rnd()*L.length)%L.length];return s}
 function arCleanCode(c){return String(c||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,4)}
 function arPid(){const L='abcdefghijklmnopqrstuvwxyz0123456789';let s='';for(let i=0;i<10;i++)s+=L[Math.floor(Math.random()*36)];return s}
+// foto di un pilota: solo una miniatura JPEG/PNG/WEBP in base64 (niente testo che possa diventare codice nella pagina)
+function arImgOk(a){return typeof a==='string'&&a.length<6000&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/.test(a)?a:''}
 function arCleanName(n){return String(n||'').replace(/[^\p{L}\p{N} ]/gu,'').trim().slice(0,16)||'PILOTA'}
 // asteroidi uguali per tutti i piloti della stessa stanza
 // materiali dei meteoriti della fascia intorno ai pianeti (game.js makeOrbitalBelt)
@@ -170,7 +172,7 @@ function arWinTeam(g){const t=arTeamScore(g);return t[1]>t[2]?1:t[2]>t[1]?2:0}
 function arColor(g,pid){const p=pid===g.pid?g.me:g.others[pid]&&g.others[pid].s;return arFactionInfo(p&&p.fa).color}
 function arScore(g){
  const ts=g.mode===1?arTeamScore(g):null,tv=p=>ts?(ts[p.tm]||0):0;// team battle: prima la squadra in testa
- return arActive(g).map(p=>({pid:p.pid,n:arCleanName(p.s.n),a:p.s.a||'',fa:arFaction(p.s.fa),k:+p.s.k||0,d:+p.s.d||0,j:+p.s.j||0,tm:+p.s.tm||0,me:p.pid===g.pid})).sort((a,b)=>tv(b)-tv(a)||b.k-a.k||a.d-b.d||a.j-b.j);
+ return arActive(g).map(p=>({pid:p.pid,n:arCleanName(p.s.n),a:arImgOk(p.s.a),fa:arFaction(p.s.fa),k:+p.s.k||0,d:+p.s.d||0,j:+p.s.j||0,tm:+p.s.tm||0,me:p.pid===g.pid})).sort((a,b)=>tv(b)-tv(a)||b.k-a.k||a.d-b.d||a.j-b.j);
 }
 function arName(g,pid){if(pid===g.pid)return g.me.n;const o=g.others[pid];return o?arCleanName(o.s.n):'?'}
 function arBlast(g,x,y,color,n=26,power=1){
@@ -467,16 +469,24 @@ function arDbUrl(){
 }
 function arNetFirebase(url,room,pid,onState){
  const base=`${url}/arena/${room}/p`,tree={};let es=null,busy=false,pending=null,closed=false,full=null;
+ const cx=typeof CX!=='undefined'&&CX&&CX.on?CX:null;
+ function ascolta(){
+  es=new EventSource(cx?cx.dbUrl(`${base}.json`):`${base}.json`);
+  const on=patch=>e=>{try{const m=JSON.parse(e.data);if(!m)return;const ch=arApply(tree,m.path,m.data,patch);
+   if(ch.has(pid)&&!tree[pid]&&!closed&&full)net.join(Object.assign({},full,net.last||{})).catch(()=>{});// cancellato per errore: rientra
+   onState(tree,ch)}catch(err){}};
+  es.addEventListener('put',on(false));es.addEventListener('patch',on(true));
+  es.addEventListener('cancel',()=>{if(net.onError)net.onError('cancel')});
+  // il gettone d'accesso dura un'ora: scaduto, si rinnova e si riapre l'ascolto
+  es.addEventListener('auth_revoked',()=>{try{es.close()}catch(e){}es=null;if(closed)return;(cx?cx.token():Promise.resolve()).then(()=>{if(!closed&&!es)ascolta()})});
+ }
  const net={tree,mode:'online',
-  async join(f){full=f;const r=await fetch(`${base}/${pid}.json`,{method:'PUT',body:JSON.stringify(Object.assign({},f,{t:{'.sv':'timestamp'}}))});
+  async join(f){
+   // accesso anonimo (accesso.js): ogni pilota scrive solo il proprio nodo, marcato col suo utente u
+   if(cx){await cx.token();f=Object.assign({},f,{u:cx.uid()})}
+   full=f;const r=await fetch(`${base}/${pid}.json`,{method:'PUT',body:JSON.stringify(Object.assign({},f,{t:{'.sv':'timestamp'}}))});
    if(!r.ok)throw new Error('rete '+r.status);
-   if(es)return;
-   es=new EventSource(`${base}.json`);
-   const on=patch=>e=>{try{const m=JSON.parse(e.data);if(!m)return;const ch=arApply(tree,m.path,m.data,patch);
-    if(ch.has(pid)&&!tree[pid]&&!closed&&full)net.join(Object.assign({},full,net.last||{})).catch(()=>{});// cancellato per errore: rientra
-    onState(tree,ch)}catch(err){}};
-   es.addEventListener('put',on(false));es.addEventListener('patch',on(true));
-   es.addEventListener('cancel',()=>{if(net.onError)net.onError('cancel')});
+   if(!es)ascolta();
   },
   send(p){net.last=p;pending=Object.assign(pending||{},p);flush()},
   leave(){closed=true;if(es)es.close();try{fetch(`${base}/${pid}.json`,{method:'DELETE',keepalive:true}).catch(()=>{})}catch(e){}},
@@ -690,7 +700,7 @@ function arLeaveRoom(){
 }
 function arFmt(t){t=Math.max(0,Math.ceil(t));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')}
 function arPilotRow(g,p,i){
- const c=arColor(g,p.pid),F=arFactionInfo(p.fa),tcls=g.mode===1&&p.tm?' t'+p.tm:'',ava=p.a?`<img src="${p.a}" alt="">`:`<em style="background:${c}">${arEsc(p.n[0]||'?')}</em>`;
+ const c=arColor(g,p.pid),F=arFactionInfo(p.fa),tcls=g.mode===1&&p.tm?' t'+p.tm:'',ava=arImgOk(p.a)?`<img src="${arEsc(arImgOk(p.a))}" alt="">`:`<em style="background:${c}">${arEsc(p.n[0]||'?')}</em>`;
  return `<li class="${p.me?'me':''}${tcls}"><span class="ar-pos">${i+1}</span>${ava}<span class="ar-n" style="color:${c}">${arEsc(p.n)}</span><span class="ar-fa" style="--fa:${c}" title="${AR_T(F.name)}">${F.id}</span><b>${p.k}</b><small>${p.d}</small></li>`;
 }
 function arTeamName(tm){const t=ARENA.teams[tm];return t?AR_T(t.n):''}

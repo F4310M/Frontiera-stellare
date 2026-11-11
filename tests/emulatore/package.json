@@ -1,0 +1,10 @@
+{
+ "name": "conex-emulatore",
+ "private": true,
+ "description": "Test delle regole Firebase nell'emulatore",
+ "devDependencies": {
+  "firebase-tools": "^13.35.1",
+  "@firebase/rules-unit-testing": "^3.0.4",
+  "firebase": "^10.14.1"
+ }
+}
