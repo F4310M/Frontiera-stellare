@@ -5,18 +5,19 @@
 
 const ECO_START=2500,ECO_EARNED_KEY='frontieraGuadagni';
 // Prezzo di ogni consumo, in crediti (CR).
-const ECO_COST={laser:1,missile:25,granata:20,fuel:2};
+// (2026-11-11) consumi molto più economici: il laser costa mezzo credito a colpo (si paga ogni 2 colpi)
+const ECO_COST={laser:.5,missile:6,granata:5,fuel:1};
 // Taglia per ogni nemico abbattuto, per fase.
-const ECO_BOUNTY={1:4,2:6};
+const ECO_BOUNTY={1:10,2:15};// (2026-11-11) era 4 e 6
 // Potenziamenti in vendita al mercato.
 const ECO_ITEMS=[
- {id:'salvo',icon:'salvo',name:'LANCIATORE MULTIPLO',desc:'Un clic della rotella lancia più missili insieme, ognuno guidato su un bersaglio diverso. Ogni missile costa 25 CR.',levels:['2 MISSILI INSIEME','3 MISSILI INSIEME'],prices:[6500,13000]},
- {id:'laser',icon:'laser',name:'LASER POTENZIATO',desc:'Colpi più grossi e più potenti, nello spazio e a terra.',levels:['DANNO +50%','DANNO +100%','DANNO +150%'],prices:[3500,7000,12000]},
- {id:'shield',icon:'shield',name:'BARRIERA RINFORZATA',desc:'La barriera e lo scudo assorbono più colpi prima di esaurirsi.',levels:['RESISTENZA +35%','RESISTENZA +70%','RESISTENZA +105%'],prices:[2800,5500,9500]},
- {id:'speed',icon:'speed',name:'MOTORI POTENZIATI',desc:'La nave accelera e vola più veloce; il pilota corre più veloce.',levels:['VELOCITÀ +12%','VELOCITÀ +24%','VELOCITÀ +36%'],prices:[2400,5000,8800]},
- {id:'fuel',icon:'fuel',name:'INIETTORI EFFICIENTI',desc:'I motori consumano meno carburante.',levels:['CONSUMO −20%','CONSUMO −40%'],prices:[1800,4000]},
- {id:'grenades',icon:'grenade',name:'CINTURA GRANATE',desc:'Granate in più all’inizio della fase 2.',levels:['+1 GRANATA','+2 GRANATE','+3 GRANATE'],prices:[1400,2800,4600]},
- {id:'twin',icon:'twin',name:'DOPPIO LASER',desc:'Spara due raggi paralleli a ogni colpo, nello spazio e a terra. Ogni colpo costa il doppio (2 CR).',levels:['DOPPIO LASER'],prices:[9000]}
+ {id:'salvo',icon:'salvo',name:'LANCIATORE MULTIPLO',desc:'Un clic della rotella lancia più missili insieme, ognuno guidato su un bersaglio diverso. Ogni missile costa 6 CR.',levels:['2 MISSILI INSIEME','3 MISSILI INSIEME'],prices:[2300,4550]},
+ {id:'laser',icon:'laser',name:'LASER POTENZIATO',desc:'Colpi più grossi e più potenti, nello spazio e a terra.',levels:['DANNO +50%','DANNO +100%','DANNO +150%'],prices:[1200,2450,4200]},
+ {id:'shield',icon:'shield',name:'BARRIERA RINFORZATA',desc:'La barriera e lo scudo assorbono più colpi prima di esaurirsi.',levels:['RESISTENZA +35%','RESISTENZA +70%','RESISTENZA +105%'],prices:[1000,1900,3300]},
+ {id:'speed',icon:'speed',name:'MOTORI POTENZIATI',desc:'La nave accelera e vola più veloce; il pilota corre più veloce.',levels:['VELOCITÀ +12%','VELOCITÀ +24%','VELOCITÀ +36%'],prices:[850,1750,3100]},
+ {id:'fuel',icon:'fuel',name:'INIETTORI EFFICIENTI',desc:'I motori consumano meno carburante.',levels:['CONSUMO −20%','CONSUMO −40%'],prices:[650,1400]},
+ {id:'grenades',icon:'grenade',name:'CINTURA GRANATE',desc:'Granate in più all’inizio della fase 2.',levels:['+1 GRANATA','+2 GRANATE','+3 GRANATE'],prices:[500,1000,1600]},
+ {id:'twin',icon:'twin',name:'DOPPIO LASER',desc:'Spara due raggi paralleli a ogni colpo, nello spazio e a terra. Ogni colpo costa il doppio (1 CR).',levels:['DOPPIO LASER'],prices:[3150]}
 ];
 
 function ecoLoad(){
@@ -36,16 +37,21 @@ function ecoReset(balance){
 function ecoFmt(n){const v=Math.round(n),t=String(Math.abs(v)).replace(/\B(?=(\d{3})+(?!\d))/g,'.');return(v<0?'−':'')+t}
 function ecoUpgrade(id){return eco.upgrades[id]||0}
 function ecoPlanetReward(p){return parseInt(String(p.reward).replace(/\D/g,''),10)||0}
-function ecoHostageBonus(p){return 60*p.difficulty}
+function ecoHostageBonus(p){return 150*p.difficulty}// (2026-11-11) era 60
 
 // Consumi: laser e carburante si possono pagare anche in debito (il saldo diventa rosso),
 // missili e granate invece richiedono crediti sufficienti.
 function ecoCanPay(kind,n=1){if(kind==='laser'||kind==='fuel')return true;return eco.balance>=ECO_COST[kind]*n}
 function ecoSpend(kind,n=1){
  if(!ecoCanPay(kind,n))return false;
- const cost=ECO_COST[kind]*n;
+ let cost=ECO_COST[kind]*n;
+ // costi sotto il credito (laser): si accumulano e si paga il credito intero
+ if(cost%1){eco.partAcc=(eco.partAcc||0)+cost;cost=Math.floor(eco.partAcc);eco.partAcc-=cost;
+  if(eco.run){eco.run.count[kind]=(eco.run.count[kind]||0)+n}
+  if(!cost)return true}
+ else if(eco.run)eco.run.count[kind]=(eco.run.count[kind]||0)+n;
  eco.balance-=cost;
- if(eco.run){eco.run.count[kind]=(eco.run.count[kind]||0)+n;eco.run.spent[kind]=(eco.run.spent[kind]||0)+cost;eco.run.total+=cost}
+ if(eco.run){eco.run.spent[kind]=(eco.run.spent[kind]||0)+cost;eco.run.total+=cost}
  ecoTick(kind,cost);ecoSave();ecoHud();
  return true;
 }
@@ -72,11 +78,11 @@ function ecoEndPhase(phase,win,info={}){
  const p=planets[selected],rows=[];
  const c=run.count,sp=run.spent;
  if(phase===1){
-  rows.push({label:'COLPI LASER SPARATI',qty:c.laser||0,unit:'× '+ECO_COST.laser+' CR',amount:-(sp.laser||0)});
+  rows.push({label:'COLPI LASER SPARATI',qty:c.laser||0,unit:'× '+String(ECO_COST.laser).replace('.',',')+' CR',amount:-(sp.laser||0)});
   rows.push({label:'MISSILI LANCIATI',qty:c.missile||0,unit:'× '+ECO_COST.missile+' CR',amount:-(sp.missile||0)});
   rows.push({label:'CARBURANTE CONSUMATO',qty:Math.round(c.fuel||0)+' u',unit:'× '+ECO_COST.fuel+' CR',amount:-(sp.fuel||0)});
  }else{
-  rows.push({label:'COLPI SPARATI',qty:c.laser||0,unit:'× '+ECO_COST.laser+' CR',amount:-(sp.laser||0)});
+  rows.push({label:'COLPI SPARATI',qty:c.laser||0,unit:'× '+String(ECO_COST.laser).replace('.',',')+' CR',amount:-(sp.laser||0)});
   rows.push({label:'GRANATE LANCIATE',qty:c.granata||0,unit:'× '+ECO_COST.granata+' CR',amount:-(sp.granata||0)});
   rows.push({label:'CARBURANTE DISCESA E JETPACK',qty:Math.round(c.fuel||0)+' u',unit:'× '+ECO_COST.fuel+' CR',amount:-(sp.fuel||0)});
  }

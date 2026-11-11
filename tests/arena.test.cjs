@@ -17,7 +17,7 @@ const dist=path.join(__dirname,'..','dist'),src=f=>fs.readFileSync(path.join(dis
 // ---- 2) logica di gioco con due piloti collegati da una rete finta
 const I18N_ROWS=[];
 const sb={I18N_ROWS,console,Math,Date,JSON,Object,Array,Set,String,Number,Promise};vm.createContext(sb);
-vm.runInContext(src('arena.js')+';this.A={arHurt,arUpgrades,arDamage,arShoot,arMeteorSpawn,arMeteorTick,ARENA,arRocks,arApply,arNew,arTick,arOnState,arHostPid,arScore,arSpawn,arCode,arCleanCode,arCleanName,arFull,arColor,arFactionInfo,arSetTeam,arTeamFix,arTeamScore,arWinTeam,arAlly,arLaunch,arUgCode,arUgDecode,arPickTeam,arHostile,arTeamOf,arRockMask,arRockBroken,arRockHit};',sb);
+vm.runInContext(src('arena.js')+';this.A={arHurt,arUpgrades,arDamage,arShoot,arMeteorSpawn,arMeteorTick,ARENA,arRocks,arApply,arNew,arTick,arOnState,arHostPid,arScore,arSpawn,arCode,arCleanCode,arCleanName,arFull,arColor,arFactionInfo,arSetTeam,arTeamFix,arTeamScore,arWinTeam,arAlly,arLaunch,arLockCode,arUgCode,arUgDecode,arPickTeam,arHostile,arTeamOf,arRockMask,arRockBroken,arRockHit};',sb);
 const A=sb.A;
 {
  // stanza: stessi asteroidi per tutti
@@ -266,6 +266,15 @@ const A=sb.A;
  Object.assign(a.me,{x:0,y:0,r:0});Object.assign(b.me,{x:500,y:200});Object.assign(c.me,{x:500,y:-300});
  for(const g of all){g.inv=0;deliver(g,{x:g.me.x,y:g.me.y,iv:0})}
  const idle={ax:0,ay:0,aim:0,fire:false,boost:false,shield:false};
+ // (2026-11-11) senza aggancio il missile parte ma non insegue nessuno
+ {const z=A.arNew('zzzzzzzzzz','Solo','',{});z.rocks=[];z.phase='P';z.rt=100;A.arTick(z,1/60,{...idle,missile:true});assert.ok(z.shots.length===1&&z.shots[0].sh[8]==='','missile senza aggancio: nessun bersaglio')}
+ // il mirino aggancia i nemici in ARENA.mis.lock secondi
+ for(let i=0;i<Math.ceil(A.ARENA.mis.lock*60)+2;i++){for(const g of all){const p=A.arTick(g,1/60,idle);if(p)deliver(g,p)}}
+ assert.strictEqual(a.locks.filter(l=>l.p>=1).length,2,'due nemici agganciati');
+ assert.ok(b.lockedBy>0&&c.lockedBy>0,'chi è agganciato lo sa (bordo rosso)');
+ assert.ok(!a.lockedBy,'nessuno ha agganciato chi non è nel mirino');
+ assert.ok(A.arFull(a).lk0===0&&A.arLockCode('nnnnnnnnnn')>0&&A.arLockCode('nnnnnnnnnn')<1000000,'codice di aggancio numerico per le regole del database');
+ a.shots=[];
  const pa=A.arTick(a,1/60,{...idle,missile:true});
  assert.strictEqual(a.shots.length,3,'livello 2: tre missili');
  assert.ok(a.shots.every(s=>typeof s.sh[8]==='string'),'ogni missile ha il suo bersaglio');

@@ -44,6 +44,19 @@ assert(val('pf.pilot.jetOn'),'W/↑ accende il jetpack anche con SPAZIO ancora p
 run('keys={}');step(3);
 console.log('PASS: jetpack con un secondo tasto di salto');
 
+// 1b) (2026-11-11) GOD MODE bloccata finché il gioco non è finito
+assert(!val('godUnlocked()'),'All\'inizio il god mode è bloccato');
+run('setGodMode(true)');
+assert(!val('godMode')&&val('localStorage.getItem("stellarGodMode")')!=='yes','Bloccata: non si accende');
+run('localStorage.setItem("frontieraPianetiLiberati",planets.filter(p=>!p.final).map(p=>p.code).join(","));finalLock()');
+assert(!val('godCheckUnlock()')&&!val('godUnlocked()'),'Cinque pianeti liberi ma OMEGA no: ancora bloccata');
+run('localStorage.setItem("frontieraOmegaLibero","yes")');
+assert(val('godCheckUnlock()')&&val('godUnlocked()'),'Liberato anche OMEGA: god mode sbloccata');
+run('mapNewGame()');
+assert(val('godUnlocked()'),'Lo sblocco resta anche dopo una nuova partita');
+run('localStorage.setItem("frontieraPianetiLiberati","")');
+console.log('PASS: god mode si sblocca solo a gioco finito');
+
 // 2) GOD MODE a terra: niente danni, niente cadute fatali, nessuna vita persa
 run('setGodMode(true)');
 assert(val('godMode&&localStorage.getItem("stellarGodMode")==="yes"'));
@@ -70,6 +83,12 @@ assert(val('mapPlayable(planets[0])'),'Pianeta liberato rigiocabile in god mode'
 const sc=val('score');run('scoreAdd(500)');assert.equal(val('score'),sc,'In god mode non si guadagnano punti');
 run('eco.balance=4000;ecoStartPhase(2);ecoEndPhase(2,true,{kills:20,rescued:5,hostages:5})');
 assert.equal(val('eco.balance'),4000,'In god mode non si guadagnano crediti');
+// niente spese: laser, missili, granate e carburante gratis
+run('eco.balance=0;ecoStartPhase(1)');
+assert(val('ecoSpend("missile",3)&&ecoSpend("granata")&&ecoSpend("laser",10)'),'In god mode si spara anche senza crediti');
+run('ecoFuel(500)');
+assert.equal(val('eco.balance'),0,'In god mode non si spende nulla');
+run('ecoEndPhase(1,true,{kills:10})');assert.equal(val('eco.balance'),0);
 run('setGodMode(false)');
 assert(!val(`mapPlayable(planets[${omega}])`),'Senza god mode OMEGA resta bloccato');
 assert(!val('mapPlayable(planets[0])'),'Senza god mode il pianeta liberato non si ripete');

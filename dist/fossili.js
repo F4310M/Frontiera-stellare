@@ -17,7 +17,7 @@ function fosBuild(S){
  const rnd=fosRng(fosSeed()),list=[],pick=a=>a[Math.floor(rnd()*a.length)];
  const smallKinds=['ammonite','trilobite','pesce','felce','ammonite','trilobite'];
  const lifts=S.lifts.map(l=>l.x);
- const clearOfLifts=(x,w)=>!lifts.some(l=>Math.abs(l-x)<w/2+SOT.liftW);
+ const holes=S.holes||[],clearOfLifts=(x,w)=>!lifts.some(l=>Math.abs(l-x)<w/2+SOT.liftW)&&!holes.some(h=>x+w/2>h.x0-20&&x-w/2<h.x1+20);
  // pavimento: nella roccia sotto i piedi
  for(const s of S.solids){
   if(s.wall||s.w<150)continue;

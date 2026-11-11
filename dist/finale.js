@@ -75,7 +75,7 @@ pfUpdatePickups=function(dt){
 pfDrawPickup=function(k,now){if(k.kind==='vita')lifeUpPill(ctx,k.x,k.y-4,now,1.15);else vOrig.pfDrawPickup(k,now)};
 
 // ---- pianeta finale
-const FINAL_PLANET={name:'OMEGA',code:'Ω–00',x:90,y:16,color:'#7a1438',glow:'#ff2a6a',theme:'abisso',boss:'omega',difficulty:7,distance:720000,threat:'APOCALITTICA',reward:'15.000 CR',desc:'La cittadella del Fronte Ombra, sospesa sopra un abisso cremisi. Qui si decide il destino della Repubblica.',final:true};
+const FINAL_PLANET={name:'OMEGA',code:'Ω–00',x:90,y:16,color:'#7a1438',glow:'#ff2a6a',theme:'abisso',boss:'omega',difficulty:7,distance:720000,threat:'APOCALITTICA',reward:'40.000 CR',desc:'La cittadella del Fronte Ombra, sospesa sopra un abisso cremisi. Qui si decide il destino della Repubblica.',final:true};
 const BASE_PLANETS=planets.filter(p=>!p.final).map(p=>p.code);
 function liberati(){return(localStorage.getItem('frontieraPianetiLiberati')||'').split(',').filter(Boolean)}
 function finalUnlocked(){const l=liberati();return BASE_PLANETS.every(c=>l.includes(c))}

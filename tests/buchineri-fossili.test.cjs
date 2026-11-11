@@ -87,13 +87,13 @@ console.log('PASS: evaporazione, disegno e traduzioni');
 
 // 8) fossili nelle gallerie di ogni pianeta
 for(let i=0;i<5;i++){
- run(`vite=3;viteSave();selected=${i};startPlatform();pf.phase='missione';sotSwitch(true,pf.sot.lifts[0].x);pf.sotT=null;fosState=null`);
+ run(`vite=3;viteSave();selected=${i};startPlatform();pf.phase='missione';sotSwitch(true,pf.sot.craters[0].x+pf.sot.craters[0].w/2);pf.sotT=null;fosState=null`);
  run('drawPlatform()');
  const st=val('fosState');assert(st&&st.list.length>=12,'fossili nel sottosuolo del pianeta '+i+': '+(st&&st.list.length));
  const walls=val('pf.sot.solids.filter(s=>s.wall).length');
  assert(val('fosState.list.filter(f=>f.where==="wall"&&f.big).length')===walls,'un grande fossile in ogni parete');
  assert(val(`fosState.list.filter(f=>f.where==="floor").every(f=>{const s=pf.sot.solids.find(s=>f.x>=s.x&&f.x<=s.x+s.w&&!s.wall);return s&&f.y>s.y+20})`),'i fossili del pavimento stanno dentro la roccia');
- assert(val(`fosState.list.filter(f=>f.where==="ceil").every(f=>f.y<SOT.ceil&&!pf.sot.lifts.some(l=>Math.abs(l.x-f.x)<SOT.liftW))`),'quelli della volta stanno nella volta, lontani dai pozzi');
+ assert(val(`fosState.list.filter(f=>f.where==="ceil").every(f=>f.y<SOT.ceil&&!pf.sot.holes.some(h=>f.x>h.x0-10&&f.x<h.x1+10))`),'quelli della volta stanno nella volta, lontani dai pozzi');
  assert.deepEqual(val('fosBuild(pf.sot).map(f=>f.x)'),val('fosState.list.map(f=>f.x)'),'sempre uguali per lo stesso pianeta');
 }
 run('globalThis.F=fosState.list.find(f=>f.big);pf.pilot.visible=true;pf.pilot.x=F.x;pf.pilot.y=F.y+40;pf.texts=[];drawPlatform()');

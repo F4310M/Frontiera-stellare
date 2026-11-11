@@ -1,7 +1,7 @@
 /* GAME OVER con l'immagine di Fabio (gameover-immagini.js) */
 .goi{position:fixed;inset:0;z-index:61;overflow:hidden;display:grid;place-items:center;background:#000;cursor:pointer;user-select:none;-webkit-user-select:none}
-.goi-box{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:min(100vw,calc(100vh * 1.78));max-width:100%;padding:0 2vw}
-.goi-img{display:block;width:100%;height:auto;max-height:84vh;object-fit:contain;image-rendering:auto;opacity:0}
+.goi-box{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:min(80vw,calc(80vh * 1.78));max-width:100%;padding:0 2vw}
+.goi-img{display:block;width:100%;height:auto;max-height:67.2vh;object-fit:contain;image-rendering:auto;opacity:0}
 .goi-on .goi-img{animation:goiIn 1.4s cubic-bezier(.2,.8,.3,1) forwards}
 @keyframes goiIn{0%{opacity:0;transform:scale(1.08);filter:brightness(2.2)}25%{opacity:1}100%{opacity:1;transform:none;filter:none}}
 .goi-press{margin:1.2vh 0 0;text-align:center;font:700 clamp(13px,2.2vw,26px) 'Chakra Petch',monospace;letter-spacing:.3em;color:#fff;text-shadow:0 0 8px rgba(255,255,255,.55),3px 3px 0 #3a0a1e;opacity:0}
