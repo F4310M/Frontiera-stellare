@@ -575,3 +575,171 @@ if(typeof document!=='undefined'&&document.querySelector&&document.body){
  },true);
  addEventListener('resize',()=>{if(STORIA.on)stMisura()});
 }
+
+// ---- NEMESI, la fortezza-pianeta dell'Impero (2026-11-11)
+// Una stazione da battaglia grande come una luna, disegnata solo per questo gioco: scafo a piastre
+// esagonali, cintura equatoriale scavata con le luci, due solchi paralleli, corona di torri al polo
+// nord e l'"Iride", il cannone a forma di cratere esagonale con sei lame che si carica di rosso.
+// Prestazioni: la stazione si disegna UNA volta su una tela in memoria (per dimensione dello schermo);
+// a ogni fotogramma si copia l'immagine e si aggiunge il bagliore dell'Iride (altra tela in memoria)
+// con qualche linea per i raggi. Niente ctx.filter né shadowBlur.
+const ST_STAZ={giro:18,carica:13.6,raggi:2.4,fuoco:.9,entra:2.5};
+function stStazVec(lat,lon){return[Math.cos(lat)*Math.sin(lon),Math.sin(lat),Math.cos(lat)*Math.cos(lon)]}
+function stStazSprite(R){
+ R=Math.max(8,Math.round(R));
+ const S=R*2+6,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');
+ const cx=S/2,cy=S/2,E=.36,cE=Math.cos(E),sE=Math.sin(E),L=[-.58,-.52,.62];
+ const Ln=Math.hypot(L[0],L[1],L[2]);L[0]/=Ln;L[1]/=Ln;L[2]/=Ln;
+ // modello (y in alto) -> vista (z verso chi guarda) -> schermo
+ const V=m=>[m[0],m[1]*cE-m[2]*sE,m[1]*sE+m[2]*cE];
+ const P=v=>[cx+R*v[0],cy-R*v[1]];
+ const luce=v=>v[0]*L[0]-v[1]*L[1]+v[2]*L[2];
+ const add=(a,b,k)=>[a[0]+b[0]*k,a[1]+b[1]*k,a[2]+b[2]*k];
+ const nor=a=>{const n=Math.hypot(a[0],a[1],a[2])||1;return[a[0]/n,a[1]/n,a[2]/n]};
+ const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+ // l'Iride: centro, e due direzioni sulla superficie per costruire l'esagono
+ const DL=.5,DO=-.52,DA=.27,dc=stStazVec(DL,DO);
+ const est=nor(cross([0,1,0],dc)),nord=cross(dc,est);
+ const suDisco=(a,ang)=>{const s=Math.sin(a),k=Math.cos(a);return[dc[0]*k+(est[0]*Math.cos(ang)+nord[0]*Math.sin(ang))*s,dc[1]*k+(est[1]*Math.cos(ang)+nord[1]*Math.sin(ang))*s,dc[2]*k+(est[2]*Math.cos(ang)+nord[2]*Math.sin(ang))*s]};
+ const angD=m=>Math.acos(Math.max(-1,Math.min(1,m[0]*dc[0]+m[1]*dc[1]+m[2]*dc[2])));
+ const meta={S,R,cx,cy};
+ if(!g)return{cv:c,...meta,glow:c,gx:cx,gy:cy,vx:[],fx:cx,fy:cy};
+ const rnd=stRnd(4242);
+ // fondo metallico
+ g.save();g.beginPath();g.arc(cx,cy,R,0,Math.PI*2);g.clip();
+ g.fillStyle='#0b0f15';g.fillRect(0,0,S,S);
+ const col=(v,k)=>{const l=Math.max(0,luce(v)),a=.06+Math.pow(l,.9)*.94;return'rgb('+Math.round(150*a*k)+','+Math.round(160*a*k)+','+Math.round(174*a*k)+')'};
+ // piastre: fasce di latitudine, piastre di larghezza simile, ognuna con la sua luce (effetto sfaccettato)
+ const dLat=.075,luci=[];
+ for(let la=-Math.PI/2+dLat*.5;la<Math.PI/2-dLat*.4;la+=dLat){
+  const n=Math.max(6,Math.round(Math.PI*2*Math.cos(la)/dLat)),dLon=Math.PI*2/n,off=rnd()*dLon;
+  for(let i=0;i<n;i++){
+   const lo=off+i*dLon,mc=stStazVec(la,lo+dLon/2),vc=V(mc);if(vc[2]<-.05)continue;
+   if(Math.abs(la)<.05)continue; // la cintura scavata
+   if(angD(mc)<DA*1.04)continue; // l'Iride
+   const g1=.035,lst=[[la-dLat/2+g1*dLat,lo+g1*dLon],[la-dLat/2+g1*dLat,lo+dLon-g1*dLon],[la+dLat/2-g1*dLat,lo+dLon-g1*dLon],[la+dLat/2-g1*dLat,lo+g1*dLon]];
+   const k=.72+rnd()*.42+(rnd()<.06?.25:0);
+   g.fillStyle=col(vc,k);g.beginPath();
+   lst.forEach((q,j)=>{const p=P(V(stStazVec(q[0],q[1])));j?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1])});g.fill();
+   // ogni tanto una piastra con un pannello più scuro dentro
+   if(rnd()<.18){const ql=la+(rnd()-.5)*dLat*.4,qo=lo+dLon*(.3+rnd()*.4),p=P(V(stStazVec(ql,qo)));
+    g.fillStyle='rgba(0,0,0,.35)';const w=R*dLat*.35*Math.max(.2,vc[2]);g.fillRect(p[0]-w,p[1]-w*.5,w*2,w)}
+   if(rnd()<.11)luci.push(stStazVec(la+(rnd()-.5)*dLat*.7,lo+rnd()*dLon));
+  }
+ }
+ // solchi paralleli a nord e a sud (linee scure con il bordo chiaro)
+ const solco=(lat,w,scuro)=>{
+  g.lineCap='round';
+  for(const [d,st] of [[0,scuro],[1,'rgba(190,205,225,.22)']]){
+   g.strokeStyle=st;g.lineWidth=Math.max(1,w*(d?.35:1));g.beginPath();let on=false;
+   for(let lo=-Math.PI;lo<=Math.PI+.01;lo+=.03){const m=stStazVec(lat+(d?w/R*.9:0),lo),v=V(m);
+    if(v[2]<0||angD(m)<DA*1.02){on=false;continue}const p=P(v);on?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]);on=true}
+   g.stroke();
+  }
+ };
+ solco(.43,R*.012,'#040609');solco(-.43,R*.012,'#040609');solco(.86,R*.008,'#05070a');
+ // cintura equatoriale: una trincea profonda con file di luci
+ {
+  const w=.05;g.fillStyle='#030508';g.beginPath();let first=true;
+  const up=[],dn=[];for(let lo=-Math.PI;lo<=Math.PI+.01;lo+=.03){const a=V(stStazVec(w,lo)),b=V(stStazVec(-w,lo));if(a[2]>-.02)up.push(P(a));if(b[2]>-.02)dn.push(P(b))}
+  for(const p of up){first?g.moveTo(p[0],p[1]):g.lineTo(p[0],p[1]);first=false}for(let i=dn.length-1;i>=0;i--)g.lineTo(dn[i][0],dn[i][1]);g.closePath();g.fill();
+  // parete interna in ombra, più chiara verso la luce
+  for(let lo=-Math.PI;lo<=Math.PI;lo+=.045){const m=stStazVec(-w*.2,lo),v=V(m);if(v[2]<.05)continue;const p=P(v);
+   const a=.25+Math.max(0,luce(v))*.6;g.fillStyle='rgba(90,100,115,'+a.toFixed(2)+')';g.fillRect(p[0]-R*.006,p[1]-R*.012,R*.012*Math.max(.3,v[2]),R*.02)}
+  for(let lo=-Math.PI;lo<=Math.PI;lo+=.02){const v=V(stStazVec(rnd()<.5?w*.55:-w*.55,lo));if(v[2]<.08||rnd()<.35)continue;const p=P(v),s=Math.max(.6,R*.0055*v[2]);
+   g.fillStyle=rnd()<.8?'rgba(255,214,150,.9)':'rgba(140,220,255,.9)';g.fillRect(p[0]-s,p[1]-s*.5,s*2,s)}
+ }
+ // corona di torri al polo nord
+ for(let i=0;i<9;i++){const lo=i/9*Math.PI*2,m=stStazVec(1.28,lo),v=V(m);if(v[2]<.05)continue;
+  const p=P(v),q=P(V(stStazVec(1.36,lo))),hgt=R*.06*v[2],wd=R*.013;
+  g.fillStyle=col(v,1.15);g.fillRect(p[0]-wd/2,p[1]-hgt,wd,hgt);g.fillStyle='#0a0d12';g.fillRect(p[0]-wd/2,p[1]-hgt*.25,wd,hgt*.25);
+  g.fillStyle='rgba(255,90,70,.95)';g.fillRect(p[0]-wd*.3,p[1]-hgt-wd*.6,wd*.6,wd*.6);void q;}
+ // l'Iride: cratere esagonale con anelli, sei lame e l'emettitore al centro
+ const esa=(a,rot)=>{const pts=[];for(let k=0;k<6;k++){const a0=rot+k*Math.PI/3,a1=a0+Math.PI/3;
+  for(let s=0;s<8;s++){const t=s/8,an=a0+(a1-a0)*t,ca=Math.cos(a0),sa=Math.sin(a0),cb=Math.cos(a1),sb=Math.sin(a1);
+   const x=ca+(cb-ca)*t,y=sa+(sb-sa)*t,rr=Math.hypot(x,y);pts.push(P(V(suDisco(a*rr,Math.atan2(y,x)))));void an}}return pts};
+ const poly=(pts)=>{g.beginPath();pts.forEach((p,j)=>j?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath()};
+ const rot=.25,dv=V(dc),lD=luce(dv);
+ poly(esa(DA*1.05,rot));g.fillStyle=col(dv,1.25);g.fill();                 // bordo rialzato
+ poly(esa(DA*.97,rot));g.fillStyle='#07090d';g.fill();
+ for(let i=0;i<7;i++){const a=DA*(.93-i*.12);poly(esa(a,rot));
+  // cratere concavo: il lato opposto alla luce è quello illuminato
+  const lp=P(V(suDisco(a*.6,Math.PI*1.25))),dp=P(V(suDisco(a*.6,Math.PI*.25)));
+  const gr=g.createLinearGradient(dp[0],dp[1],lp[0],lp[1]);const b=Math.round(40+i*7+lD*30);
+  gr.addColorStop(0,'rgb('+(b+40)+','+(b+44)+','+(b+52)+')');gr.addColorStop(1,'rgb('+(b*.35|0)+','+(b*.37|0)+','+(b*.42|0)+')');
+  g.fillStyle=gr;g.fill();g.strokeStyle='rgba(0,0,0,.55)';g.lineWidth=Math.max(1,R*.004);g.stroke()}
+ const vx=[];
+ for(let k=0;k<6;k++){const an=rot+k*Math.PI/3,a=P(V(suDisco(DA*.95,an))),b=P(V(suDisco(DA*.16,an)));vx.push(a);
+  g.strokeStyle='#05070a';g.lineWidth=Math.max(1.5,R*.016);g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();
+  g.strokeStyle='rgba(200,215,235,.35)';g.lineWidth=Math.max(1,R*.005);g.stroke();
+  g.fillStyle='rgba(255,70,50,.95)';const s=Math.max(1,R*.009);g.fillRect(a[0]-s,a[1]-s,s*2,s*2)}
+ const ec=P(dv);
+ {const r0=R*DA*.17;const gr=g.createRadialGradient(ec[0],ec[1],0,ec[0],ec[1],r0);gr.addColorStop(0,'#ffd0b0');gr.addColorStop(.35,'#ff3a24');gr.addColorStop(1,'#3a0705');
+  g.fillStyle=gr;g.beginPath();g.ellipse(ec[0],ec[1],r0,r0*Math.max(.35,dv[2]),Math.atan2(dv[1],-dv[0])+Math.PI/2,0,Math.PI*2);g.fill()}
+ // ombra morbida verso il lato notte + riflesso sul lato del sole
+ {const gr=g.createRadialGradient(cx-R*.45,cy-R*.4,R*.05,cx-R*.1,cy-R*.05,R*1.45);
+  gr.addColorStop(0,'rgba(220,235,255,.16)');gr.addColorStop(.45,'rgba(0,0,0,0)');gr.addColorStop(.8,'rgba(1,3,8,.55)');gr.addColorStop(1,'rgba(1,3,8,.9)');
+  g.fillStyle=gr;g.fillRect(0,0,S,S)}
+ // luci delle finestre sul lato in ombra
+ for(const m of luci){const v=V(m);if(v[2]<.12||luce(v)>.12)continue;const p=P(v),s=Math.max(.5,R*.004*v[2]);
+  g.fillStyle=rnd()<.85?'rgba(255,205,140,.85)':'rgba(150,215,255,.85)';g.fillRect(p[0]-s,p[1]-s,s*2,s*2)}
+ g.restore();
+ // bordo illuminato sottile dal lato del sole
+ g.strokeStyle='rgba(205,225,245,.55)';g.lineWidth=Math.max(1,R*.012);g.beginPath();g.arc(cx,cy,R-g.lineWidth/2,Math.PI*.9,Math.PI*1.62);g.stroke();
+ g.strokeStyle='rgba(205,225,245,.18)';g.lineWidth=Math.max(1,R*.006);g.beginPath();g.arc(cx,cy,R-g.lineWidth/2,Math.PI*.7,Math.PI*1.85);g.stroke();
+ // bagliore dell'Iride (tela a parte, si accende piano mentre carica)
+ const GR=Math.max(8,Math.round(R*.75)),gl=document.createElement('canvas');gl.width=gl.height=GR*2;const h=gl.getContext('2d');
+ if(h){const gr=h.createRadialGradient(GR,GR,0,GR,GR,GR);gr.addColorStop(0,'rgba(255,220,190,.95)');gr.addColorStop(.12,'rgba(255,70,40,.75)');gr.addColorStop(.4,'rgba(200,20,10,.22)');gr.addColorStop(1,'rgba(120,0,0,0)');h.fillStyle=gr;h.fillRect(0,0,GR*2,GR*2)}
+ // punto focale dei sei raggi, davanti al cratere (lungo la sua normale)
+ const fv=add(dv,dv,.28),fp=[cx+R*fv[0],cy-R*fv[1]];
+ return{cv:c,...meta,glow:gl,GR,gx:ec[0],gy:ec[1],vx,fx:fp[0],fy:fp[1],dir:nor([dv[0],-dv[1]])};
+}
+// stato della carica in un ciclo: 0..1 mentre carica, poi i raggi convergono e parte il colpo
+function stStazFase(t){
+ const T=ST_STAZ,c=((t%T.giro)+T.giro)%T.giro;
+ if(c<T.carica)return{c:Math.pow(c/T.carica,1.6),raggi:0,fuoco:0};
+ if(c<T.carica+T.raggi)return{c:1,raggi:(c-T.carica)/T.raggi,fuoco:0};
+ const f=(c-T.carica-T.raggi)/T.fuoco;
+ if(f<1)return{c:1,raggi:1,fuoco:f};
+ return{c:Math.max(0,1-(f-1)*T.fuoco/(T.giro-T.carica-T.raggi-T.fuoco)),raggi:0,fuoco:0};
+}
+function stStazDisegna(g,B,dt){
+ if(!B.sz){
+  const R=Math.min(B.W,B.H)*.105;
+  B.sz={sp:stStazSprite(R),t:0};
+ }
+ const Z=B.sz,sp=Z.sp;Z.t+=dt;
+ const a=Math.max(0,Math.min(1,(Z.t-ST_STAZ.entra)/3.5));if(a<=0)return;
+ // in alto a sinistra, lontana: scivola piano verso destra
+ const x=B.W*.17+Math.min(Z.t,150)*.9*B.d-sp.S/2,y=B.H*.22+Math.min(Z.t,150)*.25*B.d-sp.S/2;
+ g.globalAlpha=a;g.drawImage(sp.cv,x,y);
+ const F=stStazFase(Z.t-ST_STAZ.entra);
+ g.globalCompositeOperation='lighter';
+ const pul=.85+.15*Math.sin(Z.t*7),s=(.35+F.c*.9)*pul;
+ g.globalAlpha=a*Math.min(1,.18+F.c*.8);g.drawImage(sp.glow,x+sp.gx-sp.GR*s,y+sp.gy-sp.GR*s,sp.GR*2*s,sp.GR*2*s);
+ if(F.raggi>0){
+  const fx=x+sp.fx,fy=y+sp.fy,k=Math.min(1,F.raggi*1.4);
+  for(const [w,al] of [[sp.R*.03,.18],[sp.R*.009,.9]]){g.strokeStyle='rgba(255,'+(al>.5?150:60)+','+(al>.5?110:40)+','+(al*a).toFixed(2)+')';g.lineWidth=Math.max(1,w);
+   g.beginPath();for(const v of sp.vx){const vx=x+v[0],vy=y+v[1];g.moveTo(vx,vy);g.lineTo(vx+(fx-vx)*k,vy+(fy-vy)*k)}g.stroke()}
+  if(F.raggi>.6){const q=(F.raggi-.6)/.4*sp.GR*.5;g.globalAlpha=a;g.drawImage(sp.glow,fx-q,fy-q,q*2,q*2)}
+ }
+ if(F.fuoco>0){
+  // il colpo: un raggio rosso che parte dal fuoco e sparisce oltre il bordo dello schermo
+  const fx=x+sp.fx,fy=y+sp.fy,d=sp.dir,len=Math.max(B.W,B.H)*1.5,e=Math.sin(Math.PI*Math.min(1,F.fuoco));
+  const ex=fx+d[0]*len*Math.min(1,F.fuoco*3),ey=fy+d[1]*len*Math.min(1,F.fuoco*3);
+  for(const [w,c] of [[sp.R*.09,'rgba(255,40,20,'],[sp.R*.04,'rgba(255,110,70,'],[sp.R*.012,'rgba(255,235,220,']]){
+   g.strokeStyle=c+(.85*e*a).toFixed(2)+')';g.lineWidth=Math.max(1,w*(.6+.4*e));g.lineCap='round';g.beginPath();g.moveTo(fx,fy);g.lineTo(ex,ey);g.stroke()}
+  const q=sp.GR*(.6+e*.5);g.globalAlpha=a*e;g.drawImage(sp.glow,fx-q,fy-q,q*2,q*2);
+ }
+ g.globalCompositeOperation='source-over';g.globalAlpha=1;
+}
+// la stazione si aggiunge al cielo dopo LYRA: sta in alto a sinistra, lontano dal pianeta
+{
+ const _stDis=stDisegna;
+ stDisegna=function(dt){
+  const c=typeof document!=='undefined'&&document.getElementById?document.getElementById('storiaCanvas'):null;
+  const B0=STORIA.bg,r=_stDis.apply(this,arguments),B=STORIA.bg;
+  if(c&&B&&c.getContext){const g=c.getContext('2d');if(g)try{if(B!==B0&&B0)B0.sz=null;stStazDisegna(g,B,dt)}catch(e){}}
+  return r;
+ };
+}

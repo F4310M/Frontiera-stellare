@@ -8,15 +8,15 @@
 // poi solo drawImage ruotato (niente ctx.filter né shadowBlur sul canvas principale).
 // Va caricato dopo spazio.js e i18n.js (index.html: dopo speciale.js).
 
-const BH_CFG={
+const BH_CFG={ // 11-11: gravità ridotta del 10%
  chance:d=>Math.min(.95,.45+.13*d),      // probabilità che in una missione compaiano buchi neri (1: 58%, 5: 95%)
  first:d=>[12+(5-d)*3,24+(5-d)*5],       // secondi prima del primo
  next:d=>[70/(.6+.25*d),110/(.6+.25*d)], // secondi tra uno e il successivo
  life:[34,46],grow:1.6,fade:2.6,         // durata, comparsa, evaporazione (secondi)
  core:58,coreMax:100,reach:1900,         // raggio dell'orizzonte e della zona d'influenza
- drift:[30,320],                         // senza post-bruciatore: velocità minima verso il centro (bordo → centro)
- pull:[110,780],pullBoost:[60,500],swirl:.42,
- fallSpeed:[40,620],planetGap:700,swallow:.95,
+ drift:[27,288],                         // senza post-bruciatore: velocità minima verso il centro (bordo → centro)
+ pull:[99,702],pullBoost:[54,450],swirl:.42,
+ fallSpeed:[36,558],planetGap:700,swallow:.95,
  swallowEnemy:1.1,capture:.9            // navi nemiche: durata della spirale e raggio di cattura (in raggi dell'orizzonte)
 };
 const BH={sw:[],hole:null,timer:0,on:false,inside:false,was:false,warned:false,hum:0,hint:0,eaten:0,motes:[],gfx:null};
