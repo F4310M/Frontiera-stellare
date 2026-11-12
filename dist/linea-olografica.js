@@ -1,6 +1,6 @@
 // LINEA OLOGRAFICA PIANETA → PANNELLO (2026-11-12)
 // Nella home, il pianeta selezionato è collegato al pannello OBIETTIVO SELEZIONATO da un fascio olografico:
-// cono di proiezione dal pianeta al riquadro dell'anteprima, linea centrale con impulsi che scorrono,
+// cono di proiezione dal pianeta al pannello (tutta l'altezza), flusso di energia con impulsi sui due bordi,
 // anello che ruota attorno al pianeta e barra luminosa sul bordo del pannello.
 // Al cambio di pianeta il fascio si ridisegna partendo dal pianeta.
 // Solo SVG e CSS: niente filtri o ombre ricalcolati a ogni fotogramma (regola prestazioni PC).
@@ -15,23 +15,25 @@
   svg=mk('svg',{id:'lineaOlo',class:'linea-olo','aria-hidden':'true'});
   const defs=mk('defs',{},svg);
   const g=mk('linearGradient',{id:'loCono',gradientUnits:'userSpaceOnUse'},defs);
-  el.s1=mk('stop',{offset:'0','stop-opacity':'.02'},g);
-  el.s2=mk('stop',{offset:'.55','stop-opacity':'.07'},g);
+  el.s1=mk('stop',{offset:'0','stop-opacity':'.03'},g);
+  el.s2=mk('stop',{offset:'.55','stop-opacity':'.08'},g);
   el.s3=mk('stop',{offset:'1','stop-opacity':'.20'},g);
   el.grad=g;
   el.cono=mk('polygon',{fill:'url(#loCono)'},svg);
-  el.bordoA=mk('line',{class:'lo-bordo'},svg);
-  el.bordoB=mk('line',{class:'lo-bordo'},svg);
-  el.alone=mk('path',{class:'lo-alone',fill:'none'},svg);
-  el.linea=mk('path',{class:'lo-linea',fill:'none'},svg);
-  el.flusso=mk('path',{class:'lo-flusso',fill:'none'},svg);
-  el.impulsi=[0,1,2].map(()=>mk('circle',{class:'lo-impulso',r:'2.6'},svg));
+  // i due bordi del fascio: alone, linea e flusso di energia con impulsi
+  el.bordi=[0,1].map(()=>({
+   alone:mk('path',{class:'lo-alone',fill:'none'},svg),
+   linea:mk('path',{class:'lo-linea',fill:'none'},svg),
+   flusso:mk('path',{class:'lo-flusso',fill:'none'},svg),
+   impulsi:[0,1].map(()=>mk('circle',{class:'lo-impulso',r:'2.4'},svg)),
+   len:0
+  }));
   el.anello=mk('g',{class:'lo-anello'},svg);
   el.ring=mk('circle',{class:'lo-ring',fill:'none'},el.anello);
   el.ping=mk('circle',{class:'lo-ping',fill:'none'},svg);
   el.attacco=mk('line',{class:'lo-attacco'},svg);
   el.tacche=[0,1].map(()=>mk('line',{class:'lo-tacca'},svg));
-  el.punto=mk('circle',{class:'lo-punto',r:'3.5'},svg);
+  el.punti=[0,1].map(()=>mk('circle',{class:'lo-punto',r:'3.2'},svg));
   scr.appendChild(svg);
   return true;
  }
@@ -41,6 +43,7 @@
   return c||'#7ddce8';
  }
  function nascondi(){if(svg)svg.classList.remove('on');lastKey=''}
+ const dist2=(a,b)=>(a[0]-b[0])**2+(a[1]-b[1])**2;
 
  function frame(now){
   requestAnimationFrame(frame);
@@ -49,68 +52,57 @@
   if(!svg&&!build())return;
   const node=document.querySelector('#starMap .planet-node.selected');
   const panel=document.getElementById('planetPanel');
-  const prev=panel&&panel.querySelector('.planet-preview');
-  const rn=vis(node),rp=vis(panel),rv=vis(prev)||rp,rs=scr.getBoundingClientRect();
+  const rn=vis(node),rp=vis(panel),rs=scr.getBoundingClientRect();
   if(!rn||!rp)return nascondi();
   if(node!==lastNode){lastNode=node;t0=now}
   const ox=rs.left,oy=rs.top;
   const nx=rn.left+rn.width/2-ox,ny=rn.top+rn.height/2-oy,nr=rn.width/2+7;
-  // pannello a destra (PC) o sotto (telefono)
+  // il fascio copre tutto il pannello: tutta l'altezza (PC, pannello a destra) o tutta la larghezza (telefono, pannello sotto)
   const side=rp.left>rn.right+30;
-  let tx,ty,a1,a2,cx1,cy1,cx2,cy2;
-  if(side){
-   tx=rp.left-ox-3;ty=rv.top+rv.height/2-oy;
-   a1=[tx,rv.top-oy+4];a2=[tx,rv.bottom-oy-4];
-   const dx=tx-nx;cx1=nx+dx*.45;cy1=ny;cx2=tx-dx*.35;cy2=ty;
-  }else{
-   tx=rv.left+rv.width/2-ox;ty=rp.top-oy;
-   a1=[rv.left-ox+4,ty];a2=[rv.right-ox-4,ty];
-   const dy=ty-ny;cx1=nx;cy1=ny+dy*.45;cx2=tx;cy2=ty-dy*.35;
-  }
-  // partenza sul bordo dell'anello, verso il pannello
-  const ang=Math.atan2(ty-ny,tx-nx),sx=nx+Math.cos(ang)*nr,sy=ny+Math.sin(ang)*nr;
-  const key=[nx,ny,tx,ty,a1[0],a1[1],a2[0],a2[1]].map(v=>Math.round(v)).join(',');
-  const p=Math.min(1,(now-t0)/520),e=1-Math.pow(1-p,3);
-  const d=`M${sx.toFixed(1)} ${sy.toFixed(1)} C${cx1.toFixed(1)} ${cy1.toFixed(1)} ${cx2.toFixed(1)} ${cy2.toFixed(1)} ${tx.toFixed(1)} ${ty.toFixed(1)}`;
+  let a1,a2,tx,ty;
+  if(side){tx=rp.left-ox-3;a1=[tx,rp.top-oy+10];a2=[tx,rp.bottom-oy-10];ty=(a1[1]+a2[1])/2}
+  else{ty=rp.top-oy-3;a1=[rp.left-ox+10,ty];a2=[rp.right-ox-10,ty];tx=(a1[0]+a2[0])/2}
+  // partenza dai lati del pianeta (perpendicolare alla direzione del pannello)
+  const L=Math.hypot(tx-nx,ty-ny)||1,ux=(tx-nx)/L,uy=(ty-ny)/L;
+  let s1=[nx+uy*nr,ny-ux*nr],s2=[nx-uy*nr,ny+ux*nr];
+  if(dist2(s1,a1)+dist2(s2,a2)>dist2(s1,a2)+dist2(s2,a1)){const t=s1;s1=s2;s2=t}
+  const key=[nx,ny,a1[0],a1[1],a2[0],a2[1]].map(v=>Math.round(v)).join(',');
+  const p=Math.min(1,(now-t0)/560),e=1-Math.pow(1-p,3);
   if(key!==lastKey||p<1){
    lastKey=key;
    const c=colore(panel);
    if(c!==accent){accent=c;svg.style.setProperty('--lo',c);for(const s of [el.s1,el.s2,el.s3])s.setAttribute('stop-color',c)}
    el.grad.setAttribute('x1',nx);el.grad.setAttribute('y1',ny);el.grad.setAttribute('x2',tx);el.grad.setAttribute('y2',ty);
-   for(const k of ['alone','linea','flusso'])el[k].setAttribute('d',d);
-   const len=el.linea.getTotalLength?el.linea.getTotalLength():600;
-   el.len=len;
-   // disegno progressivo all'arrivo
-   el.linea.style.strokeDasharray=len;el.linea.style.strokeDashoffset=len*(1-e);
-   el.alone.style.strokeDasharray=len;el.alone.style.strokeDashoffset=len*(1-e);
-   el.flusso.style.opacity=e;
-   // cono: dal pianeta al riquadro, si apre mentre la linea arriva
-   const k2=Math.max(0,(p-.35)/.65),q=1-Math.pow(1-k2,2);
-   const ax=nx+(a1[0]-nx)*q,ay=ny+(a1[1]-ny)*q,bx=nx+(a2[0]-nx)*q,by=ny+(a2[1]-ny)*q;
-   el.cono.setAttribute('points',`${nx},${ny} ${ax},${ay} ${bx},${by}`);
-   el.cono.style.opacity=q;
-   for(const [ln,pt] of [[el.bordoA,[ax,ay]],[el.bordoB,[bx,by]]]){ln.setAttribute('x1',nx);ln.setAttribute('y1',ny);ln.setAttribute('x2',pt[0]);ln.setAttribute('y2',pt[1]);ln.style.opacity=q}
-   // barra sul bordo del pannello
+   // i bordi si allungano dal pianeta al pannello, il cono li segue
+   const ends=[[s1,a1],[s2,a2]].map(([s,a])=>[s,[s[0]+(a[0]-s[0])*e,s[1]+(a[1]-s[1])*e]]);
+   el.cono.setAttribute('points',[ends[0][0],ends[0][1],ends[1][1],ends[1][0]].map(q=>q[0].toFixed(1)+','+q[1].toFixed(1)).join(' '));
+   el.cono.style.opacity=e;
+   el.bordi.forEach((b,i)=>{
+    const [s,a]=[[s1,a1],[s2,a2]][i];
+    const d=`M${s[0].toFixed(1)} ${s[1].toFixed(1)} L${a[0].toFixed(1)} ${a[1].toFixed(1)}`;
+    for(const k of ['alone','linea','flusso'])b[k].setAttribute('d',d);
+    b.len=Math.hypot(a[0]-s[0],a[1]-s[1]);b.s=s;b.a=a;
+    for(const k of ['alone','linea']){b[k].style.strokeDasharray=b.len;b[k].style.strokeDashoffset=b.len*(1-e)}
+    b.flusso.style.opacity=e;
+   });
+   // barra sul bordo del pannello, per tutta la sua lunghezza
    el.attacco.setAttribute('x1',a1[0]);el.attacco.setAttribute('y1',a1[1]);el.attacco.setAttribute('x2',a2[0]);el.attacco.setAttribute('y2',a2[1]);
-   el.attacco.style.opacity=q;
+   el.attacco.style.opacity=e;
    const tk=side?[[a1[0],a1[1],a1[0]+7,a1[1]],[a2[0],a2[1],a2[0]+7,a2[1]]]:[[a1[0],a1[1],a1[0],a1[1]+7],[a2[0],a2[1],a2[0],a2[1]+7]];
-   el.tacche.forEach((t,i)=>{t.setAttribute('x1',tk[i][0]);t.setAttribute('y1',tk[i][1]);t.setAttribute('x2',tk[i][2]);t.setAttribute('y2',tk[i][3]);t.style.opacity=q});
-   el.punto.setAttribute('cx',tx);el.punto.setAttribute('cy',ty);el.punto.style.opacity=e;
+   el.tacche.forEach((t,i)=>{t.setAttribute('x1',tk[i][0]);t.setAttribute('y1',tk[i][1]);t.setAttribute('x2',tk[i][2]);t.setAttribute('y2',tk[i][3]);t.style.opacity=e});
+   el.punti.forEach((pt,i)=>{const a=i?a2:a1;pt.setAttribute('cx',a[0]);pt.setAttribute('cy',a[1]);pt.style.opacity=e});
    el.ring.setAttribute('cx',nx);el.ring.setAttribute('cy',ny);el.ring.setAttribute('r',nr);
    el.anello.style.transformOrigin=nx+'px '+ny+'px';
    el.ping.setAttribute('cx',nx);el.ping.setAttribute('cy',ny);el.ping.setAttribute('r',nr);
    el.ping.style.transformOrigin=nx+'px '+ny+'px';
   }
-  // impulsi che viaggiano dal pianeta al pannello
-  if(el.len&&el.linea.getPointAtLength){
-   el.impulsi.forEach((c,i)=>{
-    const f=((now/1400)+i/3)%1;
-    if(p<1){c.style.opacity=0;return}
-    const pt=el.linea.getPointAtLength(f*el.len);
-    c.setAttribute('cx',pt.x.toFixed(1));c.setAttribute('cy',pt.y.toFixed(1));
-    c.style.opacity=(Math.sin(f*Math.PI)*.95).toFixed(2);
-   });
-  }
+  // impulsi di energia che corrono sui bordi dal pianeta al pannello
+  el.bordi.forEach((b,j)=>b.impulsi.forEach((c,i)=>{
+   if(p<1||!b.s){c.style.opacity=0;return}
+   const f=((now/1500)+i/2+j*.25)%1;
+   c.setAttribute('cx',(b.s[0]+(b.a[0]-b.s[0])*f).toFixed(1));c.setAttribute('cy',(b.s[1]+(b.a[1]-b.s[1])*f).toFixed(1));
+   c.style.opacity=(Math.sin(f*Math.PI)*.95).toFixed(2);
+  }));
   svg.classList.add('on');
  }
 
@@ -118,8 +110,7 @@
  css.textContent=
   '.linea-olo{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0;transition:opacity .3s;--lo:#7ddce8;overflow:visible}'+
   '.linea-olo.on{opacity:1}'+
-  '.linea-olo .lo-bordo{stroke:var(--lo);stroke-width:1;stroke-opacity:.28;stroke-dasharray:2 5}'+
-  '.linea-olo .lo-alone{stroke:var(--lo);stroke-width:7;stroke-opacity:.10;stroke-linecap:round}'+
+    '.linea-olo .lo-alone{stroke:var(--lo);stroke-width:7;stroke-opacity:.10;stroke-linecap:round}'+
   '.linea-olo .lo-linea{stroke:var(--lo);stroke-width:1.4;stroke-opacity:.85;stroke-linecap:round}'+
   '.linea-olo .lo-flusso{stroke:#e8fdff;stroke-width:1.2;stroke-opacity:.55;stroke-dasharray:3 13;animation:loFlusso 1.1s linear infinite}'+
   '.linea-olo .lo-impulso{fill:#f2feff;stroke:var(--lo);stroke-width:3;stroke-opacity:.35}'+
