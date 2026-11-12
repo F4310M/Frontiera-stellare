@@ -33,7 +33,7 @@ const src=f=>fs.readFileSync(path.join(dist,f),'utf8');
   {name:'LYRA',code:'HX–01',glow:'#39c8ff',theme:'mare'},
   {name:'VESPER',code:'KQ–17',glow:'#ffcf4a',theme:'deserto'},
   {name:'OMEGA',code:'Ω–00',glow:'#ff2a6a',theme:'abisso',boss:'omega',final:true}];
- const PF_BOSS={mare:{name:'LEVIATANO K-3',sub:'GRANCHIO CORAZZATO DEL FRONTE OMBRA'},deserto:{name:'SCORPIONE S-5',sub:'CACCIATORE DELLE DUNE'},omega:{name:'IMPERATORE OMEGA',sub:'SIGNORE DEL FRONTE OMBRA'}};
+ const PF_BOSS={mare:{name:'LEVIATANO K-3',sub:'GRANCHIO CORAZZATO DELL’IMPERO'},deserto:{name:'SCORPIONE S-5',sub:'CACCIATORE DELLE DUNE'},omega:{name:'IMPERATORE OMEGA',sub:'SIGNORE DELL’IMPERO'}};
  let freed=[],sel=-1,orig={stars:0,nebula:0};
  const sb={planets,PF_BOSS,state:'map',W:800,H:600,ctx:{canvas:{width:800,height:600},save(){},restore(){},fillRect(){},drawImage(){}},
   $:id=>els[id]||null,document:{querySelectorAll:()=>[]},
@@ -48,7 +48,7 @@ const src=f=>fs.readFileSync(path.join(dist,f),'utf8');
  assert.equal(els.planetPanel.style.props['--panel-accent'],'#39c8ff','ombra del pannello: colore di LYRA');
  assert.ok(els.previewPlanet.classes.has('mp-rot'),'il pianeta del pannello ruota');
  assert.equal(els.planetBossName.textContent,'LEVIATANO K-3','boss finale di LYRA');
- assert.equal(els.planetBossSub.textContent,'GRANCHIO CORAZZATO DEL FRONTE OMBRA');
+ assert.equal(els.planetBossSub.textContent,'GRANCHIO CORAZZATO DELL’IMPERO');
  freed=['KQ–17'];run('selectPlanet(1)');
  assert.equal(els.planetPanel.style.props['--panel-accent'],'#ffcf4a','ombra: colore di VESPER');
  assert.equal(els.planetBossSub.textContent,'SCONFITTO','pianeta liberato: boss sconfitto');

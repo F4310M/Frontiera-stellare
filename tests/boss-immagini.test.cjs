@@ -28,7 +28,7 @@ assert.equal(val('PF_BOSS.foresta.gun.len'),Math.round(Math.hypot(532,465)*.19),
 // i colpi partono dal pungiglione e dall'occhio
 assert.deepEqual(JSON.parse(val('JSON.stringify(PF_BOSS.deserto.gun)')),{x:32,y:124,len:4});
 assert.equal(val('PF_BOSS.tempesta.gun.y'),128);
-run("setLang('en')");assert.equal(val("tr('MILLEPIEDI CORAZZATO DEL FRONTE OMBRA')"),'ARMORED CENTIPEDE OF THE SHADOW FRONT');
+run("setLang('en')");assert.equal(val("tr('MILLEPIEDI CORAZZATO DELL’IMPERO')"),'ARMORED CENTIPEDE OF THE EMPIRE');
 assert.equal(val('PF_BOSS.mare.w'),380);assert.equal(val('pfBossInfo(planets[4]).id'),'lava');assert.equal(val('planets[4].name'),'UMBRA');
 console.log('boss-immagini.test: ok');
 // i boss lunghi restano nello schermo e la carica finisce contro il bordo

@@ -190,7 +190,7 @@ function battDrawWall(x,y,now){
  // sacchi di sabbia
  const bag=(bx,by,bw)=>{const g=ctx.createLinearGradient(0,by-9,0,by+2);g.addColorStop(0,'#a59a76');g.addColorStop(1,'#5f563f');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(bx,by-4,bw/2,6,0,0,6.28);ctx.fill();ctx.strokeStyle='rgba(30,24,14,.6)';ctx.lineWidth=1;ctx.stroke()};
  for(const [bx,by,bw] of [[-11,0,22],[11,0,22],[0,-10,22],[-14,-10,14],[14,-10,14]])bag(bx,by,bw);
- // piastra corazzata del Fronte Ombra
+ // piastra corazzata dell’Impero
  const g=ctx.createLinearGradient(-w/2,-h,w/2,-h+20);g.addColorStop(0,'#4a5260');g.addColorStop(.5,'#2b313b');g.addColorStop(1,'#1a1e25');
  ctx.fillStyle=g;ctx.strokeStyle='#8a96a6';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-w/2,-17);ctx.lineTo(-w/2+3,-h);ctx.lineTo(w/2-3,-h);ctx.lineTo(w/2,-17);ctx.closePath();ctx.fill();ctx.stroke();
  ctx.save();ctx.clip();ctx.fillStyle='#c8364a';for(let i=-3;i<4;i++){ctx.save();ctx.translate(i*10,-24);ctx.rotate(-.7);ctx.fillRect(-2,-9,4,18);ctx.restore()}ctx.restore();

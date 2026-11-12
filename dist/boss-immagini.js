@@ -322,13 +322,13 @@ if(typeof PF_BOSS!=='undefined'){
  if(PF_BOSS.deserto)Object.assign(PF_BOSS.deserto,{w:240,h:170,gun:{x:Math.round(tx),y:Math.round(-ty),len:4},pod:{x:-40,y:150}});
  const M=BI.millepiedi,[mx,my]=biP(M,...M.mouth);
  if(PF_BOSS.mare)Object.assign(PF_BOSS.mare,{w:380,h:110,gun:{x:Math.round(mx),y:Math.round(M.raise-my),len:6},pod:{x:0,y:70},
-  sub:'MILLEPIEDI CORAZZATO DEL FRONTE OMBRA',brief:'un millepiedi meccanico corazzato lungo come un treno'});
+  sub:'MILLEPIEDI CORAZZATO DELL’IMPERO',brief:'un millepiedi meccanico corazzato lungo come un treno'});
  const V=BI.vespa,[vx,vy]=biP(V,...V.waist);
  if(PF_BOSS.foresta)Object.assign(PF_BOSS.foresta,{w:170,h:V.lift+90,gun:{x:Math.round(vx),y:Math.round(V.lift-vy),len:Math.round(Math.hypot(V.sting[0]-V.waist[0],V.sting[1]-V.waist[1])*V.S)},pod:{x:0,y:V.lift+60},
-  sub:'VESPA DA GUERRA DEL FRONTE OMBRA',brief:'una vespa meccanica corazzata con un pungiglione laser'});
+  sub:'VESPA DA GUERRA DELL’IMPERO',brief:'una vespa meccanica corazzata con un pungiglione laser'});
  const G=BI.drago,[gx,gy]=biP(G,...G.mouth);
  if(PF_BOSS.lava)Object.assign(PF_BOSS.lava,{w:250,h:170,gun:{x:Math.round(gx),y:Math.round(-gy),len:8},pod:{x:-40,y:150},
-  sub:'DRAGO DA GUERRA DEL FRONTE OMBRA',brief:'il drago meccanico che tiene in ostaggio la colonia'});
+  sub:'DRAGO DA GUERRA DELL’IMPERO',brief:'il drago meccanico che tiene in ostaggio la colonia'});
  const F=BI.sfera;
  if(PF_BOSS.tempesta)Object.assign(PF_BOSS.tempesta,{w:170,h:F.lift+85,gun:{x:0,y:F.lift,len:Math.round((F.eye[0]-F.O[0])*F.S)},pod:{x:0,y:F.lift+80}});
 }
@@ -341,10 +341,10 @@ if(typeof B_SCORCH!=='undefined'){
 }
 if(typeof I18N_ROWS!=='undefined'){
  const rows=[
-  ['MILLEPIEDI CORAZZATO DEL FRONTE OMBRA','ARMORED CENTIPEDE OF THE SHADOW FRONT','MILLE-PATTES BLINDÉ DU FRONT DE L’OMBRE','CIEMPIÉS BLINDADO DEL FRENTE SOMBRA','БРОНИРОВАННАЯ МНОГОНОЖКА ТЕНЕВОГО ФРОНТА','暗影阵线的装甲蜈蚣','影の戦線の装甲ムカデ'],
-  ['DRAGO DA GUERRA DEL FRONTE OMBRA','WAR DRAGON OF THE SHADOW FRONT','DRAGON DE GUERRE DU FRONT DE L’OMBRE','DRAGÓN DE GUERRA DEL FRENTE SOMBRA','БОЕВОЙ ДРАКОН ТЕНЕВОГО ФРОНТА','暗影阵线的战龙','影の戦線の戦闘ドラゴン'],
+  ['MILLEPIEDI CORAZZATO DELL’IMPERO','ARMORED CENTIPEDE OF THE EMPIRE','MILLE-PATTES BLINDÉ DE L’EMPIRE','CIEMPIÉS BLINDADO DEL IMPERIO','БРОНИРОВАННАЯ МНОГОНОЖКА ИМПЕРИИ','帝国的装甲蜈蚣','帝国の装甲ムカデ'],
+  ['DRAGO DA GUERRA DELL’IMPERO','WAR DRAGON OF THE EMPIRE','DRAGON DE GUERRE DE L’EMPIRE','DRAGÓN DE GUERRA DEL IMPERIO','БОЕВОЙ ДРАКОН ИМПЕРИИ','帝国的战龙','帝国の戦闘ドラゴン'],
   ['il drago meccanico che tiene in ostaggio la colonia','the mechanical dragon holding the colony hostage','le dragon mécanique qui retient la colonie en otage','el dragón mecánico que tiene a la colonia como rehén','механический дракон, держащий колонию в заложниках','挟持殖民地的机械巨龙','コロニーを人質に取る機械のドラゴン'],
-  ['VESPA DA GUERRA DEL FRONTE OMBRA','WAR WASP OF THE SHADOW FRONT','GUÊPE DE GUERRE DU FRONT DE L’OMBRE','AVISPA DE GUERRA DEL FRENTE SOMBRA','БОЕВАЯ ОСА ТЕНЕВОГО ФРОНТА','暗影阵线的战争胡蜂','影の戦線の戦闘スズメバチ'],
+  ['VESPA DA GUERRA DELL’IMPERO','WAR WASP OF THE EMPIRE','GUÊPE DE GUERRE DE L’EMPIRE','AVISPA DE GUERRA DEL IMPERIO','БОЕВАЯ ОСА ИМПЕРИИ','帝国的战争胡蜂','帝国の戦闘スズメバチ'],
   ['una vespa meccanica corazzata con un pungiglione laser','an armored mechanical wasp with a laser stinger','une guêpe mécanique blindée avec un dard laser','una avispa mecánica blindada con un aguijón láser','бронированная механическая оса с лазерным жалом','带激光毒刺的装甲机械胡蜂','レーザーの毒針を持つ装甲機械スズメバチ'],
   ['un millepiedi meccanico corazzato lungo come un treno','an armored mechanical centipede as long as a train','un mille-pattes mécanique blindé long comme un train','un ciempiés mecánico blindado largo como un tren','бронированная механическая многоножка длиной с поезд','像火车一样长的装甲机械蜈蚣','列車ほど長い装甲機械ムカデ']
  ];

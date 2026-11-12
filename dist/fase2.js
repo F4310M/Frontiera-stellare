@@ -262,7 +262,7 @@ function pfOpenBrief(){
  const p=planets[selected];
  show('resultOverlay',false);show('pauseOverlay',false);$('mapScreen').classList.remove('active');
  const th=pfTheme(p);$('landTitle').textContent='COLONIA DI '+p.name+' · '+th.name;
- $('landText').textContent=`I ribelli del Fronte Ombra vogliono rovesciare la Repubblica Intergalattica e hanno invaso la colonia di ${p.name}. ${th.brief} Atterra, avanza verso est e respingi i ribelli che ti vengono incontro. Lungo la strada libera i coloni prigionieri: ognuno ti lascia un rifornimento. In fondo ti aspetta ${pfBossInfo(p).name}, ${pfBossInfo(p).brief}: distruggilo. Il jetpack ti fa fare il doppio salto: tieni premuto per restare in volo. Premio della missione: ${p.reward} più un bonus per ogni ostaggio liberato.`;
+ $('landText').textContent=`Le truppe dell’Impero vogliono rovesciare la Repubblica Intergalattica e hanno invaso la colonia di ${p.name}. ${th.brief} Atterra, avanza verso est e respingi i ribelli che ti vengono incontro. Lungo la strada libera i coloni prigionieri: ognuno ti lascia un rifornimento. In fondo ti aspetta ${pfBossInfo(p).name}, ${pfBossInfo(p).brief}: distruggilo. Il jetpack ti fa fare il doppio salto: tieni premuto per restare in volo. Premio della missione: ${p.reward} più un bonus per ogni ostaggio liberato.`;
  show('landBrief');sfx('ui');
 }
 function startPlatform(){
@@ -872,7 +872,7 @@ function pfDrawLandmarks(now){
  ctx.fillStyle='#8ce9ec';ctx.font='600 15px "Chakra Petch",sans-serif';ctx.textAlign='center';ctx.fillText('COLONIA '+pf.p.name,731,PF_FLOOR-143);
  ctx.fillStyle='#7e91a7';ctx.font='9px "Chakra Petch",sans-serif';ctx.fillText('REPUBBLICA INTERGALATTICA · SETTORE HELIOS–7',731,PF_FLOOR-125);
  ctx.strokeStyle='#ff5268';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(612,PF_FLOOR-162);ctx.lineTo(850,PF_FLOOR-118);ctx.stroke();
- ctx.fillStyle='#ff8a96';ctx.font='700 10px "Chakra Petch",sans-serif';ctx.save();ctx.translate(745,PF_FLOOR-108);ctx.rotate(.05);ctx.fillText('FRONTE OMBRA',0,0);ctx.restore();
+ ctx.fillStyle='#ff8a96';ctx.font='700 10px "Chakra Petch",sans-serif';ctx.save();ctx.translate(745,PF_FLOOR-108);ctx.rotate(.05);ctx.fillText('L’IMPERO',0,0);ctx.restore();
  ctx.fillStyle='#1a2836';ctx.fillRect(170,PF_FLOOR-8,330,8);ctx.strokeStyle='rgba(81,230,255,.45)';ctx.strokeRect(170.5,PF_FLOOR-7.5,329,7);
  for(let i=0;i<6;i++){ctx.fillStyle=Math.floor(now*3)%6===i?'#ffb348':'#5a3d16';ctx.fillRect(184+i*58,PF_FLOOR-5,10,3)}
  ctx.restore();
@@ -1089,11 +1089,11 @@ $('pfPauseBtn').onclick=togglePause;
 // ---------------------------------------------------------------- novità 2026-10-31: jetpack, colpi bloccati, boss per pianeta, coloni liberati
 // Un robot finale diverso per ogni pianeta. gun/pod: posizione del cannone e del lanciamissili (rispetto ai piedi).
 const PF_BOSS={
- mare:{id:'mare',name:'LEVIATANO K-3',sub:'GRANCHIO CORAZZATO DEL FRONTE OMBRA',brief:'un granchio meccanico corazzato con chele-cannone',w:190,h:140,hp:1,speed:1.25,gun:{x:62,y:92,len:46},pod:{x:-40,y:128},moves:['passi','raffica','carica','onda']},
+ mare:{id:'mare',name:'LEVIATANO K-3',sub:'GRANCHIO CORAZZATO DELL’IMPERO',brief:'un granchio meccanico corazzato con chele-cannone',w:190,h:140,hp:1,speed:1.25,gun:{x:62,y:92,len:46},pod:{x:-40,y:128},moves:['passi','raffica','carica','onda']},
  deserto:{id:'deserto',name:'SCORPIONE S-5',sub:'CACCIATORE DELLE DUNE',brief:'uno scorpione d’acciaio con un pungiglione laser',w:200,h:150,hp:1.05,speed:1.35,gun:{x:30,y:212,len:40},pod:{x:-60,y:110},moves:['raffica','passi','carica','missili']},
  tempesta:{id:'tempesta',name:'NEMBO Z-1',sub:'SENTINELLA DELLA TEMPESTA',brief:'una sentinella volante carica di fulmini',w:140,h:200,hp:1.1,speed:1,gun:{x:40,y:150,len:52},pod:{x:-10,y:216},moves:['raffica','missili','passi','onda']},
  foresta:{id:'foresta',name:'GOLIA V-4',sub:'COLOSSO DELLA FORESTA',brief:'un colosso meccanico coperto di muschio',w:160,h:205,hp:1.15,speed:.9,gun:{x:40,y:150,len:70},pod:{x:-34,y:214},moves:['onda','passi','carica','raffica']},
- lava:{id:'lava',name:'TITANO R-9',sub:'ROBOT DA GUERRA DEL FRONTE OMBRA',brief:'il robot da guerra che tiene in ostaggio la colonia',w:120,h:200,hp:1.2,speed:1,gun:{x:30,y:150,len:80},pod:{x:-30,y:210},moves:['passi','raffica','onda','carica']}
+ lava:{id:'lava',name:'TITANO R-9',sub:'ROBOT DA GUERRA DELL’IMPERO',brief:'il robot da guerra che tiene in ostaggio la colonia',w:120,h:200,hp:1.2,speed:1,gun:{x:30,y:150,len:80},pod:{x:-30,y:210},moves:['passi','raffica','onda','carica']}
 };
 function pfBossInfo(p){return PF_BOSS[p&&p.boss]||PF_BOSS[(p&&p.theme)||'lava']||PF_BOSS.lava}
 

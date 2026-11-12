@@ -27,7 +27,7 @@ function viteGameOver(){
  phaseOneComplete=false;phaseTwoComplete=false;selected=0;
  finalLock();
  $('resultEyebrow').textContent='GAME OVER';$('resultTitle').textContent='HAI PERSO TUTTE LE VITE';
- $('resultText').textContent='Il Fronte Ombra ha vinto questa guerra. Recuperi solo il 20% dei crediti guadagnati in questa partita. Potenziamenti e pianeti liberati sono azzerati e hai di nuovo 3 vite.';
+ $('resultText').textContent='L’Impero ha vinto questa guerra. Recuperi solo il 20% dei crediti guadagnati in questa partita. Potenziamenti e pianeti liberati sono azzerati e hai di nuovo 3 vite.';
  show('landBtn',false);$('returnBtn').querySelector('span').textContent='TORNA ALLA HOME';
 }
 function viteLose(){vite=Math.max(0,vite-1);viteSave();return vite}
@@ -75,7 +75,7 @@ pfUpdatePickups=function(dt){
 pfDrawPickup=function(k,now){if(k.kind==='vita')lifeUpPill(ctx,k.x,k.y-4,now,1.15);else vOrig.pfDrawPickup(k,now)};
 
 // ---- pianeta finale
-const FINAL_PLANET={name:'OMEGA',code:'Ω–00',x:90,y:16,color:'#7a1438',glow:'#ff2a6a',theme:'abisso',boss:'omega',difficulty:7,distance:720000,threat:'APOCALITTICA',reward:'40.000 CR',desc:'La cittadella del Fronte Ombra, sospesa sopra un abisso cremisi. Qui si decide il destino della Repubblica.',final:true};
+const FINAL_PLANET={name:'OMEGA',code:'Ω–00',x:90,y:16,color:'#7a1438',glow:'#ff2a6a',theme:'abisso',boss:'omega',difficulty:7,distance:720000,threat:'APOCALITTICA',reward:'40.000 CR',desc:'La cittadella dell’Impero, sospesa sopra un abisso cremisi. Qui si decide il destino della Repubblica.',final:true};
 const BASE_PLANETS=planets.filter(p=>!p.final).map(p=>p.code);
 function liberati(){return(localStorage.getItem('frontieraPianetiLiberati')||'').split(',').filter(Boolean)}
 function finalUnlocked(){const l=liberati();return BASE_PLANETS.every(c=>l.includes(c))}
@@ -89,17 +89,17 @@ pfFinish=function(win){
  const before=state,p=pf&&pf.p;vOrig.pfFinish(win);if(state===before)return;
  if(!win){if(vite<=0)viteGameOver();return}
  const wasOpen=finalUnlocked(),l=liberati();if(p&&!l.includes(p.code)&&!p.final){l.push(p.code);localStorage.setItem('frontieraPianetiLiberati',l.join(','))}
- if(p&&p.final){$('resultEyebrow').textContent='LA REPUBBLICA È SALVA';$('resultText').textContent='IMPERATORE OMEGA è caduto e il Fronte Ombra è sconfitto. La Repubblica Intergalattica è salva: sei una leggenda.'}
+ if(p&&p.final){$('resultEyebrow').textContent='LA REPUBBLICA È SALVA';$('resultText').textContent='IMPERATORE OMEGA è caduto e l’Impero è sconfitto. La Repubblica Intergalattica è salva: sei una leggenda.'}
  else if(!wasOpen&&finalUnlocked()){finalLock();$('resultText').textContent+=' TUTTI I PIANETI SONO LIBERI: SI È SBLOCCATO IL PIANETA FINALE OMEGA.'}
  else $('resultText').textContent+=` Pianeti liberati: ${l.filter(c=>BASE_PLANETS.includes(c)).length} su ${BASE_PLANETS.length}.`;
 };
 
 // Tema del pianeta finale: stessi effetti della tempesta, colori cremisi.
-PF_THEMES.abisso=Object.assign({},PF_THEMES.tempesta,{mat:'abisso',name:'ABISSO',brief:'La cittadella del Fronte Ombra galleggia sopra un abisso cremisi: sotto le piattaforme c’è il vuoto.',banner:'CITTADELLA OMEGA · ULTIMA BATTAGLIA',
+PF_THEMES.abisso=Object.assign({},PF_THEMES.tempesta,{mat:'abisso',name:'ABISSO',brief:'La cittadella dell’Impero galleggia sopra un abisso cremisi: sotto le piattaforme c’è il vuoto.',banner:'CITTADELLA OMEGA · ULTIMA BATTAGLIA',
  sky:['#12020a','#3a0a1e','#8a1a3a'],far:'#2a0614',near:'#3a0a1c',rim:'#ff8aa8',top:'#a02048',body:['#3a0a1c','#10020a'],edge:'#ffb0c4',haze:'#ff5a7a',fall:'PRECIPITATO NELL’ABISSO',splash:['#ffd0dc','#c8183e']});
 if(typeof G_MAT!=='undefined')G_MAT.abisso=Object.assign({},G_MAT.tempesta,{dark:[30,8,16],mid:[74,22,38],light:[146,54,78],speck:[255,200,214],top:[150,30,62],top2:[255,120,146],lip:[90,20,42],rim:'#ff8aa8',liquid:['rgba(240,80,120,0)','#5a0f2a','#12020a'],foam:'rgba(255,190,210,.5)',grade:['#ffe2e8','#8a6070'],sun:[255,150,170]});
 if(typeof PL_THEMES!=='undefined')PL_THEMES.abisso={gas:true,bands:['#1a0610','#5a0f2a','#a0204a','#ff5a7a','#3a0a1a','#7a1838','#e0406a'],clouds:.66,cloudAmt:.3,ice:2,atm:[255,80,120]};
-PF_BOSS.omega={id:'omega',name:'IMPERATORE OMEGA',sub:'SIGNORE DEL FRONTE OMBRA',brief:'il signore del Fronte Ombra nella sua armatura da guerra',w:150,h:240,hp:1.6,speed:1.45,dmg:1.5,gun:{x:44,y:178,len:76},pod:{x:-34,y:250},moves:['raffica','carica','missili','onda','passi']};
+PF_BOSS.omega={id:'omega',name:'IMPERATORE OMEGA',sub:'SIGNORE DELL’IMPERO',brief:'il signore dell’Impero nella sua armatura da guerra',w:150,h:240,hp:1.6,speed:1.45,dmg:1.5,gun:{x:44,y:178,len:76},pod:{x:-34,y:250},moves:['raffica','carica','missili','onda','passi']};
 
 // IMPERATORE OMEGA: armatura nera e oro, ali di energia, aureola, lancia al plasma, scudo.
 function bOmega(c,B,now){
