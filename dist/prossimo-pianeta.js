@@ -24,3 +24,26 @@
  if(typeof abort==='function'){const ab=abort;abort=function(){last='';const r=ab.apply(this,arguments);ppTick();return r}}
  if(typeof window!=='undefined')window.prossimoPianeta={ppNext,ppTick};
 })();
+
+// ROTTA (2026-11-12): nella schermata ROTTA PER … in fondo alla linea c'è il pianeta di destinazione, non il puntino.
+(function(){
+ if(typeof brief!=='function'||typeof document==='undefined'||!document.createElement)return;
+ function rottaPianeta(){
+  const p=typeof planets!=='undefined'&&planets[selected];
+  const b=document.querySelector&&document.querySelector('#briefing .ship-line b');
+  if(!p||!b)return;
+  let o=b.querySelector('.rotta-pianeta');
+  if(!o){b.textContent='';b.classList.add('rotta-fine');o=document.createElement('span');o.className='rotta-pianeta';b.appendChild(o)}
+  o.style.setProperty('--planet',p.color);o.style.setProperty('--glow',p.glow);
+  if(o.dataset.code!==p.code){o.dataset.code=p.code;o.innerHTML='';if(typeof mpSpin==='function')try{mpSpin(o,p,30)}catch(e){}}
+ }
+ const br=brief;brief=function(){const r=br.apply(this,arguments);rottaPianeta();return r};
+ if(document.head){
+  const css=document.createElement('style');
+  css.textContent='#briefing .ship-line b.rotta-fine{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;font-size:0;flex:none}'+
+   '#briefing .rotta-pianeta{position:relative;display:block;width:34px;height:34px;border-radius:50%;overflow:hidden;background:var(--planet);'+
+   'box-shadow:inset -8px -5px 12px rgba(0,0,0,.7),inset 4px 3px 7px rgba(255,255,255,.2),0 0 18px var(--glow);animation:rotta-arrivo 2.4s ease-in-out infinite}'+
+   '@keyframes rotta-arrivo{50%{box-shadow:inset -8px -5px 12px rgba(0,0,0,.7),inset 4px 3px 7px rgba(255,255,255,.2),0 0 30px var(--glow)}}';
+  document.head.appendChild(css);
+ }
+})();

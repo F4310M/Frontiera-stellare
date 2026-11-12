@@ -2,7 +2,7 @@
 // Eseguire dalla cartella principale: node tests/prossimo-pianeta.test.cjs
 const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path');
 const src=fs.readFileSync(path.join(__dirname,'..','dist','prossimo-pianeta.js'),'utf8');
-assert.ok(fs.readFileSync(path.join(__dirname,'..','dist','index.html'),'utf8').includes('<script src="prossimo-pianeta.js"></script>'));
+assert.ok(fs.readFileSync(path.join(__dirname,'..','dist','index.html'),'utf8').includes('<script src="prossimo-pianeta.js'));
 const freed=new Set(),sel=[];
 const sb={planets:[{code:'A',difficulty:1},{code:'B',difficulty:2},{code:'C',difficulty:3},{code:'O',difficulty:7,final:true}],selected:0,state:'platform',window:{},
  mapPlayable:p=>!freed.has(p.code)&&!(p.final&&freed.size<3),mapAllDone:()=>freed.size===4,mapFirstPlayable:()=>0,

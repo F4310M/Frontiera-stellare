@@ -226,6 +226,39 @@ if(typeof setTimeout==='function'&&typeof coOn!=='undefined'&&coOn)setTimeout(as
  }
 }
 
+// ---------------------------------------------------------------- barra di caricamento 0-100% (2026-11-12)
+// MONDO e ONLINE SCORE arrivano dalla rete: mentre si caricano compare la barra con la percentuale
+// (la stessa di AGGIORNA), che sale fino a 95% e arriva a 100% quando la lista è pronta.
+{
+ const br=boardRender;
+ let cpLoadId=0;
+ boardRender=async function(){
+  const bar=$('boardRefresh'),value=$('boardRefreshValue'),fill=$('boardRefreshFill');
+  const net=coView==='mondo'||coView==='arena';
+  const busy=bar&&bar.classList&&!bar.classList.contains('hidden');
+  if(!net||!bar||!value||!fill||busy||typeof requestAnimationFrame!=='function'||typeof performance==='undefined')return br.apply(this,arguments);
+  const id=++cpLoadId,start=performance.now();let cur=0,frame=0,shown=false;
+  const draw=a=>{cur=Math.round(a);value.textContent=cur+'%';fill.style.width=cur+'%';bar.setAttribute('aria-valuenow',cur)};
+  const tick=now=>{
+   if(id!==cpLoadId)return;
+   if(!shown&&now-start>120){shown=true;show('boardRefresh',true)}
+   draw(95*(1-Math.exp(-(now-start)/700)));
+   frame=requestAnimationFrame(tick);
+  };
+  draw(0);frame=requestAnimationFrame(tick);
+  try{return await br.apply(this,arguments)}
+  finally{
+   cancelAnimationFrame(frame);
+   if(id===cpLoadId&&shown){
+    const from=cur,t0=performance.now();
+    await new Promise(res=>{const f=now=>{const k=Math.min(1,(now-t0)/260);draw(from+(100-from)*k);if(k<1)requestAnimationFrame(f);else res()};requestAnimationFrame(f)});
+    await new Promise(res=>setTimeout(res,150));
+    if(id===cpLoadId)show('boardRefresh',false);
+   }
+  }
+ };
+}
+
 // ---------------------------------------------------------------- tutto nel file di salvataggio
 if(typeof PROF_PROGRESS!=='undefined'&&Array.isArray(PROF_PROGRESS))
  for(const k of [CP.key,'stellarRecordResto','stellarClassifica','stellarInAttesa','stellarUltimoNome'])if(!PROF_PROGRESS.includes(k))PROF_PROGRESS.push(k);
