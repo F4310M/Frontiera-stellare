@@ -104,7 +104,7 @@
    if(p<1||!b.s){c.style.opacity=0;return}
    const f=((now/1500)+i/2+j*.25)%1;
    c.setAttribute('cx',(b.s[0]+(b.a[0]-b.s[0])*f).toFixed(1));c.setAttribute('cy',(b.s[1]+(b.a[1]-b.s[1])*f).toFixed(1));
-   c.style.opacity=(Math.sin(f*Math.PI)*.95).toFixed(2);
+   c.style.opacity=(Math.sin(f*Math.PI)*.5).toFixed(2);
   }));
   svg.classList.add('on');
  }
@@ -113,16 +113,16 @@
  css.textContent=
   '.linea-olo{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0;transition:opacity .3s;--lo:#7ddce8;overflow:visible}'+
   '.linea-olo.on{opacity:1}'+
-    '.linea-olo .lo-alone{stroke:var(--lo);stroke-width:7;stroke-opacity:.10;stroke-linecap:round}'+
-  '.linea-olo .lo-linea{stroke:var(--lo);stroke-width:1.4;stroke-opacity:.85;stroke-linecap:round}'+
-  '.linea-olo .lo-flusso{stroke:#e8fdff;stroke-width:1.2;stroke-opacity:.55;stroke-dasharray:3 13;animation:loFlusso 1.1s linear infinite}'+
+    '.linea-olo .lo-alone{stroke:var(--lo);stroke-width:6;stroke-opacity:.05;stroke-linecap:round}'+
+  '.linea-olo .lo-linea{stroke:var(--lo);stroke-width:1.2;stroke-opacity:.38;stroke-linecap:round}'+
+  '.linea-olo .lo-flusso{stroke:#e8fdff;stroke-width:1;stroke-opacity:.25;stroke-dasharray:3 13;animation:loFlusso 1.1s linear infinite}'+
   '.linea-olo .lo-impulso{fill:#f2feff;stroke:var(--lo);stroke-width:3;stroke-opacity:.35}'+
   '.linea-olo .lo-ring{stroke:var(--lo);stroke-width:1.2;stroke-opacity:.75;stroke-dasharray:10 6 2 6}'+
   '.linea-olo .lo-anello{animation:loGira 9s linear infinite}'+
   '.linea-olo .lo-ping{stroke:var(--lo);stroke-width:1;animation:loPing 2.2s ease-out infinite}'+
   '.linea-olo .lo-attacco{stroke:var(--lo);stroke-width:2.5;stroke-opacity:.9;stroke-linecap:round}'+
   '.linea-olo .lo-tacca{stroke:var(--lo);stroke-width:1.5;stroke-opacity:.9}'+
-  '.linea-olo .lo-punto{fill:#f2feff;stroke:var(--lo);stroke-width:3;stroke-opacity:.45;animation:loBatte 1.4s ease-in-out infinite}'+
+  '.linea-olo .lo-punto{fill:#f2feff;fill-opacity:.5;stroke:var(--lo);stroke-width:3;stroke-opacity:.25;animation:loBatte 1.4s ease-in-out infinite}'+
   '@keyframes loFlusso{to{stroke-dashoffset:-32}}'+
   '@keyframes loGira{to{transform:rotate(360deg)}}'+
   '@keyframes loPing{0%{transform:scale(1);stroke-opacity:.6}100%{transform:scale(1.7);stroke-opacity:0}}'+

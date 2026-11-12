@@ -4,7 +4,7 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('p
 const dist=path.join(__dirname,'..','dist');
 const src=fs.readFileSync(path.join(dist,'linea-olografica.js'),'utf8');
 const html=fs.readFileSync(path.join(dist,'index.html'),'utf8');
-assert.ok(html.includes('<script src="linea-olografica.js"></script>'),'caricato in index.html');
+assert.ok(/<script src="linea-olografica\.js(\?v=[0-9a-z]+)?"><\/script>/.test(html),'caricato in index.html');
 assert.ok(!/ctx\.filter|shadowBlur|filter:\s*(blur|drop)/.test(src),'niente filtri per fotogramma');
 // senza DOM non fa nulla e non si rompe
 vm.runInNewContext(src,{});
