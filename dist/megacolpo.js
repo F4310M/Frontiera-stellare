@@ -106,7 +106,10 @@ function mcUpdateShots(dt){
     if(group===fragments?!(e.life>0):!(e.hp>0))continue;
     if(segmentImpact(s.px,s.py,s.x,s.y,e,e.r*factor+s.r)===null)continue;
     s.hit.add(e);mcHitEntity(e,group,tint,s.dmg);burst(e.x,e.y,'#d8f8ff',8,.8);
+    // 2026-11-12 (Fabio): se il colpo non basta a distruggere il bersaglio si ferma lì ed esplode
+    if(group!==fragments&&e.hp>0){s.x=s.px+(s.x-s.px)*.5;s.y=s.py+(s.y-s.py)*.5;s.stop=e;s.life=0;break}
    }
+   if(s.life<=0)break;
   }
   // abbatte i razzi e i missili nemici che incontra
   for(const m of mcRockets())if(m.hp>0&&segmentImpact(s.px,s.py,s.x,s.y,m,s.r+(m.r||6)+6)!==null){m.hp=0;burst(m.x,m.y,'#ffd28a',12)}
@@ -126,6 +129,7 @@ function mcBlast(s){
  for(const [group,factor,tint] of mcGroups()){
   for(const e of group){
    if(group===fragments?!(e.life>0):!(e.hp>0))continue;
+   if(e===s.stop)continue;   // il bersaglio che ha fermato il colpo ha già preso il suo danno
    if(Math.hypot(e.x-s.x,e.y-s.y)>s.blast+e.r*factor)continue;
    mcHitEntity(e,group,tint,s.blastDmg);
   }

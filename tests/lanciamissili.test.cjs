@@ -49,7 +49,9 @@ for(let i=0;i<360&&!val('pf.missiles.some(m=>m.razzo)');i++)step(1/60);
 assert(val('pf.missiles.some(m=>m.razzo)'),'Il soldato spara');
 assert(val('L.crouch'),'Il lanciatore si inginocchia');
 run('globalThis.R=pf.missiles.find(m=>m.razzo);globalThis.y0=R.y;globalThis.x0=R.x;for(let i=0;i<18;i++)pfUpdateMissiles(1/60)');
-assert(val('R.hp>0&&R.y<y0-60&&Math.abs(R.x-x0)<.01'),'Il razzo sale in verticale');
+assert(val('R.hp>0&&R.y<y0-60&&R.x<x0'),'Il razzo sale inclinato verso il pilota');
+// 2026-11-12: tubo e razzo a 70° dal terreno, non in verticale
+assert(Math.abs(val('Math.atan2(-(y0-R.y),-(x0-R.x))')-(-(Math.PI-70*Math.PI/180)))<.02,'Il razzo parte a 70° dal terreno');
 run('for(let i=0;i<41;i++)pfUpdateMissiles(1/60)');
 assert(val('R.hp>0&&R.vx<0&&R.vy>0'),'Dopo la salita il razzo vira e scende verso il pilota');
 run('pf.pilot.x=R.x+100;pf.pilot.y=R.y+95;globalThis.prevAngle=R.angle;for(let i=0;i<10;i++)pfUpdateMissiles(1/60)');

@@ -13,7 +13,8 @@ const LM={
  reload:d=>Math.max(2.2,3.4-d*.2),   // pausa tra un razzo e l'altro
  speed0:250,speedMax:540,accel:520,  // il razzo parte lento e accelera
  dmg:20,splash:10,splashR:55,
- head:24,headCrouch:14,headCover:8   // quanto l'area colpibile sale sopra e.h per coprire la testa
+ head:24,headCrouch:14,headCover:8,  // quanto l'area colpibile sale sopra e.h per coprire la testa
+ tilt:70*Math.PI/180                 // 2026-11-12 (Fabio): il tubo è inclinato di 70° dal terreno verso il pilota (non 90°)
 };
 const lmOrig={pfRect,pfSpawnEnemy,pfUpdateEnemies,pfUpdateMissiles,gEnemy,pfDrawEnemy};
 
@@ -51,7 +52,9 @@ pfSpawnEnemy=function(type,x,y){
  }
  return lmOrig.pfSpawnEnemy(type,x,y);
 };
-function lmMuzzle(e){const sx=e.x-e.face*2,sy=e.y-(e.crouch?42:51);return{x:sx,y:sy-30,sx,sy}}
+// angolo del tubo: 70° sopra il terreno, verso il lato in cui guarda il soldato
+function lmAngle(e){return (e.face||1)>0?-LM.tilt:-(Math.PI-LM.tilt)}
+function lmMuzzle(e){const sx=e.x-e.face*2,sy=e.y-(e.crouch?42:51),a=lmAngle(e);return{x:sx+Math.cos(a)*30,y:sy+Math.sin(a)*30,sx,sy,a}}
 function lmWalk(e,dt,move){
  if(move&&e.ground){const ahead=e.x+move*(e.w/2+10),g=pfGroundAt(ahead);if(g===null||Math.abs(g-e.y)>40)move=0}
  e.vx+=pfClamp(move*e.speed-e.vx,-900*dt,900*dt);
@@ -63,7 +66,7 @@ function lmUpdateLauncher(e,dt){
  const P=pf.pilot,L=e.lm,dist=Math.abs(P.x-e.x);
  const seen=pfOnScreen(e.x,-20)&&P.visible&&P.hp>0&&pf.phase!=='vittoria';
  e.hit=Math.max(0,e.hit-dt);
- e.face=P.x>=e.x?1:-1;
+ e.face=P.x>=e.x?1:-1;e.aim=lmAngle(e);
  L.t+=dt;
  const next=state=>{L.state=state;L.t=0};
  const move=L.state==='avanza'&&P.hp>0&&dist>L.range?e.face:0;
@@ -92,7 +95,7 @@ function lmUpdateLauncher(e,dt){
 }
 function lmFire(e){
  const m=lmMuzzle(e);
- pf.missiles.push({razzo:true,x:m.x,y:m.y,vx:0,vy:-LM.speed0,angle:-Math.PI/2,hp:1,life:4,t:0});
+ pf.missiles.push({razzo:true,x:m.x,y:m.y,vx:Math.cos(m.a)*LM.speed0,vy:Math.sin(m.a)*LM.speed0,angle:m.a,hp:1,life:4,t:0});
  pfBurst(m.sx,m.sy+16,'#c7c2c8',10,.8,false,{vy:120});
  pfBurst(m.x,m.y,'#ffb05a',8,.7);noise(.35,.04,900);tone(140,.3,'sawtooth',.02,60);
  pf.cam.shake=Math.max(pf.cam.shake,.15);
@@ -144,7 +147,7 @@ pfUpdateMissiles=function(dt){
 // ---------------------------------------------------------------- disegno
 function lmDrawTube(e){
  const L=e.lm,m=lmMuzzle(e),ready=L.state!=='ricarica'||L.t>L.reload-.6;
- ctx.save();ctx.translate(m.sx,m.sy);ctx.rotate(-Math.PI/2);
+ ctx.save();ctx.translate(m.sx,m.sy);ctx.rotate(m.a);if((e.face||1)<0)ctx.scale(1,-1);
  ctx.fillStyle='#2e2a30';ctx.fillRect(-18,-4.5,48,9);
  ctx.fillStyle='#4a4148';ctx.fillRect(-18,-4.5,48,3);
  ctx.fillStyle='#ff5268';ctx.fillRect(22,-4.5,3,9);ctx.fillRect(-14,-4.5,2,9);

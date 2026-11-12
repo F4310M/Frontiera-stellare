@@ -100,6 +100,10 @@ function cpPersonalRows(){
   const g=Number(f.g&&f.g.integerValue),c=Number(f.r&&f.r.integerValue);
   if(Number.isFinite(g)&&g>=0&&g<=100)r.g=g;
   if(Number.isFinite(c)&&c>=1)r.r=c;
+  // 2026-11-12: riga mondiale del pilota senza % (scritta prima delle regole nuove): la % viene dal Personal Score
+  if(!Number.isFinite(r.g)&&r.n&&r.n===recName()){
+   try{const m=myList().find(x=>x.s===r.s&&Number.isFinite(x.g));if(m){r.g=m.g;if(Number.isFinite(m.r))r.r=m.r}}catch(e){}
+  }
   return r;
  };
 }
@@ -136,6 +140,25 @@ let cpNoExtra=false;   // regole di Firebase ancora vecchie: si scrive senza g e
   };
  }
 }
+// 2026-11-12 (Fabio): la % della riga mondiale si aggiorna a ogni fine missione e livello superato,
+// anche quando i punti non salgono (la riga si riscrive con gli stessi punti e la % nuova)
+{
+ const rp=recPush;
+ recPush=async function(r,pts){
+  const g=cpNoExtra?null:cpPercento();
+  if(g===null||r.g===g||recCap(r,pts)>r.s){
+   const s=await rp.apply(this,arguments);
+   if(g!==null&&!cpNoExtra)r.g=g;
+   return s;
+  }
+  const wait=r.t+REC.attesa+1500-Date.now();
+  if(wait>0)await recWait(Math.min(wait,REC.attesa+1500));
+  await CX.commit([{col:'classifica',id:r.id,fields:recFields(r.n,r.s),nuovo:false,maschera:true}]);
+  r.t=Date.now();if(!cpNoExtra)r.g=g;
+  if(typeof coCache!=='undefined')coCache=null;
+  return r.s;
+ };
+}
 // righe mondiali del pilota, dalla più alta
 async function cpMieRighe(n){
  const j=await coReq(':runQuery',{structuredQuery:{from:[{collectionId:'classifica'}],where:{fieldFilter:{field:{fieldPath:'n'},op:'EQUAL',value:{stringValue:n}}},limit:300}});
@@ -169,6 +192,12 @@ async function cpPulisci(n){
  recWrite=async function(n,pts){
   pts=Math.round(pts);
   const r=recLoad();
+  // stessi punti ma % di gioco cambiata: si aggiorna solo la %
+  if(r&&r.n===n&&pts<=r.s&&!cpNoExtra&&r.g!==cpPercento()){
+   if(!(await recOwn(n)))return '';
+   try{await recPush(r,pts);recSave(r)}catch(e){}
+   return r.id;
+  }
   // riga nuova: solo se la partita è tra i 3 migliori record del pilota
   if(!(r&&r.n===n)){
    if(!(await recOwn(n)))return '';
