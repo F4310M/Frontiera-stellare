@@ -116,14 +116,15 @@
   '.linea-olo.on{opacity:1}'+
   '#starMap .planet-node.selected{scale:1.55;z-index:3;transition:scale .35s cubic-bezier(.2,.9,.3,1.2)}'+
   '#starMap .planet-node{transition:scale .25s ease}'+
+  '#mapScreen .planet-node.selected:after{animation-duration:3.4s}'+
   '@media(max-width:850px){#starMap .planet-node.selected{scale:1.3}}'+
     '.linea-olo .lo-alone{stroke:var(--lo);stroke-width:6;stroke-opacity:.05;stroke-linecap:round}'+
   '.linea-olo .lo-linea{stroke:var(--lo);stroke-width:1.2;stroke-opacity:.38;stroke-linecap:round}'+
   '.linea-olo .lo-flusso{stroke:#e8fdff;stroke-width:1;stroke-opacity:.25;stroke-dasharray:3 13;animation:loFlusso 1.1s linear infinite}'+
   '.linea-olo .lo-impulso{fill:#f2feff;stroke:var(--lo);stroke-width:3;stroke-opacity:.35}'+
   '.linea-olo .lo-ring{stroke:var(--lo);stroke-width:1.2;stroke-opacity:.75;stroke-dasharray:10 6 2 6}'+
-  '.linea-olo .lo-anello{animation:loGira 9s linear infinite}'+
-  '.linea-olo .lo-ping{stroke:var(--lo);stroke-width:1;animation:loPing 2.2s ease-out infinite}'+
+  '.linea-olo .lo-anello{animation:loGira 24s linear infinite}'+
+  '.linea-olo .lo-ping{stroke:var(--lo);stroke-width:1;animation:loPing 3.4s ease-out infinite}'+
   '.linea-olo .lo-attacco{stroke:var(--lo);stroke-width:2.5;stroke-opacity:.9;stroke-linecap:round}'+
   '.linea-olo .lo-tacca{stroke:var(--lo);stroke-width:1.5;stroke-opacity:.9}'+
   '.linea-olo .lo-punto{fill:#f2feff;fill-opacity:.5;stroke:var(--lo);stroke-width:3;stroke-opacity:.25;animation:loBatte 1.4s ease-in-out infinite}'+
