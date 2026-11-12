@@ -1,4 +1,4 @@
-// LINEA OLOGRAFICA PIANETA → PANNELLO (2026-11-12)
+// LINEA OLOGRAFICA PIANETA → PANNELLO (2026-11-12) — dalla v5 solo pianeta selezionato ingrandito con anello che ruota e pulsa
 // Nella home, il pianeta selezionato è collegato al pannello OBIETTIVO SELEZIONATO da un fascio olografico:
 // una linea di energia con impulsi dal pianeta all'angolo in alto del pannello (v3: niente cono né linea inferiore),
 // anello che ruota attorno al pianeta e barra luminosa sul bordo del pannello.
@@ -35,7 +35,8 @@
   el.tacche=[0,1].map(()=>mk('line',{class:'lo-tacca'},svg));
   el.punti=[0,1].map(()=>mk('circle',{class:'lo-punto',r:'3.2'},svg));
   // 2026-11-12 (Fabio): niente fascio di luce, solo la linea superiore verso il margine alto del pannello
-  const via=[el.cono,el.attacco,...el.tacche,el.punti[1],el.bordi[1].alone,el.bordi[1].linea,el.bordi[1].flusso,...el.bordi[1].impulsi];
+  // 2026-11-12 (Fabio, v5): niente linea; il pianeta selezionato è più grande e resta l'anello che ruota e pulsa
+  const via=[el.cono,el.attacco,...el.tacche,...el.punti,...el.bordi.flatMap(b=>[b.alone,b.linea,b.flusso,...b.impulsi])];
   for(const e of via)e.setAttribute('display','none');
   scr.appendChild(svg);
   return true;
@@ -113,6 +114,9 @@
  css.textContent=
   '.linea-olo{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0;transition:opacity .3s;--lo:#7ddce8;overflow:visible}'+
   '.linea-olo.on{opacity:1}'+
+  '#starMap .planet-node.selected{scale:1.55;z-index:3;transition:scale .35s cubic-bezier(.2,.9,.3,1.2)}'+
+  '#starMap .planet-node{transition:scale .25s ease}'+
+  '@media(max-width:850px){#starMap .planet-node.selected{scale:1.3}}'+
     '.linea-olo .lo-alone{stroke:var(--lo);stroke-width:6;stroke-opacity:.05;stroke-linecap:round}'+
   '.linea-olo .lo-linea{stroke:var(--lo);stroke-width:1.2;stroke-opacity:.38;stroke-linecap:round}'+
   '.linea-olo .lo-flusso{stroke:#e8fdff;stroke-width:1;stroke-opacity:.25;stroke-dasharray:3 13;animation:loFlusso 1.1s linear infinite}'+
