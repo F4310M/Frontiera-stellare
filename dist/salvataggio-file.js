@@ -114,12 +114,13 @@
    '.sf-avviso-x{border:0;background:none;color:#ffe2b0;font-size:20px;line-height:1;cursor:pointer;padding:0 4px}';
   document.head.appendChild(css);
  }
- if(typeof addEventListener==='function')addEventListener('load',()=>{
+ (function(){
   if(typeof I18N_ROWS==='undefined')return;
   const rows=[
    ['I PROGRESSI NON SONO ANCORA NEL FILE DI SALVATAGGIO','YOUR PROGRESS IS NOT IN THE SAVE FILE YET','TES PROGRÈS NE SONT PAS ENCORE DANS LE FICHIER DE SAUVEGARDE','TU PROGRESO AÚN NO ESTÁ EN EL ARCHIVO DE GUARDADO','ПРОГРЕСС ЕЩЁ НЕ В ФАЙЛЕ СОХРАНЕНИЯ','进度尚未写入存档文件','進行状況はまだセーブファイルにありません'],
    ['SALVA ORA','SAVE NOW','SAUVEGARDER','GUARDAR AHORA','СОХРАНИТЬ','立即保存','今すぐセーブ']
   ];
   for(const r of rows)if(!I18N_ROWS.some(x=>x[0]===r[0]))I18N_ROWS.push(r);
- });
+  if(typeof i18nBuild==='function')try{i18nBuild();if(typeof i18nApply==='function')i18nApply()}catch(e){}
+ })();
 })();

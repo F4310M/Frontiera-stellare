@@ -55,7 +55,15 @@ await no('punti che scendono',updateDoc(doc(A,'classifica','r2'),{s:4000,t:serve
 await no('cambio di nome',updateDoc(doc(A,'classifica','r2'),{n:'Bianca',s:9000,t:serverTimestamp()}));
 await no('cambio della creazione',updateDoc(doc(A,'classifica','r2'),{s:9000,c:serverTimestamp(),t:serverTimestamp()}));
 await ok('aggiornamento dopo 16 s nei limiti',assertSucceeds(updateDoc(doc(A,'classifica','r2'),{s:82000,t:serverTimestamp()})));
-await no('nessuno cancella',deleteDoc(doc(A,'classifica','r2')));
+// 2026-11-12: % di gioco (g) e ×N (r); restano i 3 migliori record del pilota: il proprietario del nome cancella le sue righe
+await ok('riga con % e ciclo',assertSucceeds(setDoc(doc(A,'classifica','r4'),riga('Fabio Mutone',3000,{g:42,r:2}))));
+await no('% oltre 100',setDoc(doc(A,'classifica','r5'),riga('Fabio Mutone',3000,{g:101})));
+await no('ciclo 0',setDoc(doc(A,'classifica','r5'),riga('Fabio Mutone',3000,{r:0})));
+await no('% non intera',setDoc(doc(A,'classifica','r5'),riga('Fabio Mutone',3000,{g:'50'})));
+await no('senza accesso non si cancella',deleteDoc(doc(anon,'classifica','r4')));
+await no('B non cancella le righe di A',deleteDoc(doc(B,'classifica','r4')));
+await ok('A cancella una sua riga',assertSucceeds(deleteDoc(doc(A,'classifica','r4'))));
+await ok('A2 (stesso nome, altro PC) cancella una sua riga',assertSucceeds(deleteDoc(doc(A2,'classifica','r3'))));
 
 // ---- ARENA
 const ar=(n,m,v,b,extra)=>Object.assign({n,m,v,b,p:b*100+v*500+m*50,t:serverTimestamp()},extra||{});

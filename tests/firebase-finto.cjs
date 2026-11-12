@@ -28,9 +28,12 @@ function firebaseFinto(){
    const nm=after.get('nomi/'+parts[1]);
    return parts[3]===uid&&!!nm&&typeof str(f.k)==='string'&&sha(str(f.k))===str(nm.fields.h);
   }
+  if(f===null)return col==='classifica'&&!!old&&mio(str(old.fields.n));   // cancellazione: solo righe della classifica del proprietario del nome (2026-11-12)
   if(col==='classifica'){
    const n=str(f.n),s=I(f.s);
-   if(!(keys(f).every(k=>['n','s','d','a','t','c'].includes(k))&&nomeOk(n)&&s>0&&s<=3000000&&/^\d{4}-\d\d-\d\d$/.test(str(f.d)||'')&&mio(n)))return false;
+   const g=f.g?I(f.g):0,r=f.r?I(f.r):1;
+   if(!(g>=0&&g<=100&&r>=1&&r<=999))return false;
+   if(!(keys(f).every(k=>['n','s','d','a','t','c','g','r'].includes(k))&&nomeOk(n)&&s>0&&s<=3000000&&/^\d{4}-\d\d-\d\d$/.test(str(f.d)||'')&&mio(n)))return false;
    if(!old)return s<=80000;
    const of=old.fields;
    if(!of.c||!of.t||str(of.n)!==n||msOf(f.c)!==msOf(of.c))return false;
@@ -69,13 +72,15 @@ function firebaseFinto(){
    return ok([{result:{aggregateFields:{c:{integerValue:String(all.filter(([k,d])=>k.split('/')[0]===c&&k.split('/').length===2&&I(d.fields[ff.field.fieldPath])>v).length)}}}}]);
   }
   if(url.includes(':runQuery')){
-   const q=body.structuredQuery,c=q.from[0].collectionId,fld=q.orderBy[0].field.fieldPath;
-   return ok(all.filter(([k])=>k.split('/')[0]===c&&k.split('/').length===2).map(([,d])=>d).sort((x,y)=>I(y.fields[fld])-I(x.fields[fld])).slice(0,q.limit||100).map(d=>({document:d})));
+   const q=body.structuredQuery,c=q.from[0].collectionId,fld=q.orderBy?q.orderBy[0].field.fieldPath:'s',ff=q.where&&q.where.fieldFilter;
+   const eq=d=>!ff||(ff.op==='EQUAL'&&str(d.fields[ff.field.fieldPath])===ff.value.stringValue);
+   return ok(all.filter(([k])=>k.split('/')[0]===c&&k.split('/').length===2).map(([,d])=>d).filter(eq).sort((x,y)=>I(y.fields[fld])-I(x.fields[fld])).slice(0,q.limit||100).map(d=>({document:d})));
   }
   if(url.includes(':commit')){
    if(!S.regole||!uid)return no(403);
    const after=new Map(S.docs);
    const ws=body.writes.map(w=>{
+    if(w.delete){const path=keyOf(w.delete),old=after.get(path)||null;if(!old)return {path,old:null,fields:null,del:true};after.delete(path);return {path,old,fields:null,del:true}}
     const path=keyOf(w.update.name),old=after.get(path)||null;let fields;
     if(w.currentDocument&&w.currentDocument.exists===false&&old)return {err:409};
     if(w.currentDocument&&w.currentDocument.exists===true&&!old)return {err:404};
@@ -85,7 +90,7 @@ function firebaseFinto(){
     const d={name:w.update.name,fields};after.set(path,d);return {path,old,fields};
    });
    const e=ws.find(w=>w.err);if(e)return no(e.err);
-   for(const w of ws)if(!controlla(w.path,w.old,w.fields,after,uid))return no(403);
+   for(const w of ws)if(!(w.del&&!w.old)&&!controlla(w.path,w.old,w.fields,after,uid))return no(403);
    S.docs=after;return ok({writeResults:ws.map(()=>({updateTime:ts()}))});
   }
   // GET di un documento
