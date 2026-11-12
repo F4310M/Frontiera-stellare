@@ -262,7 +262,8 @@ if(typeof profApply==='function'){
   const r=pa.apply(this,arguments);
   let id=null;try{id=localStorage.getItem(CORSA_KEY)}catch(e){}
   if(id&&typeof sigillo!=='undefined'&&sigillo&&sigillo.morta(id)){
-   for(const k of ['frontieraCrediti','frontieraGuadagni','frontieraPotenziamenti','frontieraVite','frontieraPhaseOneComplete','frontieraPhaseTwoComplete','frontieraPianetiLiberati','frontieraOmegaLibero','stellarPunti','stellarPartita',SAVE_KEY,CORSA_KEY])
+   // i potenziamenti restano (sono permanenti, upgrade-permanenti.js)
+   for(const k of ['frontieraCrediti','frontieraGuadagni','frontieraVite','frontieraPhaseOneComplete','frontieraPhaseTwoComplete','frontieraPianetiLiberati','frontieraOmegaLibero','stellarPunti','stellarPartita',SAVE_KEY,CORSA_KEY])
     try{localStorage.removeItem(k)}catch(e){}
    try{sessionStorage.setItem('stellarAvviso','morta')}catch(e){}
    if(typeof prof!=='undefined'&&prof&&typeof profSnapKey==='function'){prof.snap='';if(typeof profStore==='function')profStore()}
