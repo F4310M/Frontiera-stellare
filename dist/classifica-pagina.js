@@ -19,7 +19,7 @@ function bpBuild(){
   notes=[...card.querySelectorAll('.board-note')],head=pick('.settings-head'),close=pick('#closeBoard');
  const top=document.createElement('header');top.className='bp-top';
  top.innerHTML='<button id="boardBack" type="button" class="text-btn">'+BP.ico('arrow-left')+' <span>TORNA ALLA MAPPA</span></button>'+
-  '<p class="eyebrow">CLASSIFICA</p><p class="bp-pilot"><span>PILOTA</span> <b id="bpPilot"></b></p>';
+  '<p class="eyebrow">CLASSIFICA</p><p class="bp-pilot"><span>PILOTA</span> <i id="bpAva" class="bp-ava-box"></i><b id="bpPilot"></b></p>';
  const body=document.createElement('div');body.className='bp-body';
  const main=document.createElement('section');main.className='bp-main';
  const title=document.createElement('div');title.className='bp-title';title.innerHTML='<h2>CLASSIFICA</h2>';
@@ -55,6 +55,8 @@ async function bpMe(){
  try{
   const n=typeof arkName==='function'?arkName():(typeof recName==='function'?recName():'');
   if($$('bpPilot'))$$('bpPilot').textContent=n||'—';
+  // foto del pilota (o emblema con l'iniziale) accanto al nome
+  if($$('bpAva'))try{$$('bpAva').innerHTML=n&&typeof profAva==='function'?profAva(typeof prof!=='undefined'&&prof?prof.mini:'','bp-ava',n):''}catch(e){}
   // MONDO: miglior punteggio della campagna
   const best=typeof mapBestScore==='function'?mapBestScore():0;
   $$('bpWorldPts').textContent=scoreFmt(best);
@@ -109,6 +111,8 @@ function bpStyle(){
  '.bp-top .eyebrow{margin:0;font-size:12px;letter-spacing:5px}'+
  '.bp-top .text-btn{margin:0;width:auto;flex:none;padding-left:22px;padding-right:22px}'+
  '.bp-pilot{margin:0;font-size:12px;letter-spacing:1.5px;color:var(--muted)}.bp-pilot b{color:var(--cyan);font-size:15px;margin-left:6px}'+
+ '.bp-pilot{display:flex;align-items:center;justify-content:flex-end;gap:2px}.bp-ava-box{display:inline-flex;font-style:normal;margin-left:8px}.bp-ava-box:empty{display:none}'+
+ '.bp-ava{width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid var(--cyan);box-shadow:0 0 10px rgba(80,220,255,.45);display:inline-flex;align-items:center;justify-content:center;color:#fff;font:800 15px/1 inherit;font-style:normal}'+
  '.bp-body{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:48px;width:min(1280px,100%);margin:0 auto;padding:34px 42px 32px}'+
  '.bp-main{display:flex;flex-direction:column;min-height:0}'+
  '.bp-main>*{flex-shrink:0}'+

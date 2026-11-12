@@ -72,10 +72,15 @@ service cloud.firestore {
         && request.resource.data.s - resource.data.s <= 120000
         && request.resource.data.s <= 80000 + secondi(resource.data.c) * 150
         && nomeMio(request.resource.data.n);
-      allow delete: if false;
+      // 2026-11-12: per ogni pilota restano i suoi 3 migliori record; il proprietario del nome
+      // può cancellare le sue righe (solo le sue: serve la chiave del nome)
+      allow delete: if utente() && nomeMio(resource.data.n);
     }
     function valida(r) {
-      return r.keys().hasOnly(['n', 's', 'd', 'a', 't', 'c'])
+      return r.keys().hasOnly(['n', 's', 'd', 'a', 't', 'c', 'g', 'r'])
+        // g = % della campagna completata (0-100), r = quante volte si sta giocando la campagna (×N)
+        && (!('g' in r) || (r.g is int && r.g >= 0 && r.g <= 100))
+        && (!('r' in r) || (r.r is int && r.r >= 1 && r.r <= 999))
         && r.keys().hasAll(['n', 's', 'd', 't', 'c'])
         && nomeOk(r.n)
         && r.s is int && r.s > 0 && r.s <= 3000000

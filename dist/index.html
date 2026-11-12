@@ -31,7 +31,7 @@
   <main id="mapScreen" class="screen active" aria-label="Mappa stellare">
     <header class="topbar">
       <div class="brand"><span class="brand-mark">CX</span><span>CON<b>EX</b></span></div>
-      <div class="top-actions"><div class="credits-chip" title="Crediti disponibili"><small>CREDITI</small><b id="mapCredits">2.500 CR</b></div><button id="marketBtn" class="settings-btn market-btn" aria-label="Apri il mercato"><i data-ico="coins"></i> <span>MERCATO</span></button><button id="settingsBtn" class="settings-btn" aria-label="Apri impostazioni"><i data-ico="gear"></i> <span>IMPOSTAZIONI</span></button></div>
+      <div class="top-actions"><div class="credits-chip" title="Crediti disponibili"><small>CREDITI</small><b id="mapCredits">1.000 CR</b></div><button id="marketBtn" class="settings-btn market-btn" aria-label="Apri il mercato"><i data-ico="coins"></i> <span>MERCATO</span></button><button id="settingsBtn" class="settings-btn" aria-label="Apri impostazioni"><i data-ico="gear"></i> <span>IMPOSTAZIONI</span></button></div>
     </header>
     <section class="map-layout">
       <aside class="mission-copy">
@@ -123,7 +123,7 @@
   </section>
 
   <section id="resultOverlay" class="overlay hidden">
-    <div class="brief-card result-card"><div class="result-main"><p class="eyebrow" id="resultEyebrow">ORBITA RAGGIUNTA</p><h2 id="resultTitle">MISSIONE COMPIUTA</h2><p id="resultText"></p><div id="resultStats" class="result-stats"><span><small>NEMICI</small><b id="killsStat">0</b></span><span><small>TEMPO</small><b id="timeStat">0:00</b></span><span><small>SCAFO</small><b id="hullStat">100%</b></span></div></div><div class="result-side"><div id="ecoRecap" class="eco-recap hidden"></div><button id="landBtn" class="launch-btn hidden"><span>ATTERRA SUL PIANETA · FASE 2</span><b><i data-ico="land"></i></b></button><button id="returnBtn" class="launch-btn"><span>TORNA ALLA MAPPA</span><b><i data-ico="map"></i></b></button><button id="marketBtnResult" class="text-btn market-link"><i data-ico="coins"></i> <span>APRI IL MERCATO · POTENZIAMENTI</span></button></div></div>
+    <div class="brief-card result-card"><div class="result-main"><p class="eyebrow" id="resultEyebrow">ORBITA RAGGIUNTA</p><h2 id="resultTitle">MISSIONE COMPIUTA</h2><p id="resultText"></p><div id="resultStats" class="result-stats"><span><small>NEMICI</small><b id="killsStat">0</b></span><span><small>TEMPO</small><b id="timeStat">0:00</b></span><span><small>SCAFO</small><b id="hullStat">100%</b></span></div></div><div class="result-side"><div id="ecoRecap" class="eco-recap hidden"></div><button id="landBtn" class="launch-btn hidden"><span>ATTERRA SUL PIANETA · FASE 2</span><b><i data-ico="land"></i></b></button><button id="returnBtn" class="launch-btn"><span>TORNA ALLA HOME</span><b><i data-ico="map"></i></b></button><button id="marketBtnResult" class="text-btn market-link"><i data-ico="coins"></i> <span>APRI IL MERCATO · POTENZIAMENTI</span></button></div></div>
   </section>
 
   <section id="landBrief" class="overlay hidden">
@@ -153,14 +153,14 @@
     <div class="controls-tip">A / D muovi · W / SPAZIO salta · S abbassati (S + SPAZIO scendi dalla piattaforma) · MOUSE mira · CLIC spara (tieni premuto: mega colpo) · ROTELLA o E granata · MOUSE DX scudo · P pausa</div>
   </section>
 
-  <div id="ecoHud" class="eco-hud" aria-label="Crediti"><small>CREDITI</small><b id="ecoBalance">2.500 CR</b><em id="ecoSpent"></em><span id="ecoDelta" class="eco-delta"></span></div>
+  <div id="ecoHud" class="eco-hud" aria-label="Crediti"><small>CREDITI</small><b id="ecoBalance">1.000 CR</b><em id="ecoSpent"></em><span id="ecoDelta" class="eco-delta"></span></div>
 
   <section id="marketScreen" class="market-screen hidden" aria-labelledby="marketTitle">
     <header class="market-header">
       <div class="market-content market-heading">
         <div><p class="eyebrow">CANTIERE DELLA REPUBBLICA</p><h2 id="marketTitle">MERCATO</h2></div>
         <div class="market-actions">
-          <div class="market-balance"><span>SALDO DISPONIBILE</span><b id="marketBalance">2.500 CR</b></div>
+          <div class="market-balance"><span>SALDO DISPONIBILE</span><b id="marketBalance">1.000 CR</b></div>
           <button id="closeMarket" class="settings-btn" type="button" aria-label="Chiudi mercato"><i data-ico="close"></i> <span>CHIUDI IL MERCATO</span></button>
         </div>
       </div>
@@ -221,14 +221,14 @@
   <script src="camera.js"></script>
   <script src="iperspazio.js"></script>
   <script src="pianeta.js"></script>
-  <script src="fase2.js"></script>
+  <script src="fase2.js?v=20261112b"></script>
   <script src="grafica2.js"></script>
   <script src="palazzi.js"></script>
   <script src="boss.js"></script>
   <script src="economia.js"></script>
   <script src="upgrade-permanenti.js"></script>
   <script src="home.js"></script>
-  <script src="finale.js"></script>
+  <script src="finale.js?v=20261112b"></script>
   <script src="musica.js?v=20261106b"></script>
   <script src="volume.js"></script>
   <script src="firebase-config.js"></script>
@@ -243,14 +243,14 @@
   <script src="missili-nemici.js"></script>
   <script src="multi-aggancio.js"></script>
   <script src="spazio.js"></script>
-  <script src="battaglia.js"></script>
+  <script src="battaglia.js?v=20261112b"></script>
   <script src="nave3d.js"></script>
   <script src="nave-gadget.js"></script>
   <script src="ingresso.js"></script>
   <script src="sotterranei.js"></script>
   <script src="godmode.js"></script>
   <script src="profilo.js"></script>
-  <script src="i18n.js"></script>
+  <script src="i18n.js?v=20261112b"></script>
   <script src="facile.js"></script>
   <script src="assalto.js"></script>
   <script src="spirale.js"></script>
@@ -264,6 +264,8 @@
   <script src="record.js"></script>
   <script src="ricomincia.js"></script>
   <script src="partita.js"></script>
+  <script src="salvataggio-file.js?v=20261112b"></script>
+  <script src="linea-olografica.js?v=20261112e"></script>
   <script src="menu-pianeti.js"></script>
   <script src="pianeti-dettaglio.js"></script>
   <script src="comandi.js"></script>
@@ -272,10 +274,11 @@
   <script src="megacolpo.js"></script>
   <script src="rifiniture.js"></script>
   <script src="vite.js"></script>
+  <script src="vite-simbolo.js?v=20261112a"></script>
   <script src="barriere.js"></script>
   <script src="ammiraglia.js"></script>
   <script src="boss-robot.js"></script>
-  <script src="boss-immagini.js"></script>
+  <script src="boss-immagini.js?v=20261112b"></script>
   <script src="coloni.js"></script>
   <script src="nuvola-aiuto.js"></script>
   <script src="camminata.js"></script>
@@ -290,10 +293,12 @@
   <script src="barra-orbita.js"></script>
   <script src="arena.js"></script>
   <script src="classifica-arena.js"></script>
-  <script src="classifica-pagina.js"></script>
+  <script src="classifica-pagina.js?v=20261112b"></script>
   <script src="miglior-punteggio.js"></script>
   <script src="mia-posizione.js"></script>
+  <script src="classifica-personale.js?v=20261112c"></script>
   <script src="caffe.js"></script>
+  <script src="prossimo-pianeta.js?v=20261112b"></script>
   <script src="gameover.js"></script>
   <script src="gameover-immagini.js"></script>
   <script src="upgrade-disponibili.js"></script>
@@ -311,6 +316,7 @@
   <script src="mercato-aggiorna.js"></script>
   <script src="storia.js"></script>
   <script src="nuova-partita-home.js"></script>
+  <script src="torna-home.js?v=20261112a"></script>
   <script src="esci.js"></script>
 </body>
 </html>

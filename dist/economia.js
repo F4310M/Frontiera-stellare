@@ -3,7 +3,7 @@
 // game.js e fase2.js chiamano queste funzioni solo se esistono (typeof), quindi il gioco
 // funziona anche senza questo file.
 
-const ECO_START=2500,ECO_EARNED_KEY='frontieraGuadagni';
+const ECO_START=1000,ECO_EARNED_KEY='frontieraGuadagni';
 // Prezzo di ogni consumo, in crediti (CR).
 // (2026-11-11) consumi molto più economici: il laser costa mezzo credito a colpo (si paga ogni 2 colpi)
 const ECO_COST={laser:.5,missile:6,granata:5,fuel:1};
