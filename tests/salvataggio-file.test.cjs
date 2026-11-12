@@ -44,11 +44,19 @@ const noop=()=>{};
  await run('salvataggioFile.tick()');
  assert.equal(scritture,1,'niente scrittura in volo');
 
- // 4) permesso del browser da rinnovare: non scrive da solo (servirà SALVA ORA), resta in sospeso
- perm='prompt';sb.state='map';
+ // 4) permesso del browser da rinnovare: senza gesto non scrive; al primo clic lo chiede da solo e salva
+ perm='prompt';sb.state='map';let richieste=0;
+ handle.requestPermission=async()=>{richieste++;perm='granted';return 'granted'};
  await new Promise(r=>setTimeout(r,2600));
  await run('salvataggioFile.tick()');
  assert.equal(scritture,1);assert.equal(run('profDirty()'),true);
+ await run('salvataggioFile.guardaPermesso()');
+ run('salvataggioFile.gesto()');run('salvataggioFile.gesto()');
+ await new Promise(r=>setTimeout(r,50));
+ assert.equal(richieste,1,'permesso chiesto una sola volta, senza avviso');
+ assert.equal(scritture,2,'dopo il clic il file si aggiorna');
+ assert.equal(run('profDirty()'),false);
+ ls.setItem('frontieraCrediti','9400');scritture=1;
 
  // 5) chiave di un altro pilota (sale diverso): non usata
  perm='granted';run('profKeyMem=null');

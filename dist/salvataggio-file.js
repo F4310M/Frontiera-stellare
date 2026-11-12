@@ -5,9 +5,9 @@
 // Ora, finita una missione o tornati alla mappa, il file scelto la prima volta si aggiorna da solo:
 // - la chiave del pilota (AES, non esportabile: la password non si legge da lì) resta nel browser
 //   in IndexedDB, così non serve riscrivere la password a ogni avvio;
-// - Chrome/Edge riscrivono lo stesso file; se il browser vuole di nuovo il permesso (di solito una
-//   volta per sessione) o la chiave manca, in basso nella mappa compare SALVA ORA: il permesso si dà solo con un clic;
-// - gli altri browser (download) non scaricano file da soli: resta solo l'avviso.
+// - Chrome/Edge riscrivono lo stesso file; se il browser vuole di nuovo il permesso lo si chiede
+//   da solo al primo clic (nessun avviso da premere);
+// - gli altri browser (download) non scaricano file da soli.
 // Va caricato dopo profilo.js e partita.js.
 (function(){
  if(typeof profSaveFile!=='function'||typeof profIdb!=='function'||typeof profPack!=='function')return;
@@ -67,60 +67,48 @@
   finally{writing=false}
  }
 
- // ---- avviso SALVA ORA quando il browser vuole un clic
- function banner(on){
-  if(typeof document==='undefined'||!document.createElement)return;
-  let b=document.getElementById('sfAvviso');
-  if(!on){if(b)b.classList.add('hidden');return}
-  if(hidden)return;
-  if(!b){
-   b=document.createElement('div');b.id='sfAvviso';b.className='sf-avviso hidden';b.setAttribute('role','status');
-   b.innerHTML='<span id="sfAvvisoTxt"></span><button id="sfAvvisoOk" class="sf-avviso-ok" type="button"></button><button id="sfAvvisoX" class="sf-avviso-x" type="button" aria-label="Chiudi">×</button>';
-   document.body.appendChild(b);
-   b.querySelector('#sfAvvisoOk').onclick=async e=>{
-    if(e&&e.stopPropagation)e.stopPropagation();
-    await loadKey();
-    const ok=typeof profSaveClick==='function'?await profSaveClick():false;
-    if(ok){keepKey();banner(false)}
-   };
-   b.querySelector('#sfAvvisoX').onclick=e=>{if(e&&e.stopPropagation)e.stopPropagation();hidden=true;banner(false)};
-  }
-  b.querySelector('#sfAvvisoTxt').textContent=tx('I PROGRESSI NON SONO ANCORA NEL FILE DI SALVATAGGIO');
-  b.querySelector('#sfAvvisoOk').textContent=tx('SALVA ORA');
-  b.classList.remove('hidden');
+ // ---- permesso del file chiesto da solo (2026-11-12 pomeriggio): niente più avviso SALVA ORA.
+ // Chrome/Edge danno il permesso di scrittura solo dopo un gesto: al primo clic o tasto fuori dal
+ // combattimento lo si chiede in automatico (il browser mostra la sua domanda una volta; scegliendo
+ // "Consenti a ogni visita" non la ripropone più). Se il permesso c'è già non succede nulla.
+ let fileH=null,perm='',chiesto=false;
+ async function guardaPermesso(){
+  fileH=await idbGet('backup');
+  perm='';
+  if(fileH&&typeof fileH.queryPermission==='function')try{perm=await fileH.queryPermission({mode:'readwrite'})}catch(e){}
+  return perm;
  }
+ function gesto(){
+  if(chiesto||perm==='granted'||!fileH||typeof fileH.requestPermission!=='function')return;
+  if(typeof prof==='undefined'||!prof||prof.modo!=='pc')return;
+  if(!SAFE.includes(st())&&st()!=='menu')return;
+  chiesto=true;
+  try{fileH.requestPermission({mode:'readwrite'}).then(p=>{perm=p;if(p==='granted'){last=0;tick().catch(()=>{})}},()=>{})}catch(e){}
+ }
+ if(typeof document!=='undefined'&&document.addEventListener){
+  document.addEventListener('pointerdown',gesto,true);
+  document.addEventListener('keydown',gesto,true);
+ }
+ if(typeof setTimeout==='function')setTimeout(()=>{guardaPermesso().catch(()=>{})},500);
 
  // ---- controllo ogni 3 secondi: solo fuori dal combattimento (mappa o missione finita)
  async function tick(){
   const s=st();
-  if(s!==lastState){if(s==='won')hidden=false;lastState=s}
+  if(s!==lastState)lastState=s;
   if(typeof prof==='undefined'||!prof||prof.modo!=='pc'||writing)return;
-  if(!SAFE.includes(s)){banner(false);return}
-  if(typeof profDirty==='function'&&!profDirty()){banner(false);return}
+  if(!SAFE.includes(s))return;
+  if(typeof profDirty==='function'&&!profDirty())return;
   const now=Date.now();if(now-last<2500)return;last=now;
   const ok=await scriviFile();
-  banner(!ok&&s==='map');
+  if(!ok)guardaPermesso().catch(()=>{});
  }
  if(typeof setInterval==='function')setInterval(()=>{tick().catch(()=>{})},3000);
- if(typeof globalThis!=='undefined')globalThis.salvataggioFile={scriviFile,tick,loadKey};
+ if(typeof globalThis!=='undefined')globalThis.salvataggioFile={scriviFile,tick,loadKey,gesto,guardaPermesso};
 
- // ---- stile e traduzioni
+ // stile per i cursori: nessun cursore di testo lampeggiante fuori dai campi da scrivere
  if(typeof document!=='undefined'&&document.createElement&&document.head){
   const css=document.createElement('style');
-  css.textContent='.sf-avviso{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:12px;'+
-   'max-width:calc(100% - 32px);padding:10px 12px 10px 16px;border:1px solid #ffb347;border-radius:10px;background:rgba(10,14,28,.92);'+
-   'color:#ffe2b0;font:600 13px/1.3 inherit;letter-spacing:.04em;box-shadow:0 0 18px rgba(255,170,60,.35)}'+
-   '.sf-avviso.hidden{display:none}.sf-avviso-ok{border:0;border-radius:7px;padding:7px 12px;background:#ffb347;color:#1a1000;font-weight:800;cursor:pointer;white-space:nowrap}'+
-   '.sf-avviso-x{border:0;background:none;color:#ffe2b0;font-size:20px;line-height:1;cursor:pointer;padding:0 4px}';
+  css.textContent='html,body,body *{caret-color:transparent}input,textarea,[contenteditable="true"]{caret-color:auto}';
   document.head.appendChild(css);
  }
- (function(){
-  if(typeof I18N_ROWS==='undefined')return;
-  const rows=[
-   ['I PROGRESSI NON SONO ANCORA NEL FILE DI SALVATAGGIO','YOUR PROGRESS IS NOT IN THE SAVE FILE YET','TES PROGRÈS NE SONT PAS ENCORE DANS LE FICHIER DE SAUVEGARDE','TU PROGRESO AÚN NO ESTÁ EN EL ARCHIVO DE GUARDADO','ПРОГРЕСС ЕЩЁ НЕ В ФАЙЛЕ СОХРАНЕНИЯ','进度尚未写入存档文件','進行状況はまだセーブファイルにありません'],
-   ['SALVA ORA','SAVE NOW','SAUVEGARDER','GUARDAR AHORA','СОХРАНИТЬ','立即保存','今すぐセーブ']
-  ];
-  for(const r of rows)if(!I18N_ROWS.some(x=>x[0]===r[0]))I18N_ROWS.push(r);
-  if(typeof i18nBuild==='function')try{i18nBuild();if(typeof i18nApply==='function')i18nApply()}catch(e){}
- })();
 })();
