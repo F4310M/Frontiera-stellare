@@ -32,10 +32,10 @@ const G_MAT={
 };
 const G_ORBIT={
  mare:{x:.76,y:158,size:118,tint:'#8deaff',moons:2},
- deserto:{x:.30,y:172,size:144,tint:'#ffc891',rings:true},
+ deserto:{x:.30,y:172,size:144,tint:'#ffc891',rings:false},
  foresta:{x:.25,y:148,size:122,tint:'#bcebad',moons:1},
  lava:{x:.75,y:148,size:166,tint:'#ff795b',moons:1},
- tempesta:{x:.72,y:125,size:134,tint:'#c9afff',rings:true},
+ tempesta:{x:.72,y:125,size:134,tint:'#c9afff',rings:false},
  abisso:{x:.57,y:168,size:186,tint:'#ff6894',eclipse:true}
 };
 function gMat(){return G_MAT[(pf.theme||pfTheme(pf.p)).mat||(pf.theme||pfTheme(pf.p)).id]||G_MAT.mare}

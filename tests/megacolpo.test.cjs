@@ -46,6 +46,15 @@ step(.8);
 assert(val('enemies.length===0'),'il mega colpo attraversa e distrugge entrambi i nemici');
 console.log('PASS: rilascio = mega colpo perforante');
 
+// 2026-11-12: se il bersaglio resiste il mega colpo si ferma all'impatto (non va oltre)
+run(quiet+'mouse.down=true');step(1.4);
+run(`enemies=[{x:player.x+250,y:player.y,vx:0,vy:0,hp:500,max:500,r:20,type:'fighter'},{x:player.x+520,y:player.y,vx:0,vy:0,hp:6,r:20,type:'fighter'}];for(const e of enemies){e.fire=99}`);
+run('mouse.down=false');step(1/60);step(.6);
+assert.equal(val('mc.shots.length'),0,'il colpo si ferma sul nemico che resiste');
+assert(val('enemies.some(e=>e.hp<500)'),'il nemico resistente prende il danno');
+assert(val('enemies.some(e=>e.hp===6)'),'il nemico dietro non viene colpito');
+console.log('PASS: mega colpo si ferma su un bersaglio che non distrugge');
+
 // carica a metà = colpo più debole; esplode a fine corsa
 run(quiet+'mouse.down=true');step(.75);run('mouse.down=false');step(1/60);
 const half=val('mc.shots[0]');

@@ -45,12 +45,13 @@ console.log('PASS: disegno dei soldati');
 run("pf.enemies=[];for(let i=0;i<4;i++)tOrig.pfSpawnEnemy('soldato',pf.cam.x+pfViewW()-80-i*70)");
 const before=val('pf.kills');
 assert.equal(val('spcUse()'),true);
-step(1.6);assert.equal(val('spc.strike.missiles.length'),3,'tre missili lanciati');
+step(3.4);assert.equal(val('spc.strike.missiles.length'),3,'tre missili lanciati');
+assert.deepEqual(val('spc.strike.missiles.map(m=>Math.round((m.px-pf.cam.x)/pfViewW()*100))'),[12,50,88],'inizio, centro e fine dello schermo');
 run('drawPlatform()');
 step(1.6);
 assert.equal(val('spc.strike?spc.strike.hits:3'),3,'tre esplosioni');
 assert(val('pf.kills')>=before+4,'nemici distrutti');
-step(4);assert.equal(val('spc.strike'),null,'il bombardamento finisce');
+step(6);assert.equal(val('spc.strike'),null,'il bombardamento finisce');
 console.log('PASS: bombardamento a tre missili');
 
 // 5) boss: in tutto 1/4 dell'energia

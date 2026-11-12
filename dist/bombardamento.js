@@ -8,7 +8,9 @@
 // Va caricato dopo speciale.js.
 
 const BOMB={
- n:3,launch:[.1,.34,.58],    // punti dello schermo (frazione della larghezza) in cui parte ogni missile
+ n:3,launch:[.1,.5,.9],      // 2026-11-12 (Fabio): un missile all'inizio, uno al centro e uno alla fine dello schermo
+ slow:.5,                     // la nave passa più lentamente (metà di SPEC.shipSpeed)
+ hitAt:[.12,.5,.88],          // dove cade ogni missile (frazione della larghezza dello schermo, sul terreno)
  drop:.16,accel:3400,maxV:1650,turn:9,
  radius:260,                  // nemici distrutti attorno a ogni esplosione
  life:1.7,scorch:6            // durata dell'esplosione e della bruciatura a terra (secondi)
@@ -31,9 +33,9 @@ function bombAimPoint(t){
 }
 function bombLaunch(S,i){
  const VW=pfViewW(),cx=pf.cam.x,sh=S.ship;
- const t=bombTargets(S)[0]||null;
- let gx=cx+VW*(.35+.22*i),g=pfGroundAt(gx);if(g===null)g=PF_FLOOR;
- const m={i,x:sh.x+(i-1)*18,y:sh.y+26,vx:SPEC.shipSpeed*.45,vy:120,t:0,target:t,px:gx,py:g,trail:0,done:false};
+ // 2026-11-12: ogni missile cade nel suo punto fisso dello schermo (inizio, centro, fine), senza inseguire bersagli
+ let gx=cx+VW*BOMB.hitAt[i],g=pfGroundAt(gx);if(g===null)g=PF_FLOOR;
+ const m={i,x:sh.x,y:sh.y+26,vx:SPEC.shipSpeed*BOMB.slow*.2,vy:120,t:0,target:null,px:gx,py:g,trail:0,done:false};
  S.missiles.push(m);
  tone(520+i*90,.35,'sawtooth',.02,1300);noise(.35,.025,2200);
  pfBurst(m.x,m.y,'#fff1c9',6,.6);
@@ -44,7 +46,7 @@ spcUpdateStrike=function(dt){
  if(!S.missiles){S.missiles=[];S.booms=[];S.fired=0;S.hits=0}
  S.t+=dt;const VW=pfViewW(),cx=pf.cam.x;
  if(S.t>=SPEC.radioT&&!S.ship){S.ship={x:cx-160,y:150};pfStatus('NAVE IN ARRIVO · LANCIO DEI MISSILI',1800);noise(1.4,.03,500);tone(90,1.2,'sine',.04,140)}
- if(S.ship){S.ship.x+=SPEC.shipSpeed*dt;S.ship.y=150+Math.sin(S.t*3)*6;
+ if(S.ship){S.ship.x+=SPEC.shipSpeed*BOMB.slow*dt;S.ship.y=150+Math.sin(S.t*3)*6;
   while(S.fired<BOMB.n&&S.ship.x>=cx+VW*BOMB.launch[S.fired])bombLaunch(S,S.fired++);
  }
  for(const m of S.missiles){

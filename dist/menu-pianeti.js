@@ -144,11 +144,11 @@ selectPlanet=function(i){
 const MP_FAR=[ // x,y in frazioni dello schermo, r = raggio (×scala), colori, anello
  {x:.08,y:.17,r:7,a:'#9cc8ff',b:'#1d3560',ring:false,ph:0,sp:.45},
  {x:.33,y:.09,r:4,a:'#ffc58a',b:'#5a2a10',ring:false,ph:1.7,sp:.6},
- {x:.62,y:.13,r:11,a:'#d9b6ff',b:'#2c1858',ring:true,ph:3.1,sp:.32},
+ {x:.62,y:.13,r:11,a:'#d9b6ff',b:'#2c1858',ring:false,ph:3.1,sp:.32},
  {x:.95,y:.42,r:6,a:'#8ff0d0',b:'#0d3a34',ring:false,ph:.9,sp:.52},
  {x:.47,y:.9,r:9,a:'#ff9f7a',b:'#4a1410',ring:false,ph:2.4,sp:.38},
  {x:.18,y:.62,r:3.5,a:'#c8e0ff',b:'#203048',ring:false,ph:4.2,sp:.7},
- {x:.73,y:.93,r:5,a:'#fff0b0',b:'#4c3a10',ring:true,ph:5.3,sp:.48},
+ {x:.73,y:.93,r:5,a:'#fff0b0',b:'#4c3a10',ring:false,ph:5.3,sp:.48},
  {x:.88,y:.08,r:3,a:'#ffb0c8',b:'#4a1028',ring:false,ph:2.9,sp:.66},
  {x:.27,y:.38,r:2.6,a:'#b0ffe8',b:'#103a30',ring:false,ph:.4,sp:.74}
 ];

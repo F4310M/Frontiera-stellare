@@ -124,9 +124,8 @@ function plDraw(w,g){
  a.addColorStop(0,`rgba(${atm[0]},${atm[1]},${atm[2]},0)`);a.addColorStop(.2,`rgba(${atm[0]},${atm[1]},${atm[2]},.32)`);a.addColorStop(.5,`rgba(${atm[0]},${atm[1]},${atm[2]},.1)`);a.addColorStop(1,`rgba(${atm[0]},${atm[1]},${atm[2]},0)`);
  ctx.fillStyle=a;ctx.beginPath();ctx.arc(0,0,r*1.2,0,Math.PI*2);ctx.fill();
  const ring=(s,e)=>{for(let band=0;band<3;band++){ctx.strokeStyle=['rgba(159,182,203,.34)','rgba(216,207,183,.42)','rgba(142,167,191,.22)'][band];ctx.lineWidth=r*(band===1?.022:.012);ctx.beginPath();ctx.ellipse(0,0,r*(1.43+band*.05),r*(.34+band*.012),-.18,s,e);ctx.stroke()}};
- ring(Math.PI,Math.PI*2);
+ // 2026-11-12 (Fabio): niente anelli stile Saturno intorno ai pianeti
  const sm=ctx.imageSmoothingEnabled;ctx.imageSmoothingEnabled=true;ctx.drawImage(g.canvas,-r,-r,r*2,r*2);ctx.imageSmoothingEnabled=sm;
- ring(0,Math.PI);
  ctx.strokeStyle=`rgba(${atm[0]},${atm[1]},${atm[2]},.45)`;ctx.lineWidth=Math.max(1,r*.009);ctx.beginPath();ctx.arc(0,0,r*1.005,Math.PI*.92,Math.PI*1.8);ctx.stroke();
  ctx.restore();
 }
