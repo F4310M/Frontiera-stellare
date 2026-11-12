@@ -292,7 +292,7 @@ function pfFinish(win){
  $('killsStat').textContent=pf.kills;
  const sec=Math.floor(pf.time);$('timeStat').textContent=Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
  $('hullStat').textContent=pf.rescued+'/'+pf.hostages.length;
- show('landBtn',false);show('marketBtnResult',false);$('returnBtn').querySelector('span').textContent='TORNA ALLA MAPPA';
+ show('landBtn',false);show('marketBtnResult',false);$('returnBtn').querySelector('span').textContent='TORNA ALLA HOME';
  if(typeof ecoEndPhase==='function')ecoEndPhase(2,win,{kills:pf.kills,rescued:pf.rescued,hostages:pf.hostages.length});
 }
 // Chiamata da finish() della fase 1: dopo la conquista dell'orbita si può atterrare.
@@ -302,7 +302,7 @@ function pfAfterSpaceFinish(win){
  $('landBtn').querySelector('span').textContent='LIBERA LA COLONIA · FASE 2';
  show('landBtn',win);show('marketBtnResult',false);
  if(win){const p=planets[selected],t=$('resultText');if(p&&t)t.textContent+=' '+pfTheme(p).brief}
- $('returnBtn').querySelector('span').textContent=win?'ABBANDONA':'TORNA ALLA MAPPA';
+ $('returnBtn').querySelector('span').textContent=win?'ABBANDONA':'TORNA ALLA HOME';
 }
 // Chiamata da abort(): ritorno alla mappa.
 function pfCleanup(){show('platformHud',false);show('landBrief',false);show('landBtn',false);pfStatLabels(['NEMICI','TEMPO','SCAFO']);pf=null}

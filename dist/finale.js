@@ -28,7 +28,7 @@ function viteGameOver(){
  finalLock();
  $('resultEyebrow').textContent='GAME OVER';$('resultTitle').textContent='HAI PERSO TUTTE LE VITE';
  $('resultText').textContent='Il Fronte Ombra ha vinto questa guerra. Recuperi solo il 20% dei crediti guadagnati in questa partita. Potenziamenti e pianeti liberati sono azzerati e hai di nuovo 3 vite.';
- show('landBtn',false);$('returnBtn').querySelector('span').textContent='RICOMINCIA DALLA MAPPA';
+ show('landBtn',false);$('returnBtn').querySelector('span').textContent='TORNA ALLA HOME';
 }
 function viteLose(){vite=Math.max(0,vite-1);viteSave();return vite}
 function viteGain(){if(vite>=VITE_MAX)return false;vite++;viteSave();return true}

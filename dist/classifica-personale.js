@@ -27,6 +27,25 @@ function cpCiclo(){
  if(ch||cpGet(CP.key)===null)cpSet(CP.key,JSON.stringify(c));
  return c.n;
 }
+// missioni nello spazio vinte in questa partita: stellarSpazioVinti = {p: id partita, c: [codici pianeta]}
+function cpSpazio(){
+ const run=cpGet('stellarPartita')||'';
+ try{const o=JSON.parse(cpGet('stellarSpazioVinti')||'null');if(o&&o.p===run&&Array.isArray(o.c))return o.c.filter(x=>typeof x==='string')}catch(e){}
+ return [];
+}
+function cpSpazioVinto(code){
+ if(typeof code!=='string'||!code)return;
+ const run=typeof myRun==='function'?myRun():(cpGet('stellarPartita')||'');
+ const c=cpSpazio();if(!c.includes(code)){c.push(code);cpSet('stellarSpazioVinti',JSON.stringify({p:run,c:c.slice(-20)}))}
+}
+if(typeof finish==='function'){
+ const fi=finish;
+ finish=function(win){
+  // segnato PRIMA del punteggio, così la riga della partita ha già la % giusta
+  try{if(win&&typeof state!=='undefined'&&(state==='orbit'||state==='play')&&typeof planets!=='undefined'&&planets[selected])cpSpazioVinto(planets[selected].code)}catch(e){}
+  return fi.apply(this,arguments);
+ };
+}
 function cpLiberati(){return(cpGet('frontieraPianetiLiberati')||'').split(',').filter(Boolean)}
 function cpPercento(){
  const base=typeof BASE_PLANETS!=='undefined'&&Array.isArray(BASE_PLANETS)?BASE_PLANETS:null;
@@ -38,10 +57,22 @@ function cpPercento(){
  if(omega)passi+=2;
  else{
   // pianeta in corso con la fase nello spazio già vinta (salvataggio all'inizio della fase a terra)
+  // + ogni missione nello spazio vinta in questa partita su un pianeta non ancora liberato
   let s=null;try{s=typeof saveLoad==='function'?saveLoad():null}catch(e){}
-  if(s&&s.fase===2&&!lib.includes(s.code))passi+=1;
+  const sp=new Set(cpSpazio().filter(c=>!lib.includes(c)));
+  if(s&&s.fase===2&&!lib.includes(s.code))sp.add(s.code);
+  passi+=sp.size;
  }
- return Math.max(0,Math.min(100,Math.round(passi/CP.passi*100)));
+ passi=Math.min(CP.passi,passi);
+ let g=Math.max(0,Math.min(100,Math.round(passi/CP.passi*100)));
+ // nella stessa partita la % non torna indietro (al GAME OVER i pianeti liberati si azzerano prima del punteggio)
+ const run=cpGet('stellarPartita')||'';
+ if(run){
+  let m=null;try{m=JSON.parse(cpGet('stellarPercento')||'null')}catch(e){}
+  if(m&&m.p===run&&Number.isFinite(m.g)&&m.g>g)g=Math.min(100,m.g);
+  else if(!m||m.p!==run||m.g!==g)cpSet('stellarPercento',JSON.stringify({p:run,g}));
+ }
+ return g;
 }
 function cpFmt(g,r){
  if(!Number.isFinite(g))return '—';
@@ -53,7 +84,7 @@ function cpFmt(g,r){
 myAdd=function(points){
  const pts=Math.round(points);if(!(pts>0))return;
  const b=myList(),p=myRun(),r=b.find(x=>x.p===p),d=new Date().toISOString().slice(0,10),g=cpPercento(),n=cpCiclo();
- if(r){if(pts>=r.s){r.s=pts;r.d=d;r.g=g;r.r=n}}else b.push({p,s:pts,d,g,r:n});
+ if(r){if(pts>=r.s){r.s=pts;r.d=d;r.r=n}r.g=Math.max(Number.isFinite(r.g)?r.g:0,g)}else b.push({p,s:pts,d,g,r:n});
  b.sort((x,y)=>y.s-x.s);mySave(b.slice(0,CP.max));
 };
 function cpPersonalRows(){
@@ -261,7 +292,7 @@ if(typeof setTimeout==='function'&&typeof coOn!=='undefined'&&coOn)setTimeout(as
 
 // ---------------------------------------------------------------- tutto nel file di salvataggio
 if(typeof PROF_PROGRESS!=='undefined'&&Array.isArray(PROF_PROGRESS))
- for(const k of [CP.key,'stellarRecordResto','stellarClassifica','stellarInAttesa','stellarUltimoNome'])if(!PROF_PROGRESS.includes(k))PROF_PROGRESS.push(k);
+ for(const k of [CP.key,'stellarPercento','stellarSpazioVinti','stellarRecordResto','stellarClassifica','stellarInAttesa','stellarUltimoNome'])if(!PROF_PROGRESS.includes(k))PROF_PROGRESS.push(k);
 cpCiclo();
 if(typeof setInterval==='function')setInterval(cpCiclo,4000);
 
