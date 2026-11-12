@@ -1,6 +1,6 @@
 // LINEA OLOGRAFICA PIANETA → PANNELLO (2026-11-12)
 // Nella home, il pianeta selezionato è collegato al pannello OBIETTIVO SELEZIONATO da un fascio olografico:
-// cono di proiezione dal pianeta al pannello (tutta l'altezza), flusso di energia con impulsi sui due bordi,
+// una linea di energia con impulsi dal pianeta all'angolo in alto del pannello (v3: niente cono né linea inferiore),
 // anello che ruota attorno al pianeta e barra luminosa sul bordo del pannello.
 // Al cambio di pianeta il fascio si ridisegna partendo dal pianeta.
 // Solo SVG e CSS: niente filtri o ombre ricalcolati a ogni fotogramma (regola prestazioni PC).
@@ -34,6 +34,9 @@
   el.attacco=mk('line',{class:'lo-attacco'},svg);
   el.tacche=[0,1].map(()=>mk('line',{class:'lo-tacca'},svg));
   el.punti=[0,1].map(()=>mk('circle',{class:'lo-punto',r:'3.2'},svg));
+  // 2026-11-12 (Fabio): niente fascio di luce, solo la linea superiore verso il margine alto del pannello
+  const via=[el.cono,el.attacco,...el.tacche,el.punti[1],el.bordi[1].alone,el.bordi[1].linea,el.bordi[1].flusso,...el.bordi[1].impulsi];
+  for(const e of via)e.setAttribute('display','none');
   scr.appendChild(svg);
   return true;
  }
