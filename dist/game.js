@@ -37,7 +37,7 @@ function canPay(kind,n=1){return typeof ecoCanPay==='function'?ecoCanPay(kind,n)
 let wingMissiles=[];
 const AIM_RESPONSE=16;
 // Tetto di pixel per fotogramma: sui monitor grandi del PC la sovracampionatura 2x faceva disegnare 8-15 milioni di pixel a ogni fotogramma (un iPhone ne disegna circa 3).
-const PIXEL_BUDGET=4.2e6;
+let PIXEL_BUDGET=4.2e6;
 function targetDpr(){const nat=devicePixelRatio||1,want=Math.min(3,Math.max(nat,2)),cap=Math.sqrt(PIXEL_BUDGET/Math.max(1,W*H));return Math.max(1,Math.min(want,Math.max(cap,Math.min(nat,1)))*renderQuality)}
 function applyCanvasScale(){dpr=targetDpr();canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';vignette=null}
 // Qualità adattiva con isteresi: scende se i fotogrammi sono lenti o a scatti, risale solo dopo 3 finestre buone di fila
