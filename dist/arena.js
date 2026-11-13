@@ -119,6 +119,24 @@ function arUpgrades(get){const u={};for(const k of AR_UPS)u[k]=Math.max(0,Math.m
 function arUgCode(up){let n=0;AR_UPS.forEach((k,i)=>{n+=Math.max(0,Math.min(3,(up&&up[k])|0))*4**i});return n}
 function arUgDecode(n){n=Math.max(0,Math.floor(+n||0));const u={};AR_UPS.forEach((k,i)=>{u[k]=Math.floor(n/4**i)%4});return u}
 function arDamage(up){return Math.round(ARENA.dmg*(1+.5*(up&&up.laser||0))*(up&&up.twin?.65:1))}
+// (2026-11-13) PROGRESSI VERIFICATI (progressi.js): gli upgrade valgono fino al livello della campagna.
+// budget = quanti livelli di upgrade in tutto; si tengono nell'ordine di AR_UPS finché il budget basta.
+function arCapUp(up,budget){
+ const u=arUpgrades(k=>up&&up[k]);if(typeof budget!=='number')return u;
+ let r=Math.max(0,Math.floor(budget));for(const k of AR_UPS){u[k]=Math.min(u[k],r);r-=u[k]}return u;
+}
+// budget di un pilota della stanza: null = nessun limite (niente Firebase o niente progressi.js)
+function arBudgetOf(g,pid){
+ if(typeof PV==='undefined'||!PV||!PV.on)return null;
+ if(pid===g.pid){const b=PV.budget(PV.mio());return b===null?PV.budget(0):b}
+ const o=g.others[pid],u=o&&o.s&&typeof o.s.u==='string'?o.s.u:'';
+ const l=u?PV.di(u):undefined;return PV.budget(typeof l==='number'?l:0);// livello non ancora letto = livello 0
+}
+// danno massimo che può avere un colpo di quel pilota (colpo normale o caricato, oppure missile)
+function arShotCap(up,power,mis){
+ if(mis)return ARENA.mis.dmg;
+ return Math.min(ARENA.maxDmg,Math.round(ARENA.dmg*(1+.5*(up&&up.laser||0))*(power?2+power*.6:1))+1);
+}
 function arNew(pid,name,avatar,up,mode,faction){
  if(typeof mode==='string'){faction=mode;mode=0}// arNew(pid,nome,foto,pot,fazione) come prima
  const u=arUpgrades(k=>up&&up[k]),md=mode===1?1:0,fa=arFaction(faction);
@@ -226,9 +244,13 @@ function arOnState(g,tree,changed){
   // colpi nuovi
   const col=arColor(g,pid);
   for(const raw of arList(s.sh)){const sh=arList(raw);const i=+sh[0]||0;if(i<=o.lastShot)continue;o.lastShot=i;
-   const dmg=Math.max(1,Math.min(ARENA.maxDmg,+sh[5]||ARENA.dmg));// danno dichiarato da chi spara, con un tetto
+   let dmg=Math.max(1,Math.min(ARENA.maxDmg,+sh[5]||ARENA.dmg));// danno dichiarato da chi spara, con un tetto
    const rad=Math.max(3,Math.min(12,+sh[6]||3)),power=Math.max(0,Math.min(1,+sh[7]||0));
    const tg=typeof sh[8]==='string'?sh[8].slice(0,10):null;// missile guidato: pilota bersaglio
+   // (2026-11-13) tetto del livello verificato di chi spara: danno e numero di missili come i suoi upgrade permessi
+   const bud=arBudgetOf(g,pid);
+   if(bud!==null){const vu=arCapUp(arUgDecode(s.ug),bud);dmg=Math.min(dmg,arShotCap(vu,power,tg!==null));
+    if(tg!==null){o.mis=(o.mis||[]).filter(t=>g.time-t<ARENA.mis.cd*.8);if(o.mis.length>=1+(vu.salvo|0))continue;o.mis.push(g.time)}}
    g.bullets.push({x:+sh[1],y:+sh[2],vx:+sh[3],vy:+sh[4],dmg,r:rad,power,o:pid,life:tg!==null?ARENA.mis.life:power?1.35:ARENA.bulletLife,c:col,big:power>0||dmg>ARENA.dmg*1.2,mis:tg!==null,tg});
    if(tg!==null&&tg===g.pid)g.events.push({type:'lock'})}
   // abbattimenti: chi è morto dice chi lo ha colpito
@@ -565,7 +587,7 @@ function arBuildUI(){
     <ul class="ar-feats">
      <li><b>METEORITI</b><span>Resistenti come quelli intorno ai pianeti: se li rompi, i frammenti colpiscono chi è vicino.</span></li>
      <li><b>COMETE</b><span>Attraversano l’arena e spazzano via navi, colpi e meteoriti: guarda l’avviso.</span></li>
-     <li><b>MERCATO</b><span>I tuoi potenziamenti del mercato valgono anche qui: laser, barriera, motori, doppio laser, iniettori e lanciatore multiplo (missili guidati).</span></li>
+     <li><b>MERCATO</b><span>I tuoi potenziamenti del mercato valgono anche qui (laser, barriera, motori, doppio laser, iniettori e lanciatore multiplo), fino al livello raggiunto nella campagna: ogni missione vinta lo alza.</span></li>
     </ul>
    </section>
    <section class="ar-page-col ar-page-play">
@@ -681,7 +703,9 @@ async function arJoin(code,checked=false){
  const url=arDbUrl();
  try{
   if(url&&!checked){const n=await arRoomCount(url,code);if(n>=ARENA.max){arUI.busy=false;return arErr(AR_T('STANZA PIENA'))}}
-  const p=arProfile(),pid=arPid(),g=arNew(pid,p.nome,p.mini,arUpgrades(typeof upg==='function'?upg:null),arUI.mode,arFactionChoice);g.room=code;g.rocks=arRocks(code);arSpawn(g);
+  const p=arProfile(),pid=arPid(),up0=arUpgrades(typeof upg==='function'?upg:null),bud=typeof PV!=='undefined'&&PV&&PV.on?PV.budget(PV.mio()??0):null,up=arCapUp(up0,bud);
+  const limitato=AR_UPS.some(k=>up[k]<up0[k]);
+  const g=arNew(pid,p.nome,p.mini,up,arUI.mode,arFactionChoice);g.room=code;g.rocks=arRocks(code);arSpawn(g);
   const net=url?arNetFirebase(url,code,pid,(t,ch)=>{if(ar===g)arOnState(g,t,ch)}):arNetLocal(code,pid,(t,ch)=>{if(ar===g)arOnState(g,t,ch)});
   g.net=net;ar=g;
   await net.join(arFull(g));
@@ -691,6 +715,7 @@ async function arJoin(code,checked=false){
   if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
   if(typeof enterGameFullscreen==='function')try{enterGameFullscreen()}catch(e){}
   if(typeof sfx==='function')try{sfx('warp')}catch(e){}
+  if(limitato)arMessage(AR_T('UPGRADE LIMITATI DAL LIVELLO DELLA CAMPAGNA'),6);
  }catch(e){arUI.busy=false;if(ar&&ar.net)ar.net.leave();ar=null;arErr(AR_T('RETE NON RAGGIUNGIBILE'))}
 }
 function arLeaveRoom(){
@@ -1105,7 +1130,7 @@ if(typeof I18N_ROWS!=='undefined'){
   ["NAVI ROSSE","RED SHIPS","VAISSEAUX ROUGES","NAVES ROJAS","КРАСНЫЕ КОРАБЛИ","红色飞船","赤い船"],
   ["ARENA SPAZIALE","SPACE ARENA","ARÈNE SPATIALE","ARENA ESPACIAL","КОСМИЧЕСКАЯ АРЕНА","太空竞技场","宇宙アリーナ"],
   ["Tutti contro tutti, fino a 6 piloti. Vince chi arriva per primo a 10 abbattimenti o chi ne ha di più dopo 5 minuti.","Free for all, up to 6 pilots. The first to reach 10 kills wins, or whoever has the most after 5 minutes.","Chacun pour soi, jusqu’à 6 pilotes. Le premier à 10 victoires gagne, ou celui qui en a le plus après 5 minutes.","Todos contra todos, hasta 6 pilotos. Gana el primero en llegar a 10 derribos o quien tenga más tras 5 minutos.","Каждый сам за себя, до 6 пилотов. Побеждает первый, кто сбьёт 10 врагов, или тот, у кого больше побед через 5 минут.","混战模式，最多 6 名飞行员。率先击落 10 架者获胜，或 5 分钟后击落最多者获胜。","最大6人のバトルロイヤル。先に10機撃墜するか、5分後に撃墜数が最も多いパイロットの勝利。"],
-  ["I tuoi potenziamenti del mercato valgono anche qui: laser, barriera, motori, doppio laser, iniettori e lanciatore multiplo (missili guidati).","Your market upgrades work here too: laser, barrier, engines, twin laser, injectors and multi-launcher (homing missiles).","Tes améliorations du marché valent aussi ici : laser, barrière, moteurs, double laser, injecteurs et lanceur multiple (missiles guidés).","Tus mejoras del mercado también valen aquí: láser, barrera, motores, doble láser, inyectores y lanzador múltiple (misiles guiados).","Улучшения из магазина действуют и здесь: лазер, барьер, двигатели, двойной лазер, инжекторы и мультипусковая установка (самонаводящиеся ракеты).","你在商店购买的升级在这里同样有效：激光、护盾、引擎、双激光、喷射器和多联发射器（追踪导弹）。","マーケットで買った強化はここでも有効：レーザー、バリア、エンジン、ダブルレーザー、インジェクター、マルチランチャー（誘導ミサイル）。"],
+  ["I tuoi potenziamenti del mercato valgono anche qui (laser, barriera, motori, doppio laser, iniettori e lanciatore multiplo), fino al livello raggiunto nella campagna: ogni missione vinta lo alza.","Your market upgrades work here too (laser, barrier, engines, twin laser, injectors and multi-launcher), up to the level reached in the campaign: every mission won raises it.","Tes améliorations du marché valent aussi ici (laser, barrière, moteurs, double laser, injecteurs et lanceur multiple), jusqu’au niveau atteint dans la campagne : chaque mission gagnée l’augmente.","Tus mejoras del mercado también valen aquí (láser, barrera, motores, doble láser, inyectores y lanzador múltiple), hasta el nivel alcanzado en la campaña: cada misión ganada lo sube.","Улучшения из магазина действуют и здесь (лазер, барьер, двигатели, двойной лазер, инжекторы и мультипусковая установка) до уровня, достигнутого в кампании: каждая выигранная миссия его повышает.","你在商店购买的升级在这里同样有效（激光、护盾、引擎、双激光、喷射器和多联发射器），但不超过战役中达到的等级：每赢一场任务等级就会提升。","マーケットで買った強化はここでも有効（レーザー、バリア、エンジン、ダブルレーザー、インジェクター、マルチランチャー）。ただしキャンペーンで到達したレベルまで：ミッションに勝つたびに上がる。"],
   ["PILOTA","PILOT","PILOTE","PILOTO","ПИЛОТ","飞行员","パイロット"],
   ["PARTITA VELOCE","QUICK MATCH","PARTIE RAPIDE","PARTIDA RÁPIDA","БЫСТРАЯ ИГРА","快速匹配","クイックマッチ"],
   ["CREA UNA STANZA","CREATE A ROOM","CRÉER UN SALON","CREAR UNA SALA","СОЗДАТЬ КОМНАТУ","创建房间","ルームを作成"],

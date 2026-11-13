@@ -160,6 +160,27 @@ service cloud.firestore {
         && r.m == vecchia.m && r.v == vecchia.v && r.b == vecchia.b;
     }
 
+    // ---------------------------------------------------------------- PROGRESSI VERIFICATI (2026-11-13)
+    // progressi/{uid} = { l: missioni vinte nella campagna, t: ora del server }. Nell'arena il livello
+    // decide quanti upgrade del mercato si possono usare (progressi.js). Il livello sale al massimo di 10
+    // passi per volta e solo dopo 5 minuti (300 s) per passo dall'ultima scrittura: chi si regala crediti
+    // sul PC non si può regalare anche il livello. Lo legge chiunque (gli altri piloti dell'arena).
+    match /progressi/{uid} {
+      allow read: if true;
+      allow create: if utente() && uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['l', 't'])
+        && request.resource.data.l is int && request.resource.data.l >= 0 && request.resource.data.l <= 1
+        && request.resource.data.t == request.time;
+      allow update: if utente() && uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['l', 't'])
+        && request.resource.data.l is int
+        && request.resource.data.l > resource.data.l
+        && request.resource.data.l - resource.data.l <= 10
+        && request.resource.data.t == request.time
+        && request.time >= resource.data.t + duration.value(300 * (request.resource.data.l - resource.data.l), 's');
+      allow delete: if false;
+    }
+
     // tutto il resto del database è chiuso
     match /{document=**} {
       allow read, write: if false;
