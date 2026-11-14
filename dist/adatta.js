@@ -28,11 +28,13 @@ function fitCardNow(c){
  return k;
 }
 function fitAll(){for(const c of document.querySelectorAll(FIT_CARDS))fitCard(c)}
+// Un testo cambiato fuori da ogni finestra aperta (HUD, punteggi in volo) non cambia l'altezza delle finestre.
+function fitFuori(m){const t=m.target;if(!t||t===document.body||!t.closest)return false;if(t.closest('.overlay'))return false;for(const n of m.addedNodes)if(n.nodeType===1&&(n.matches('.overlay,.brief-card')||n.querySelector('.overlay,.brief-card')))return false;return true}
 let fitQueued=false;
 function fitSoon(){if(fitQueued)return;fitQueued=true;requestAnimationFrame(()=>{fitQueued=false;fitAll()})}
 if(typeof MutationObserver==='function'&&typeof document!=='undefined'&&document.body){
  // Una finestra che si apre o cambia contenuto si riadatta. Le modifiche di stile fatte qui non contano.
- new MutationObserver(ms=>{for(const m of ms){if(m.type==='attributes'&&m.attributeName==='style')continue;fitSoon();return}})
+ new MutationObserver(ms=>{for(const m of ms){if(m.type==='attributes'&&m.attributeName==='style')continue;if(m.type==='childList'&&fitFuori(m))continue;fitSoon();return}})
   .observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
  addEventListener('resize',fitSoon);addEventListener('orientationchange',fitSoon);
  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitSoon);
