@@ -4,8 +4,11 @@
 // L'immagine si costruisce un po' per volta (pochi millisecondi per fotogramma) mentre il pianeta
 // è ancora lontano; finché non è pronta resta il disegno originale.
 // Se il browser non ha un canvas fuori schermo (come nei test) si usa il disegno originale.
+// 11-14: le nuvole sono uno strato a parte, appena sopra la superficie (sporgono un po' dal bordo,
+// fanno ombra sotto di sé) e si muovono pianissimo.
 
 const plOrig={drawWorld};
+const PL_CLOUDS={lift:1.018,swing:.035,speed:.06,shadow:.32,shOff:.014};// strato nuvole: quanto sporge, oscillazione (rad), velocità, ombra
 let plCache=null;
 
 // Tavolozze per tema: ogni voce è [altezza, colore]; sotto "sea" è acqua.
@@ -44,6 +47,7 @@ function plStart(p){
  try{canvas=document.createElement('canvas');if(!canvas||!canvas.getContext)return null;const c=canvas.getContext('2d');if(!c||!c.createImageData||!c.putImageData)return null}catch(e){return null}
  const S=Math.min(2048,Math.max(768,Math.round(plDpr()*2*(430+p.difficulty*18)*1.05)));
  canvas.width=canvas.height=S;const c=canvas.getContext('2d'),img=c.createImageData(S,S);
+ let clouds=null,cimg=null;try{clouds=document.createElement('canvas');clouds.width=clouds.height=S;const cc=clouds.getContext('2d');cimg=cc&&cc.createImageData?cc.createImageData(S,S):null;if(!cimg)clouds=null}catch(e){clouds=null;cimg=null}
  const seed=(Math.random()*4294967296)>>>0,N=plNoise(seed),T=PL_THEMES[p.theme]||PL_THEMES.mare;
  const land=T.land?T.land.map(([h,col])=>[h,plHex(col)]):null,water=T.water?T.water.map(plHex):null,bands=T.bands?T.bands.map(plHex):null;
  // rotazione casuale della sfera: continenti in posizioni diverse ogni missione
@@ -52,17 +56,17 @@ function plStart(p){
  const storm=bands?{y:(N.rnd()-.5)*.9,x:(N.rnd()-.5)*.8,r:.12+N.rnd()*.08}:null;
  const L=[-.55,-.6,.58],ln=Math.hypot(...L);L[0]/=ln;L[1]/=ln;L[2]/=ln;
  const Hv=[L[0],L[1],L[2]+1],hn=Math.hypot(...Hv);Hv[0]/=hn;Hv[1]/=hn;Hv[2]/=hn;
- return{p,seed,canvas,c,img,S,row:0,ready:false,N,T,land,water,bands,ca,sa,cb,sb,off,coff,storm,L,Hv};
+ return{p,seed,canvas,c,img,clouds,cimg,S,row:0,ready:false,N,T,land,water,bands,ca,sa,cb,sb,off,coff,storm,L,Hv};
 }
 function plDpr(){return Math.min(2,Math.max(1,(typeof devicePixelRatio==='number'?devicePixelRatio:1)))}
 
 function plBuildRows(g,budgetMs){
- const t0=performance.now(),{S,img,N,T,land,water,bands,ca,sa,cb,sb,off,coff,storm,L,Hv}=g,d=img.data,R=S/2,atm=T.atm;
+ const t0=performance.now(),{S,img,N,T,land,water,bands,ca,sa,cb,sb,off,coff,storm,L,Hv}=g,d=img.data,cd=g.cimg?g.cimg.data:null,R=S/2,atm=T.atm;
  while(g.row<S){
   const y=g.row,ny=(y+.5-R)/R;
   for(let x=0;x<S;x++){
    const nx=(x+.5-R)/R,q=nx*nx+ny*ny,i=(y*S+x)*4;
-   if(q>1){d[i+3]=0;g.prevH=undefined;continue}
+   if(q>1){d[i+3]=0;if(cd)cd[i+3]=0;g.prevH=undefined;continue}
    const nz=Math.sqrt(1-q);
    // punto sulla sfera ruotato (posizione dei continenti)
    let px=nx*ca+nz*sa,pz=-nx*sa+nz*ca,py=ny;const py2=py*cb-pz*sb;pz=py*sb+pz*cb;py=py2;
@@ -99,8 +103,10 @@ function plBuildRows(g,budgetMs){
     if(ice>T.ice){const m=Math.min(1,(ice-T.ice)/.05);r+=(238-r)*m;gC+=(244-gC)*m;b+=(250-b)*m;water_=false}
    }
    // nuvole
-   let cl=N.fbm(px*2.6+coff[0],py*4+coff[1],pz*2.6+coff[2],5);cl=Math.max(0,Math.min(1,(cl-T.clouds)/.18))*T.cloudAmt;
-   if(cl>0){const cc=T.lava?[90,70,64]:[245,248,252],m=Math.min(.92,cl);r+=(cc[0]-r)*m;gC+=(cc[1]-gC)*m;b+=(cc[2]-b)*m;water_=water_&&m<.4;emit*=1-m}
+   let cl=N.fbm(px*2.6+coff[0],py*4+coff[1],pz*2.6+coff[2],5);cl=Math.max(0,Math.min(1,(cl-T.clouds)/.14))*T.cloudAmt;
+   const cc=T.lava?[90,70,64]:[245,248,252],cm=cl>0?Math.min(.92,cl):0;
+   // senza strato a parte (vecchio modo) le nuvole si mescolano alla superficie
+   if(!cd&&cm>0){r+=(cc[0]-r)*cm;gC+=(cc[1]-gC)*cm;b+=(cc[2]-b)*cm;water_=water_&&cm<.4;emit*=1-cm}
    // luce: giorno/notte, riflesso sul mare, bordo atmosferico
    const dl=nx*L[0]+ny*L[1]+nz*L[2],day=Math.max(0,Math.min(1,dl*1.5+.12)),light=.035+.965*day*(0.7+.3*dl);
    r*=light;gC*=light;b*=light;
@@ -108,13 +114,21 @@ function plBuildRows(g,budgetMs){
    if(emit>0){const e=emit*(1-day*.55);r+=255*e*.55;gC+=110*e*.55;b+=35*e*.4}
    const rim=Math.pow(1-nz,2.6)*(.25+.75*day);r+=(atm[0]-r)*rim*.7;gC+=(atm[1]-gC)*rim*.7;b+=(atm[2]-b)*rim*.7;
    const edge=Math.min(1,(1-Math.sqrt(q))*R/1.2);
+   if(cd){// strato delle nuvole: stessa luce del pianeta, un po' del colore dell'atmosfera sul bordo
+    if(cm>0){let cr=cc[0]*light,cg=cc[1]*light,cb2=cc[2]*light;cr+=(atm[0]-cr)*rim*.45;cg+=(atm[1]-cg)*rim*.45;cb2+=(atm[2]-cb2)*rim*.45;
+     cd[i]=cr>255?255:cr;cd[i+1]=cg>255?255:cg;cd[i+2]=cb2>255?255:cb2;cd[i+3]=255*cm*edge}else cd[i+3]=0}
    if(!bands)g.prevH=g.lastH;
    d[i]=r>255?255:r;d[i+1]=gC>255?255:gC;d[i+2]=b>255?255:b;d[i+3]=255*edge;
   }
   g.row++;
   if(performance.now()-t0>budgetMs)break;
  }
- if(g.row>=S){g.c.putImageData(img,0,0);g.ready=true;g.img=null}
+ if(g.row>=S){g.c.putImageData(img,0,0);
+  if(g.clouds&&g.cimg){try{g.clouds.getContext('2d').putImageData(g.cimg,0,0);
+   // ombra delle nuvole: stessa forma, scura, a metà risoluzione
+   const h=Math.max(64,S>>1),sh=document.createElement('canvas');sh.width=sh.height=h;const x=sh.getContext('2d');
+   x.drawImage(g.clouds,0,0,h,h);x.globalCompositeOperation='source-in';x.fillStyle='#000';x.fillRect(0,0,h,h);g.cshadow=sh}catch(e){g.clouds=null}}
+  g.ready=true;g.img=null;g.cimg=null}
 }
 
 // Disegno: alone atmosferico nel colore del tema, anelli (se c'erano), sfera dettagliata.
@@ -125,7 +139,17 @@ function plDraw(w,g){
  ctx.fillStyle=a;ctx.beginPath();ctx.arc(0,0,r*1.2,0,Math.PI*2);ctx.fill();
  const ring=(s,e)=>{for(let band=0;band<3;band++){ctx.strokeStyle=['rgba(159,182,203,.34)','rgba(216,207,183,.42)','rgba(142,167,191,.22)'][band];ctx.lineWidth=r*(band===1?.022:.012);ctx.beginPath();ctx.ellipse(0,0,r*(1.43+band*.05),r*(.34+band*.012),-.18,s,e);ctx.stroke()}};
  // 2026-11-12 (Fabio): niente anelli stile Saturno intorno ai pianeti
- const sm=ctx.imageSmoothingEnabled;ctx.imageSmoothingEnabled=true;ctx.drawImage(g.canvas,-r,-r,r*2,r*2);ctx.imageSmoothingEnabled=sm;
+ const sm=ctx.imageSmoothingEnabled;ctx.imageSmoothingEnabled=true;ctx.drawImage(g.canvas,-r,-r,r*2,r*2);
+ if(g.clouds){
+  // strato delle nuvole poco sopra la superficie: ombra spostata dalla parte opposta alla luce,
+  // poi le nuvole un po' più grandi del pianeta; ruotano avanti e indietro pianissimo
+  const t=performance.now()/1000,rot=PL_CLOUDS.swing*Math.sin(t*PL_CLOUDS.speed+g.seed%7),R2=r*PL_CLOUDS.lift;
+  ctx.save();ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.clip();ctx.rotate(rot);
+  if(g.cshadow){ctx.globalAlpha=PL_CLOUDS.shadow;ctx.drawImage(g.cshadow,-R2+r*PL_CLOUDS.shOff,-R2+r*PL_CLOUDS.shOff*.95,R2*2,R2*2)}
+  ctx.restore();
+  ctx.save();ctx.rotate(rot);ctx.drawImage(g.clouds,-R2,-R2,R2*2,R2*2);ctx.restore();
+ }
+ ctx.imageSmoothingEnabled=sm;
  ctx.strokeStyle=`rgba(${atm[0]},${atm[1]},${atm[2]},.45)`;ctx.lineWidth=Math.max(1,r*.009);ctx.beginPath();ctx.arc(0,0,r*1.005,Math.PI*.92,Math.PI*1.8);ctx.stroke();
  ctx.restore();
 }
