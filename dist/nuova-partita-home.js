@@ -27,10 +27,11 @@ function nphSposta(){
  nphPosiziona();
 }
 // sempre subito a destra di STORIA (che a sua volta segue ESCI DAL GIOCO)
+let nphAttesa=false;
 function nphPosiziona(){
  const s=document.getElementById('storiaBtn')||document.getElementById('exitBtn'),b=document.getElementById('saveNewBtn');
  if(!s||!b||!b.classList.contains('nuova-btn'))return;
- if(!s.offsetWidth){if(typeof requestAnimationFrame==='function')requestAnimationFrame(nphPosiziona);return}
+ if(!s.offsetWidth){if(!nphAttesa&&!(document.body&&document.body.classList.contains('playing'))){nphAttesa=true;setTimeout(()=>{nphAttesa=false;nphPosiziona()},250)}return}
  b.style.left=(s.offsetLeft+s.offsetWidth+10)+'px';b.style.top=s.offsetTop+'px';
 }
 if(typeof document!=='undefined'&&document.querySelector&&document.body){
