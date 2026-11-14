@@ -138,7 +138,10 @@ function plBuildRows(g,budgetMs){
   if(g.clouds&&g.cimg){try{g.clouds.getContext('2d').putImageData(g.cimg,0,0);
    // ombra delle nuvole: stessa forma, scura, a metà risoluzione
    const h=Math.max(64,S>>1),sh=document.createElement('canvas');sh.width=sh.height=h;const x=sh.getContext('2d');
-   x.drawImage(g.clouds,0,0,h,h);x.globalCompositeOperation='source-in';x.fillStyle='#000';x.fillRect(0,0,h,h);g.cshadow=sh}catch(e){g.clouds=null}}
+   x.drawImage(g.clouds,0,0,h,h);x.globalCompositeOperation='source-in';x.fillStyle='#000';x.fillRect(0,0,h,h);
+   // ritaglio già pronto sul disco del pianeta (al posto del clip a ogni fotogramma, che costava qualche FPS in 4K)
+   const L2=PL_CLOUDS.lift,k=h/(2*L2);x.globalCompositeOperation='destination-in';x.beginPath();
+   x.arc(h/2-PL_CLOUDS.shOff*k,h/2-PL_CLOUDS.shOff*.95*k,k,0,Math.PI*2);x.fill();g.cshadow=sh}catch(e){g.clouds=null}}
   g.ready=true;g.img=null;g.cimg=null}
 }
 
@@ -155,10 +158,9 @@ function plDraw(w,g){
   // strato delle nuvole poco sopra la superficie: ombra spostata dalla parte opposta alla luce,
   // poi le nuvole un po' più grandi del pianeta; ruotano avanti e indietro pianissimo
   const t=performance.now()/1000,rot=PL_CLOUDS.swing*Math.sin(t*PL_CLOUDS.speed+g.seed%7),R2=r*PL_CLOUDS.lift;
-  ctx.save();ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.clip();ctx.rotate(rot);
-  if(g.cshadow){ctx.globalAlpha=PL_CLOUDS.shadow;ctx.drawImage(g.cshadow,-R2+r*PL_CLOUDS.shOff,-R2+r*PL_CLOUDS.shOff*.95,R2*2,R2*2)}
-  ctx.restore();
-  ctx.save();ctx.rotate(rot);ctx.drawImage(g.clouds,-R2,-R2,R2*2,R2*2);ctx.restore();
+  ctx.save();ctx.rotate(rot);
+  if(g.cshadow){ctx.globalAlpha=PL_CLOUDS.shadow;ctx.drawImage(g.cshadow,-R2+r*PL_CLOUDS.shOff,-R2+r*PL_CLOUDS.shOff*.95,R2*2,R2*2);ctx.globalAlpha=1}
+  ctx.drawImage(g.clouds,-R2,-R2,R2*2,R2*2);ctx.restore();
  }
  ctx.imageSmoothingEnabled=sm;
  ctx.strokeStyle=`rgba(${atm[0]},${atm[1]},${atm[2]},.45)`;ctx.lineWidth=Math.max(1,r*.009);ctx.beginPath();ctx.arc(0,0,r*1.005,Math.PI*.92,Math.PI*1.8);ctx.stroke();
