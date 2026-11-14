@@ -8,7 +8,7 @@
 // poi solo drawImage ruotato (niente ctx.filter né shadowBlur sul canvas principale).
 // Va caricato dopo spazio.js e i18n.js (index.html: dopo speciale.js).
 
-const BH_CFG={ // 11-11: gravità ridotta del 10%
+const BH_CFG={ // 11-11: gravità ridotta del 10%; 11-14: sulla nave del pilota -20% (si riesce a fuggire)
  chance:d=>Math.min(.95,.45+.13*d),      // probabilità che in una missione compaiano buchi neri (1: 58%, 5: 95%)
  first:d=>[12+(5-d)*3,24+(5-d)*5],       // secondi prima del primo
  next:d=>[70/(.6+.25*d),110/(.6+.25*d)], // secondi tra uno e il successivo
@@ -17,6 +17,7 @@ const BH_CFG={ // 11-11: gravità ridotta del 10%
  drift:[27,288],                         // senza post-bruciatore: velocità minima verso il centro (bordo → centro)
  pull:[99,702],pullBoost:[54,450],swirl:.42,
  fallSpeed:[36,558],planetGap:700,swallow:.95,
+ player:.8,                             // 11-14: quanto il buco nero tira la nave del pilota rispetto al resto
  swallowEnemy:1.1,capture:.9            // navi nemiche: durata della spirale e raggio di cattura (in raggi dell'orizzonte)
 };
 const BH={sw:[],hole:null,timer:0,on:false,inside:false,was:false,warned:false,hum:0,hint:0,eaten:0,motes:[],gfx:null};
@@ -96,11 +97,11 @@ function bhPullPlayer(h,dt){
  BH.inside=true;BH.was=true;
  const ux=d?dx/d:Math.cos(player.angle),uy=d?dy/d:Math.sin(player.angle),boost=player.boostState==='active',q=1-d/h.reach;
  if(!BH.warned){BH.warned=true;status('ANOMALIA GRAVITAZIONALE · USA IL POST-BRUCIATORE',3600);tone(70,.9,'sawtooth',.03,40)}
- const a=bhAccel(h,d,boost?BH_CFG.pullBoost:BH_CFG.pull);
+ const a=bhAccel(h,d,boost?BH_CFG.pullBoost:BH_CFG.pull)*BH_CFG.player;
  player.vx+=(ux-uy*BH_CFG.swirl*.5)*a*dt;player.vy+=(uy+ux*BH_CFG.swirl*.5)*a*dt;
  if(!boost){
   // senza post-bruciatore i motori normali non bastano: la nave scivola sempre verso il centro
-  const drift=h.k*(BH_CFG.drift[0]+(BH_CFG.drift[1]-BH_CFG.drift[0])*q*q),vr=player.vx*ux+player.vy*uy;
+  const drift=BH_CFG.player*h.k*(BH_CFG.drift[0]+(BH_CFG.drift[1]-BH_CFG.drift[0])*q*q),vr=player.vx*ux+player.vy*uy;
   if(vr<drift){player.vx+=ux*(drift-vr);player.vy+=uy*(drift-vr)}
   BH.hint-=dt;
   if(BH.hint<=0&&(player.forward||player.strafe)&&h.k>.5){BH.hint=5;status('SOLO IL POST-BRUCIATORE PUÒ SFUGGIRE AL BUCO NERO',2000)}

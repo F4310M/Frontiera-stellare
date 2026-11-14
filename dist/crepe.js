@@ -1,4 +1,4 @@
-// Crepe dei meteoriti colpiti (2026-11-09): spaccature frastagliate con profondità, bordo illuminato,
+// Crepe dei meteoriti colpiti (2026-11-09; 11-14: la crepa si espande a vista fino alla rottura): spaccature frastagliate con profondità, bordo illuminato,
 // magma che si scalda col danno, buche schiacciate, schegge/polvere/braci a ogni colpo.
 // Vale nel gioco in singolo (sostituisce drawRockCracks di game.js, usato anche da meteoriti.js)
 // e nell'arena online (arena.js chiama crDraw). Tutto il disegno delle crepe è pre-renderizzato in cache:
@@ -134,28 +134,88 @@ function crParts(st,dt){
 
 // Disegna crepe + effetti del colpo. Il contesto è già traslato (e ruotato) al centro della roccia.
 // obj: oggetto roccia (serve solo a ricordare il danno precedente), dmg 0..1, rad = raggio, seed = variante.
+const CR_GROW={speed:.9,ease:7,creep:.12,creepRate:.03,front:.045};
+// tratti "in crescita": quelli nati tra il disegno in cache e il livello mostrato, disegnati dal vivo
+// (al massimo un sesto della rete), con l'ultimo pezzo che avanza come una spaccatura che corre.
+function crFront(net,lo,hi,k,L){
+ if(hi<=lo)return;const heat=crHeat(L),wk=.6+L*.75,list=[];
+ for(const s of net.segs)if(s.b>=lo&&s.b<hi)list.push(s);
+ if(!list.length)return;
+ ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+ const seg=(s,col,wm)=>{const f=Math.min(1,(hi-s.b)/CR_GROW.front),x1=s.x0+(s.x1-s.x0)*f,y1=s.y0+(s.y1-s.y0)*f;
+  ctx.strokeStyle=col;ctx.lineWidth=Math.max(.35,s.w*wm*wk)*k;ctx.beginPath();ctx.moveTo(s.x0*k,s.y0*k);ctx.lineTo(x1*k,y1*k);ctx.stroke();return[x1*k,y1*k,f]};
+ for(const s of list)seg(s,'rgba(0,0,0,.5)',2.2);
+ for(const s of list)seg(s,'rgba(12,7,5,.96)',1.45);
+ let tips=[];for(const s of list){const t=seg(s,heat.core,.6);if(t[2]<1)tips.push(t)}
+ // la punta che avanza è incandescente
+ ctx.globalCompositeOperation='lighter';ctx.fillStyle='rgba(255,214,150,.85)';
+ for(const t of tips.slice(0,8)){ctx.beginPath();ctx.arc(t[0],t[1],Math.max(.8,1.4*k),0,6.283);ctx.fill()}
+ ctx.restore();
+}
 function crDraw(obj,dmg,rad,seed){
  if(typeof document==='undefined'||!(rad>0))return false;
  dmg=Math.min(1,Math.max(0,+dmg||0));
  const now=performance.now()/1000;let st=crState.get(obj);
- if(!st){st={d:dmg,hit:-9,last:now,parts:[],n:0};crState.set(obj,st)}
+ if(!st){st={d:dmg,hit:-9,last:now,parts:[],n:0,show:dmg,creep:0,dust:0};crState.set(obj,st)}
  const v=((seed|0)%CR_VARIANTS+CR_VARIANTS)%CR_VARIANTS,net=crNet(v),k=rad/CR_REF;
  if(dmg>st.d+1e-4){st.hit=now;st.n++;crBurst(st,net,dmg,k,v*131+st.n*977+(rad|0))}
+ if(dmg<st.d-1e-4){st.show=dmg;st.creep=0}// roccia riparata o rinata (arena)
  st.d=dmg;
  const dt=Math.min(.05,Math.max(0,now-st.last));st.last=now;
- const stage=Math.min(CR_STAGES,Math.ceil(dmg*CR_STAGES-1e-6));
- if(stage>=1){
-  const sp=crSprite(v,stage);if(sp===false)return false;
-  if(sp){
-   const size=sp.size*k;ctx.drawImage(sp.c,-size/2,-size/2,size,size);
-   // lampo del colpo e brace che pulsa sulle rocce molto rovinate
-   const age=now-st.hit,flash=age<.45?(1-age/.45)*.9:0,glow=dmg>.5?(dmg-.5)*(.22+.16*Math.sin(now*4.2+v)):0;
-   if(flash+glow>.02){ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=Math.min(1,flash+glow);ctx.drawImage(sp.c,-size/2,-size/2,size,size);ctx.restore()}
-  }
+ // una roccia incrinata continua a cedere piano piano: la crepa striscia avanti anche senza colpi
+ if(dmg>0)st.creep=Math.min(CR_GROW.creep*(.4+dmg*.6),st.creep+dt*CR_GROW.creepRate*(.3+dmg));
+ const target=dmg>0?Math.min(.99,dmg+st.creep):0;
+ if(st.show<target){const gap=target-st.show;st.show=Math.min(target,st.show+dt*(CR_GROW.speed*.2+gap*CR_GROW.ease));
+  // mentre cede si sbriciola un po' di polvere dalle punte
+  st.dust-=dt;if(st.dust<=0&&gap<.05&&dmg>.3){st.dust=.9+Math.random()*1.4;crBurst(st,net,st.show,k*.55,v*71+st.n*13+(now*10|0))}}
+ else st.show=target;
+ const L=st.show,stage=Math.min(CR_STAGES,Math.floor(L*CR_STAGES+1e-6));
+ if(L>0){
+  let size=0,sp=null;
+  if(stage>=1){sp=crSprite(v,stage);if(sp===false)return false;if(sp){size=sp.size*k;ctx.drawImage(sp.c,-size/2,-size/2,size,size)}}
+  crFront(net,sp?stage/CR_STAGES:0,L,k,L);
+  // lampo del colpo e brace che pulsa sulle rocce molto rovinate (più veloce vicino alla rottura)
+  if(sp){const age=now-st.hit,flash=age<.45?(1-age/.45)*.9:0,glow=L>.5?(L-.5)*(.22+.16*Math.sin(now*(4.2+L*6)+v)):0;
+   if(flash+glow>.02){ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=Math.min(1,flash+glow);ctx.drawImage(sp.c,-size/2,-size/2,size,size);ctx.restore()}}
  }
  if(st.parts.length)crParts(st,dt);
  return true;
 }
+
+// ---------------------------------------------------------------- rottura completa
+// Quando la roccia si spacca, la rete di crepe si accende tutta e si apre di colpo: i pezzi volano via
+// (frammenti di game.js / arena.js) lungo le spaccature. Disegnato nel mondo per 0,45 secondi.
+const crShards=[];
+function crShatter(x,y,rad,rot,seed){
+ if(typeof document==='undefined'||!(rad>0))return;
+ const v=((seed|0)%CR_VARIANTS+CR_VARIANTS)%CR_VARIANTS;
+ crShards.push({x,y,rad,rot:rot||0,v,t0:performance.now()/1000});
+ if(crShards.length>12)crShards.splice(0,crShards.length-12);
+}
+function crDrawShatters(){
+ if(!crShards.length)return;
+ const now=performance.now()/1000;let alive=0;
+ for(const s of crShards){
+  const a=(now-s.t0)/.45;if(a>=1||a<0)continue;crShards[alive++]=s;
+  const sp=crSprite(s.v,CR_STAGES);if(!sp)continue;
+  const k=s.rad/CR_REF,size=sp.size*k*(1+a*.55);
+  ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.rot);ctx.globalCompositeOperation='lighter';
+  ctx.globalAlpha=(1-a)*(1-a);ctx.drawImage(sp.c,-size/2,-size/2,size,size);
+  ctx.globalAlpha=(1-a)*.8;ctx.drawImage(sp.c,-size*.6,-size*.6,size*1.2,size*1.2);
+  const dots=crSoftDot();if(dots){const g=s.rad*(1.1+a*1.4);ctx.globalAlpha=(1-a)*.9;ctx.drawImage(dots[0],-g,-g,g*2,g*2)}
+  ctx.restore();
+ }
+ crShards.length=alive;
+}
+if(typeof addEventListener==='function')addEventListener('load',()=>{
+ // gioco in singolo: la roccia distrutta lancia i frammenti (spawnFragments) -> si spacca lungo le crepe
+ if(typeof spawnFragments==='function'){const o=spawnFragments;spawnFragments=function(src){try{if(src&&src.rock){if(src._crv===undefined)src._crv=Math.abs(Math.floor((src.rot||.37)*100003+(src.r||1)*7919));crShatter(src.x,src.y,src.r,src.rot,src._crv)}}catch(e){}return o.apply(this,arguments)}}
+ if(typeof drawShockwaves==='function'){const o=drawShockwaves;drawShockwaves=function(){const r=o.apply(this,arguments);try{crDrawShatters()}catch(e){}return r}}
+ // sfida online
+ if(typeof arRockBreak==='function'){const o=arRockBreak;arRockBreak=function(g,i){const rk=g&&g.rocks&&g.rocks[i],was=rk&&!rk.br;const r=o.apply(this,arguments);
+  try{if(was&&rk.br)crShatter(rk.x,rk.y,rk.r,rk.rot+performance.now()/1000*.03*(i%2?1:-1),rk.v*7+i)}catch(e){}return r}}
+ if(typeof arDrawFrags==='function'){const o=arDrawFrags;arDrawFrags=function(){const r=o.apply(this,arguments);try{crDrawShatters()}catch(e){}return r}}
+});
 
 // gioco in singolo: stessa firma di game.js, il danno resta sempre tra 0 e 1 (vedi correzione del blocco #52)
 if(typeof drawRockCracks==='function'){
