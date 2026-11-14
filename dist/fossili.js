@@ -60,66 +60,86 @@ function fosReady(){
 
 // ---------------------------------------------------------------- disegno dei fossili (una volta sola)
 const FOS_BONE='rgb(226,212,180)',FOS_DARK='rgba(8,6,4,.62)';
+// 11-14 (Fabio: "migliora il disegno dei fossili"): ogni forma si disegna in quattro passate, una volta sola:
+// alone di roccia più chiara scavata, incavo in ombra (sfumato), osso con luce da in alto a sinistra, filo di luce.
+let FW=1,FPASS='osso';
 function fosPaint(g,kind,rnd){
- const K=FOS_KINDS[kind];
- const pass=(col,fn)=>{g.strokeStyle=col;g.fillStyle=col;fn()};
- // prima l'impronta scura (roccia scavata), poi l'osso spostato di poco: sembra in rilievo
- const twice=fn=>{g.save();g.translate(1.8,2.2);pass(FOS_DARK,fn);g.restore();pass(FOS_BONE,fn)};
+ const K=FOS_KINDS[kind],M=Math.max(K.w,K.h);
+ const bone=g.createLinearGradient(-K.w*.5,-K.h*.5,K.w*.5,K.h*.5);
+ bone.addColorStop(0,'#f0dfb8');bone.addColorStop(.45,'#c9ad7c');bone.addColorStop(1,'#7c6244');// osso pietrificato, color ambra
+ const pass=(name,col,w,dx,dy,blur,fn)=>{g.save();FPASS=name;FW=w;g.translate(dx,dy);g.strokeStyle=col;g.fillStyle=col;
+  if(blur){g.shadowColor='rgba(0,0,0,.85)';g.shadowBlur=blur;g.shadowOffsetX=1.5;g.shadowOffsetY=2}fn();g.restore();FW=1;FPASS='osso'};
+ const twice=fn=>{
+  pass('roccia','rgba(150,132,104,.42)',2.7,0,0,0,fn);   // la roccia attorno all'osso, scavata e più chiara
+  pass('incavo','rgba(10,7,4,.8)',1.55,1.6,2,4,fn);       // incavo in ombra (sfumatura disegnata una volta sola nell'immagine)
+  pass('osso',bone,1.1,0,0,0,fn);                         // osso con volume
+  pass('luce','rgba(255,244,214,.6)',.38,-.7,-.9,0,fn);  // filo di luce sul bordo in alto
+ };
  g.lineCap='round';g.lineJoin='round';
- // alone di roccia diversa attorno al fossile
- const gr=g.createRadialGradient(0,0,0,0,0,Math.max(K.w,K.h)*.6);gr.addColorStop(0,'rgba(0,0,0,.22)');gr.addColorStop(.7,'rgba(0,0,0,.1)');gr.addColorStop(1,'rgba(0,0,0,0)');
- g.fillStyle=gr;g.beginPath();g.ellipse(0,0,K.w*.6,K.h*.6,0,0,6.283);g.fill();
+ // lastra di roccia sedimentaria attorno al fossile, di forma irregolare, con granelli
+ const pts=[];for(let i=0;i<14;i++){const a=i/14*6.283,r=.52+rnd()*.12;pts.push([Math.cos(a)*K.w*r,Math.sin(a)*K.h*r])}
+ const gr=g.createRadialGradient(-K.w*.12,-K.h*.15,0,0,0,M*.62);gr.addColorStop(0,'rgba(120,106,86,.42)');gr.addColorStop(.75,'rgba(70,60,48,.3)');gr.addColorStop(1,'rgba(30,26,20,0)');
+ g.fillStyle=gr;g.beginPath();pts.forEach(([x,y],i)=>{const [px,py]=pts[(i+13)%14];i?g.quadraticCurveTo(px,py,(px+x)/2,(py+y)/2):g.moveTo((pts[13][0]+x)/2,(pts[13][1]+y)/2)});g.closePath();g.fill();
+ g.strokeStyle='rgba(0,0,0,.28)';g.lineWidth=1;g.stroke();
+ for(let i=0;i<M*1.1;i++){const a=rnd()*6.283,r=Math.sqrt(rnd())*.5;g.fillStyle=rnd()<.5?'rgba(255,240,210,.12)':'rgba(0,0,0,.18)';g.fillRect(Math.cos(a)*K.w*r,Math.sin(a)*K.h*r,1.1,1.1)}
  if(kind==='ammonite'){
   const turns=3.2,b=.2,r0=2.4,pts=[];for(let t=0;t<=turns*6.283;t+=.12)pts.push([Math.cos(t)*r0*Math.exp(b*t),Math.sin(t)*r0*Math.exp(b*t),t]);
   const sc=(K.w*.46)/(r0*Math.exp(b*turns*6.283));
-  twice(()=>{g.lineWidth=3;g.beginPath();pts.forEach(([x,y],i)=>i?g.lineTo(x*sc,y*sc):g.moveTo(x*sc,y*sc));g.stroke();
-   g.lineWidth=1.3;for(let i=6;i<pts.length;i+=3){const [x,y,t]=pts[i],ri=r0*Math.exp(b*(t-6.283))*sc,r=Math.hypot(x,y)*sc,a=Math.atan2(y,x);g.beginPath();g.moveTo(Math.cos(a)*ri,Math.sin(a)*ri);g.lineTo(Math.cos(a)*r,Math.sin(a)*r);g.stroke()}});
+  twice(()=>{if(FPASS!=='luce'){g.save();g.globalAlpha*=FPASS==='osso'?.45:.5;g.beginPath();g.arc(0,0,K.w*.46,0,6.283);g.fill();g.restore()}// conchiglia piena
+   g.lineWidth=3*FW;g.beginPath();pts.forEach(([x,y],i)=>i?g.lineTo(x*sc,y*sc):g.moveTo(x*sc,y*sc));g.stroke();
+   g.lineWidth=1.3*FW;for(let i=6;i<pts.length;i+=3){const [x,y,t]=pts[i],ri=r0*Math.exp(b*(t-6.283))*sc,r=Math.hypot(x,y)*sc,a=Math.atan2(y,x);g.beginPath();g.moveTo(Math.cos(a)*ri,Math.sin(a)*ri);g.lineTo(Math.cos(a)*r,Math.sin(a)*r);g.stroke()}});
  }else if(kind==='trilobite'){
-  twice(()=>{g.lineWidth=2.4;g.beginPath();g.ellipse(-22,0,13,20,0,Math.PI*.5,Math.PI*1.5);g.stroke();
+  twice(()=>{if(FPASS!=='luce'){g.save();g.globalAlpha*=FPASS==='osso'?.55:.5;g.beginPath();g.ellipse(4,0,30,19,0,0,6.283);g.fill();g.restore()}// corpo pieno
+   g.lineWidth=2.4*FW;g.beginPath();g.ellipse(-22,0,13,20,0,Math.PI*.5,Math.PI*1.5);g.stroke();
    g.beginPath();g.ellipse(-24,0,5,7,0,0,6.283);g.fill();
-   g.lineWidth=2;for(let i=0;i<9;i++){const x=-14+i*5.2,h=19-i*1.5;g.beginPath();g.moveTo(x,-h);g.quadraticCurveTo(x+2.5,0,x,h);g.stroke()}
-   g.lineWidth=1.6;g.beginPath();g.moveTo(-14,-4);g.lineTo(32,-1.5);g.moveTo(-14,4);g.lineTo(32,1.5);g.stroke();
+   g.lineWidth=2*FW;for(let i=0;i<9;i++){const x=-14+i*5.2,h=19-i*1.5;g.beginPath();g.moveTo(x,-h);g.quadraticCurveTo(x+2.5,0,x,h);g.stroke()}
+   g.lineWidth=1.6*FW;g.beginPath();g.moveTo(-14,-4);g.lineTo(32,-1.5);g.moveTo(-14,4);g.lineTo(32,1.5);g.stroke();
    g.beginPath();g.moveTo(31,-6);g.quadraticCurveTo(38,0,31,6);g.stroke()});
  }else if(kind==='pesce'){
-  twice(()=>{g.lineWidth=2.6;g.beginPath();g.moveTo(-44,0);g.quadraticCurveTo(0,-6,44,0);g.stroke();
+  twice(()=>{g.lineWidth=2.6*FW;g.beginPath();g.moveTo(-44,0);g.quadraticCurveTo(0,-6,44,0);g.stroke();
    // cranio
-   g.lineWidth=2;g.beginPath();g.moveTo(-44,0);g.lineTo(-60,-6);g.lineTo(-62,4);g.closePath();g.stroke();
+   g.lineWidth=2*FW;g.beginPath();g.moveTo(-44,0);g.lineTo(-60,-6);g.lineTo(-62,4);g.closePath();g.stroke();
    g.beginPath();g.moveTo(-58,4);g.lineTo(-48,10);g.stroke();
    g.beginPath();g.arc(-52,-2,2.4,0,6.283);g.fill();
    // costole
-   g.lineWidth=1.3;for(let i=0;i<13;i++){const x=-38+i*5.6,y0=-.13*Math.sin((x+44)/88*Math.PI)*12-1,h=18-Math.abs(i-4)*1.3;g.beginPath();g.moveTo(x,y0);g.quadraticCurveTo(x+4,y0-h*.5,x+6,y0-h);g.moveTo(x,y0);g.quadraticCurveTo(x+4,y0+h*.5,x+6,y0+h*.9);g.stroke()}
+   g.lineWidth=1.3*FW;for(let i=0;i<13;i++){const x=-38+i*5.6,y0=-.13*Math.sin((x+44)/88*Math.PI)*12-1,h=18-Math.abs(i-4)*1.3;g.beginPath();g.moveTo(x,y0);g.quadraticCurveTo(x+4,y0-h*.5,x+6,y0-h);g.moveTo(x,y0);g.quadraticCurveTo(x+4,y0+h*.5,x+6,y0+h*.9);g.stroke()}
    // coda
-   g.lineWidth=1.6;for(let i=-3;i<=3;i++){g.beginPath();g.moveTo(44,0);g.lineTo(60,i*5.5);g.stroke()}});
+   g.lineWidth=1.6*FW;for(let i=-3;i<=3;i++){g.beginPath();g.moveTo(44,0);g.lineTo(60,i*5.5);g.stroke()}});
  }else if(kind==='felce'){
-  twice(()=>{g.lineWidth=2;g.beginPath();g.moveTo(0,46);g.quadraticCurveTo(-6,0,6,-46);g.stroke();
-   g.lineWidth=1.3;for(let i=0;i<12;i++){const t=i/12,y=44-t*88,x=-4*Math.sin(t*3)+t*8,l=(1-t)*24+5;
+  twice(()=>{g.lineWidth=2*FW;g.beginPath();g.moveTo(0,46);g.quadraticCurveTo(-6,0,6,-46);g.stroke();
+   g.lineWidth=1.3*FW;for(let i=0;i<12;i++){const t=i/12,y=44-t*88,x=-4*Math.sin(t*3)+t*8,l=(1-t)*24+5;
     g.beginPath();g.ellipse(x-l*.55,y-3,l*.5,2.4,-.5,0,6.283);g.stroke();g.beginPath();g.ellipse(x+l*.55,y-3,l*.5,2.4,.5,0,6.283);g.stroke()}});
  }else if(kind==='cranio'){
-  twice(()=>{g.lineWidth=2.6;g.beginPath();g.moveTo(-40,4);g.bezierCurveTo(-42,-30,-6,-40,18,-30);g.bezierCurveTo(38,-22,44,-4,40,8);g.bezierCurveTo(30,18,10,16,-8,20);g.bezierCurveTo(-24,22,-38,18,-40,4);g.stroke();
+  twice(()=>{g.lineWidth=2.6*FW;g.beginPath();g.moveTo(-40,4);g.bezierCurveTo(-42,-30,-6,-40,18,-30);g.bezierCurveTo(38,-22,44,-4,40,8);g.bezierCurveTo(30,18,10,16,-8,20);g.bezierCurveTo(-24,22,-38,18,-40,4);g.stroke();
+   if(FPASS!=='luce'){g.save();g.globalAlpha*=FPASS==='osso'?.85:.6;g.fill();g.restore()}// cranio pieno, non solo il contorno
    // tre orbite (creatura aliena)
    for(const [x,y,r] of [[-14,-8,7],[4,-14,8],[22,-6,6]]){g.beginPath();g.arc(x,y,r,0,6.283);g.stroke()}
    // mandibola con denti
-   g.lineWidth=2.2;g.beginPath();g.moveTo(-30,22);g.quadraticCurveTo(0,40,34,14);g.stroke();
-   g.lineWidth=1.4;for(let i=0;i<8;i++){const x=-24+i*7;g.beginPath();g.moveTo(x,20+Math.sin(i*.4)*2);g.lineTo(x+2,27+Math.sin(i*.4)*2);g.stroke()}
-   g.lineWidth=1.1;g.beginPath();g.moveTo(-36,-10);g.lineTo(-26,-20);g.moveTo(28,-26);g.lineTo(36,-18);g.stroke()});
+   g.lineWidth=2.2*FW;g.beginPath();g.moveTo(-30,22);g.quadraticCurveTo(0,40,34,14);g.stroke();
+   g.lineWidth=1.4*FW;for(let i=0;i<8;i++){const x=-24+i*7;g.beginPath();g.moveTo(x,20+Math.sin(i*.4)*2);g.lineTo(x+2,27+Math.sin(i*.4)*2);g.stroke()}
+   g.lineWidth=1.1*FW;g.beginPath();g.moveTo(-36,-10);g.lineTo(-26,-20);g.moveTo(28,-26);g.lineTo(36,-18);g.stroke()});
+  // orbite e narici scure e profonde, con un filo di luce sul bordo in basso
+  for(const [x,y,r] of [[-14,-8,6],[4,-14,7],[22,-6,5]]){const q=g.createRadialGradient(x+1,y+1.5,0,x,y,r);q.addColorStop(0,'#050302');q.addColorStop(.8,'#1b140c');q.addColorStop(1,'rgba(60,46,30,.9)');
+   g.fillStyle=q;g.beginPath();g.arc(x,y,r,0,6.283);g.fill();g.strokeStyle='rgba(255,246,222,.5)';g.lineWidth=.7;g.beginPath();g.arc(x,y,r+.4,.3,2.4);g.stroke()}
+  g.fillStyle='#120c06';g.beginPath();g.ellipse(32,6,2.4,4,.4,0,6.283);g.fill();
  }else if(kind==='rettile'){
   // grande scheletro nella "posa della morte": collo piegato all'indietro, coda lunga
   const sp=[];for(let i=0;i<=40;i++){const t=i/40,x=-130+t*270,y=t<.35?-34*Math.sin((.35-t)/.35*Math.PI*.9)-8*(1-t/.35)+8:8*Math.sin((t-.35)*4.4)+(t>.7?(t-.7)*40:0);sp.push([x,y])}
   twice(()=>{
    // vertebre
-   g.lineWidth=2.4;g.beginPath();sp.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.stroke();
+   g.lineWidth=2.4*FW;g.beginPath();sp.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.stroke();
    for(let i=1;i<sp.length;i++){const [x,y]=sp[i],r=i<14?3.2:i<26?4.2:Math.max(1.4,4.2-(i-26)*.2);g.beginPath();g.arc(x,y,r,0,6.283);g.fill()}
    // cranio
-   const [hx,hy]=sp[0];g.lineWidth=2.4;g.beginPath();g.moveTo(hx+4,hy-2);g.lineTo(hx-26,hy-10);g.lineTo(hx-30,hy-2);g.lineTo(hx-4,hy+8);g.closePath();g.stroke();
+   const [hx,hy]=sp[0];g.lineWidth=2.4*FW;g.beginPath();g.moveTo(hx+4,hy-2);g.lineTo(hx-26,hy-10);g.lineTo(hx-30,hy-2);g.lineTo(hx-4,hy+8);g.closePath();g.stroke();
    g.beginPath();g.arc(hx-10,hy-4,3,0,6.283);g.stroke();
-   g.lineWidth=1.2;for(let i=0;i<5;i++){g.beginPath();g.moveTo(hx-28+i*5,hy-1);g.lineTo(hx-27+i*5,hy+3);g.stroke()}
+   g.lineWidth=1.2*FW;for(let i=0;i<5;i++){g.beginPath();g.moveTo(hx-28+i*5,hy-1);g.lineTo(hx-27+i*5,hy+3);g.stroke()}
    // costole
-   g.lineWidth=1.8;for(let i=14;i<25;i++){const [x,y]=sp[i],h=20+Math.sin((i-14)/11*Math.PI)*22;g.beginPath();g.moveTo(x,y);g.bezierCurveTo(x-6,y+h*.4,x-2,y+h*.9,x+6,y+h);g.stroke()}
+   g.lineWidth=1.8*FW;for(let i=14;i<25;i++){const [x,y]=sp[i],h=20+Math.sin((i-14)/11*Math.PI)*22;g.beginPath();g.moveTo(x,y);g.bezierCurveTo(x-6,y+h*.4,x-2,y+h*.9,x+6,y+h);g.stroke()}
    // zampe
-   const leg=(i,dir)=>{const [x,y]=sp[i];g.lineWidth=3;g.beginPath();g.moveTo(x,y+3);g.lineTo(x+dir*14,y+28);g.lineTo(x+dir*4,y+52);g.stroke();g.lineWidth=1.6;g.beginPath();g.moveTo(x+dir*4,y+52);g.lineTo(x+dir*14,y+56);g.moveTo(x+dir*4,y+52);g.lineTo(x+dir*10,y+60);g.moveTo(x+dir*4,y+52);g.lineTo(x-dir*2,y+59);g.stroke()};
+   const leg=(i,dir)=>{const [x,y]=sp[i];g.lineWidth=3*FW;g.beginPath();g.moveTo(x,y+3);g.lineTo(x+dir*14,y+28);g.lineTo(x+dir*4,y+52);g.stroke();g.lineWidth=1.6*FW;g.beginPath();g.moveTo(x+dir*4,y+52);g.lineTo(x+dir*14,y+56);g.moveTo(x+dir*4,y+52);g.lineTo(x+dir*10,y+60);g.moveTo(x+dir*4,y+52);g.lineTo(x-dir*2,y+59);g.stroke()};
    leg(15,-1);leg(17,1);leg(25,-1);leg(27,1);
    // bacino
-   const [px,py]=sp[26];g.lineWidth=2.2;g.beginPath();g.ellipse(px,py+6,10,6,0,0,6.283);g.stroke();
+   const [px,py]=sp[26];g.lineWidth=2.2*FW;g.beginPath();g.ellipse(px,py+6,10,6,0,0,6.283);g.stroke();
   });
  }
  // crepe e granelli nella roccia attorno
@@ -141,7 +161,7 @@ function fosDrawList(st,which,cx,VW){
   const K=FOS_KINDS[f.kind],half=K.w*f.sc/2+20;if(f.x+half<cx||f.x-half>cx+VW)continue;
   const sp=fosSprite(st,f);if(!sp)continue;
   ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.rot);ctx.scale(f.flip?-f.sc:f.sc,f.sc);
-  ctx.globalAlpha=f.where==='ceil'?.7:.85;ctx.drawImage(sp.c,-sp.w/2,-sp.h/2,sp.w,sp.h);
+  ctx.globalAlpha=f.where==='ceil'?.85:1;ctx.drawImage(sp.c,-sp.w/2,-sp.h/2,sp.w,sp.h);
   ctx.restore();
  }
 }
@@ -164,7 +184,7 @@ if(typeof sotDrawCeiling==='function'){
   fosOrigCeil(cx,VW,G,now);
   try{if(st){fosDrawList(st,'ceil',cx,VW);fosNear(st);
    // una luce tenue sui fossili grandi, così si notano anche nel buio della galleria
-   if(G&&G.gfx&&typeof gLight==='function')for(const f of st.list)if(f.big&&f.x>cx-200&&f.x<cx+VW+200)gLight(f.x,f.y,FOS_KINDS[f.kind].w*f.sc*.7,'#d9e6ff',.22)}
+   if(G&&G.gfx&&typeof gLight==='function')for(const f of st.list)if(f.big&&f.x>cx-200&&f.x<cx+VW+200)gLight(f.x,f.y,FOS_KINDS[f.kind].w*f.sc*.75,'#e8ecff',.32)}
   }catch(e){console.error(e)}
  };
 }
