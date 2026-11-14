@@ -8,6 +8,7 @@
 // fanno ombra sotto di sé) e si muovono pianissimo.
 
 const plOrig={drawWorld};
+const PL_RELIEF={ridge:.16,from:.06,light:.8,max:.45,shade:.55,ao:.14};// 11-14 rilievo: altezza creste, da che quota, forza luce/ombra sui pendii, valli più scure
 const PL_CLOUDS={lift:1.018,swing:.035,speed:.06,shadow:.32,shOff:.014};// strato nuvole: quanto sporge, oscillazione (rad), velocità, ombra
 let plCache=null;
 
@@ -62,11 +63,12 @@ function plDpr(){return Math.min(2,Math.max(1,(typeof devicePixelRatio==='number
 
 function plBuildRows(g,budgetMs){
  const t0=performance.now(),{S,img,N,T,land,water,bands,ca,sa,cb,sb,off,coff,storm,L,Hv}=g,d=img.data,cd=g.cimg?g.cimg.data:null,R=S/2,atm=T.atm;
+ if(!g.rowA){g.rowA=new Float32Array(S).fill(NaN);g.rowB=new Float32Array(S).fill(NaN)}
  while(g.row<S){
-  const y=g.row,ny=(y+.5-R)/R;
+  const y=g.row,ny=(y+.5-R)/R,up=g.rowA,cur=g.rowB;
   for(let x=0;x<S;x++){
    const nx=(x+.5-R)/R,q=nx*nx+ny*ny,i=(y*S+x)*4;
-   if(q>1){d[i+3]=0;if(cd)cd[i+3]=0;g.prevH=undefined;continue}
+   if(q>1){d[i+3]=0;if(cd)cd[i+3]=0;g.prevH=undefined;cur[x]=NaN;continue}
    const nz=Math.sqrt(1-q);
    // punto sulla sfera ruotato (posizione dei continenti)
    let px=nx*ca+nz*sa,pz=-nx*sa+nz*ca,py=ny;const py2=py*cb-pz*sb;pz=py*sb+pz*cb;py=py2;
@@ -81,11 +83,20 @@ function plBuildRows(g,budgetMs){
     r=c0[0]+(c1[0]-c0[0])*s;gC=c0[1]+(c1[1]-c0[1])*s;b=c0[2]+(c1[2]-c0[2])*s;
     if(ds<1){const m=(1-ds)*.6;r+=(235-r)*m;gC+=(150-gC)*m;b+=(120-b)*m}
    }else{
-    const h=N.fbm(px*1.7+off[0],py*1.7+off[1],pz*1.7+off[2],9);g.lastH=h;
+    let h=N.fbm(px*1.7+off[0],py*1.7+off[1],pz*1.7+off[2],9);
+    // 11-14: creste montuose (rumore "a cresta") che salgono con la quota, solo sulle terre emerse
+    const sea0=T.sea??0,e0=h-sea0-PL_RELIEF.from;
+    // la luce si calcola su una forma liscia (poche ottave) + creste: pendii puliti, niente puntinato
+    let hs=N.fbm(px*1.7+off[0],py*1.7+off[1],pz*1.7+off[2],6);
+    if(e0>0){const rn=1-Math.abs(N.fbm(px*7+off[2],py*7+off[0],pz*7+off[1],4)*2-1),k=rn*rn*Math.min(1,e0*6);h+=k*PL_RELIEF.ridge*.35;hs+=k*PL_RELIEF.ridge}
+    g.lastH=hs;cur[x]=hs;
+    // pendenza verso sinistra e verso l'alto: luce e ombra come su un plastico (luce da in alto a sinistra)
+    const hl=g.prevH??hs,hu=Number.isNaN(up[x])?hs:up[x],gx=(hs-hl)*S,gy=(hs-hu)*S,
+     rl=(gx*.55+gy*.6)*PL_RELIEF.light,relief=Math.max(-PL_RELIEF.max,Math.min(PL_RELIEF.max,rl<0?rl*PL_RELIEF.shade:rl));
     if(T.lava){
      // crosta di basalto con crepe di lava incandescente
      const cr=1-Math.abs(N.fbm(px*3+off[1],py*3+off[2],pz*3+off[0],5)*2-1),glow=Math.max(0,(cr-.9)/.1)**1.5;
-     const base=28+h*50;r=base+12;gC=base*.8;b=base*.75;
+     const base=(28+h*50)*(1+relief*.8);r=base+12;gC=base*.8;b=base*.75;
      if(h<T.sea){const m=Math.min(1,(T.sea-h)/.05);r+=(255-r)*m*.9;gC+=(120-gC)*m*.8;b+=(30-b)*m*.6;emit=m*.9}
      if(glow>0){r+=(255-r)*glow;gC+=(150-gC)*glow*.9;b+=(40-b)*glow*.5;emit=Math.max(emit,glow)}
     }else if(h<T.sea){
@@ -94,7 +105,7 @@ function plBuildRows(g,budgetMs){
     }else{
      const e=(h-T.sea)/(1-T.sea),c=plRamp(land,e*1.6);r=c[0];gC=c[1];b=c[2];
      // rilievo: luce radente calcolata dalla pendenza rispetto al pixel precedente
-     const sl=Math.max(-.35,Math.min(.35,(h-(g.prevH??h))*S*.9));r*=1-sl;gC*=1-sl;b*=1-sl;
+     const sl=1+relief-(1-Math.min(1,e*3))*PL_RELIEF.ao;r*=sl;gC*=sl;b*=sl;
      const det=N.n3(px*22+off[2],py*22,pz*22)*.16-.08;r*=1+det;gC*=1+det;b*=1+det;
      if(T.dunes){const du=Math.sin((px*40+py*12+N.n3(px*6,py*6,pz*6)*6))*.06;r*=1+du;gC*=1+du;b*=1+du}
     }
@@ -120,7 +131,7 @@ function plBuildRows(g,budgetMs){
    if(!bands)g.prevH=g.lastH;
    d[i]=r>255?255:r;d[i+1]=gC>255?255:gC;d[i+2]=b>255?255:b;d[i+3]=255*edge;
   }
-  g.row++;
+  g.row++;g.rowA=cur;g.rowB=up;
   if(performance.now()-t0>budgetMs)break;
  }
  if(g.row>=S){g.c.putImageData(img,0,0);
