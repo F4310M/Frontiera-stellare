@@ -20,12 +20,15 @@ function slDraw(cx,VW){
  const iw=slImg.naturalWidth,ih=slImg.naturalHeight,k=SL.floor/SL.lake,w=iw*k,h=ih*k;
  // sotto l'immagine (se lo schermo è più alto) il colore scuro del lago
  ctx.fillStyle='#0b3a5c';ctx.fillRect(0,h-2,VW,PF_VH-h+2);
+ // qualità di ridimensionamento bassa (bilineare) come gli strati di grafica2.js: quella alta costava qualche FPS in 4K
+ const q=ctx.imageSmoothingQuality;ctx.imageSmoothingQuality='low';
  const off=((cx*SL.par)%(w*2)+w*2)%(w*2);
  for(let x=-off,i=0;x<VW;x+=w,i++){
   if(x+w<0)continue;
   if(i%2===0)ctx.drawImage(slImg,x,0,w,h);
   else{ctx.save();ctx.translate(x+w,0);ctx.scale(-1,1);ctx.drawImage(slImg,0,0,w,h);ctx.restore()}
  }
+ ctx.imageSmoothingQuality=q;
 }
 if(typeof drawPlatform==='function'){
  const orig=drawPlatform;
