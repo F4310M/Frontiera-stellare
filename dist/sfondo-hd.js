@@ -57,7 +57,31 @@ function shdTexture(kind='roccia'){
 function shdLayerCap(){try{return grfx.p==='ultra'?SHD.resUltra:SHD.resBase}catch(e){return SHD.resBase}}
 // gMakeLayers usa Math.min(1.2,gfx.res): per gli strati si fa vedere una gfx.res "scalata" in modo che il
 // risultato sia Math.min(tetto,gfx.res) (il resto del livello continua a usare la gfx.res vera).
+// Niente strisce piatte fra il terreno e le montagne (2026-11-14 sera, richiesta di Fabio):
+// nel mare gli strati 1-3 avevano lunghi tratti a quota zero (h=max(0,(n-.55)*2.6)) e nel deserto la base
+// delle mesas era bloccata a una quota fissa: con il bordo in luce diventavano una riga chiara su tutto lo
+// schermo. Mentre si costruiscono gli strati, il rumore che decide i profili viene corretto solo lì:
+// i tratti piatti diventano colline basse e ondulate. Il numero di ottave/frequenza riconosce lo strato
+// (gMakeLayers chiama gFbm1p(u,5+k*3,5,...) per il profilo e gFbm1p(u,40,2,...) per la modulazione).
+function shdNoFlat(fn){
+ const id=(pf.theme||pfTheme(pf.p)).id;if(id!=='mare'&&id!=='deserto')return fn();
+ const orig=gFbm1p;
+ gFbm1p=function(u,freq,oct,seed){
+  const n=orig.apply(this,arguments);
+  if(id==='mare'&&oct===5&&freq>5&&freq<=14){// strati 1-3 del mare: altezza minima che ondeggia
+   const hmin=.12+.34*orig(u,19+freq,3,seed+77);return Math.max(n,.55+hmin/2.6);
+  }
+  if(id==='deserto'&&freq===40&&oct===2)return .5+(n-.5)*5;// modulazione più ampia: la base non è più una riga
+  return n;
+ };
+ try{return fn()}finally{gFbm1p=orig}
+}
 if(shdOrig.gMakeLayers)gMakeLayers=function(){
+ const self=this,args=arguments;
+ if(typeof gFbm1p!=='function'||typeof pf==='undefined'||!pf||!pf.p)return shdLayersHD.apply(self,args);
+ return shdNoFlat(()=>shdLayersHD.apply(self,args));
+};
+function shdLayersHD(){
  const cap=shdLayerCap();if(cap<=SHD.resBase||typeof gfx==='undefined'||!gfx)return shdOrig.gMakeLayers.apply(this,arguments);
  const real=gfx.res,want=Math.min(cap,real),k=want/SHD.resBase;
  if(k<=1)return shdOrig.gMakeLayers.apply(this,arguments);
@@ -78,7 +102,7 @@ function shdLayerIndex(par){const P=[.035,.09,.17,.29];let k=0;for(let i=1;i<4;i
 //  fasce (attenuazione della trama scendendo), foschia [colore, alfa] in basso, rim colore del bordo in luce }
 function shdReliefCanvas(c,R,o){
  const w=c.width,h=c.height;if(!w||!h)return false;
- const m=gMat(),sunLeft=m.sunPos[0]<.5,Lx=sunLeft?-.72:.72,Ly=-.69;// verso il sole (in alto)
+ const m=gMat(),sunLeft=m.sunPos[0]<.5,Lx=sunLeft?-.92:.92,Ly=-.38;// verso il sole: luce radente di lato (i bordi orizzontali restano quasi senza riga chiara)
  const t=gCanvas(w,h);if(!t)return false;const tg=t.g,g=c.getContext('2d');
  g.save();g.setTransform(1,0,0,1,0,0);
  // bordo in luce: dove, spostandosi verso il sole, si esce dalla sagoma; ombra dal lato opposto
