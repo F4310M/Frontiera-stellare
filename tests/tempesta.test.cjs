@@ -10,6 +10,7 @@ function pfGroundAt(x){for(const s of pf.solids)if(x>=s.x&&x<s.x+s.w)return s.y;
 function pfUpdatePilot(dt){const P=pf.pilot;if(!P.jetOn)P.x+=P.vx*dt;else P.x+=P.vx*dt}
 var calore=[];function pfUpdateJetpack(P,dt,hold){calore.push(PF_JET.heat)}
 function drawPlatform(){}
+function pfUpdateEnemies(dt){}
 function pfBanner(t){banners.push(t)}function pfStatus(t){stati.push(t)}`,sb);
 vm.runInContext(fs.readFileSync(path.join(dist,'tempesta.js'),'utf8'),sb);
 const run=c=>vm.runInContext(c,sb),step=(n,f)=>{for(let i=0;i<n;i++){if(f)f();run('pfUpdatePilot(1/60)')}};
@@ -29,6 +30,12 @@ run('pf.pilot.jetOn=false');
 // il vento non butta il pilota in un burrone già superato
 run('pf.solids=[{x:0,y:600,w:300},{x:420,y:600,w:2000}];pf.pilot.x=440;pf.pilot.vx=0');
 step(120);assert.ok(run('pf.pilot.x')>=420,'si ferma sul bordo del burrone');
+// anche i nemici vengono spinti indietro (soldati a terra e droni), ma non in un burrone
+run("pf.enemies=[{x:1200,y:600,w:24,hp:50,ground:true,vx:0},{x:460,y:600,w:24,hp:50,ground:true,vx:0},{x:1000,y:300,hp:20,type:'drone'}]");
+for(let i=0;i<60;i++)run('pfUpdateEnemies(1/60)');
+assert.ok(run('pf.enemies[0].x')<1200-150,'il vento spinge il soldato nemico');
+assert.ok(run('pf.enemies[1].x')>=420,'il nemico non cade nel burrone');
+assert.ok(run('pf.enemies[2].x')<1000&&run('pf.enemies[2].x')>run('pf.enemies[0].x')-1000,'il drone è spinto un po\'');
 // col boss o nei sotterranei la tempesta si calma
 run('pf.boss={}');step(60*3);assert.equal(run('pf.tempesta.k'),0,'col boss niente tempesta');
 assert.ok(sb.stati.includes('TEMPESTA · AVANZA SOLO COL JETPACK'));

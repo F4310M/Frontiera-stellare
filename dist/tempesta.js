@@ -14,6 +14,8 @@ const TS={
  dur:[9,12],      // durata della tempesta (piena forza)
  ramp:1.6,        // secondi per salire e per calmarsi
  warn:5,          // secondi di avviso prima (avviso grande sul monitor con il conto alla rovescia)
+ nemici:.85,      // forza del vento sui soldati nemici a terra rispetto al pilota
+ droni:.5,       // e sui droni in volo
  wind:1.3,        // forza del vento rispetto alla corsa del pilota (più di 1 = a piedi si arretra)
  jetHeat:.55,     // il jetpack si scalda così (più piano) durante la tempesta
  streaks:140      // strisce di vento a piena forza su uno schermo grande
@@ -72,6 +74,32 @@ function tsPush(P,dt,k){
  P.x=nx;if(P.vx>0)P.vx*=Math.max(0,1-k*dt*2);
 }
 
+// 2026-11-15 (Fabio): la tempesta spinge indietro anche i nemici. Stesso vento verso ovest:
+// i soldati a terra scivolano (TS.nemici della forza sul pilota), i droni in volo un po' meno.
+// Non li spinge mai in una fossa né dentro un muro.
+function tsPushEnemies(dt,k){
+ if(!(k>0)||!pf||!pf.enemies)return;
+ const base=TS.wind*PF_RUN*k*dt;
+ for(const e of pf.enemies){
+  if(!(e.hp>0)||e.boss)continue;
+  if(e.type==='drone'){e.x-=base*TS.droni;continue}
+  const hw=(e.w||22)/2;let nx=e.x-base*TS.nemici;
+  for(const s of pf.solids)if(e.y>s.y+.5&&e.x-hw>=s.x+s.w-.5&&nx-hw<s.x+s.w&&nx+hw>s.x)nx=Math.max(nx,s.x+s.w+hw);
+  if(e.ground){
+   if(e.onPlat){if(!pf.plats.some(p=>Math.abs(p.y-e.y)<1&&nx+hw>p.x&&nx-hw<p.x+p.w))nx=e.x}
+   else if(pfGroundAt(nx-hw*.5)===null)nx=e.x;
+  }else if(pfGroundAt(nx)===null&&pfGroundAt(e.x)!==null)nx=e.x;
+  if(nx<e.x){e.x=nx;if(e.vx>0)e.vx*=Math.max(0,1-k*dt*2)}
+ }
+}
+if(typeof pfUpdateEnemies==='function'&&typeof PF_RUN!=='undefined'){
+ const orig=pfUpdateEnemies;
+ pfUpdateEnemies=function(dt){
+  const r=orig.apply(this,arguments);
+  try{if(pf&&state==='platform'&&!paused)tsPushEnemies(dt,tsK())}catch(e){}
+  return r;
+ };
+}
 if(typeof pfUpdatePilot==='function'&&typeof PF_RUN!=='undefined'){
  const orig=pfUpdatePilot;
  pfUpdatePilot=function(dt){
