@@ -31,7 +31,7 @@ const SL={
   VESPER:{img:[['vesper-1.jpg',725],['vesper-2.jpg',721],['vesper-3.jpg',736],['vesper-4.jpg',721],['vesper-5.jpg',721],['vesper-6.jpg',721]],
    fluido:null,cielo:'nuvole'},
   NIMBUS:{img:[['nimbus-1.jpg',704],['nimbus-2.jpg',706],['nimbus-3.jpg',741],['nimbus-4.jpg',706],['nimbus-5.jpg',706]],
-   fluido:null,cielo:'neve'},
+   fluido:null,cielo:'neve',contenitori:true},
   KHEPRI:{img:[['khepri-1.jpg',730],['khepri-2.jpg',730],['khepri-3.jpg',684],['khepri-4.jpg',730],['khepri-5.jpg',730]],
    fluido:'cascata',cielo:'spore'},// immagini rifatte da Fabio il 15/11 (città nella giungla, cascata)
   OMEGA:{img:[['omega-1.jpg',713],['omega-2.jpg',713],['omega-3.jpg',713],['omega-4.jpg',713]],
@@ -98,6 +98,13 @@ function slAnalyze(s){
    else if(fl==='lava'){if(r>150&&b>90&&g<120&&r>g+60)a=Math.min(1,(r-g-60)/120)}
    if(a>.05){D[o]=255;D[o+1]=255;D[o+2]=255;D[o+3]=a*255;tot++}}
   m.g.putImageData(md,0,0);if(tot>w*h*.003)an.mask=m.c}}
+ // contenitori azzurri (vetro con liquido luminoso) e luci azzurre: maschera e alone sfumato, fatti una volta
+ if(s.conf.contenitori){const m=slCanvas(w,h);if(m){const md=m.g.createImageData(w,h),D=md.data;let tot=0;
+  // solo il liquido luminoso (azzurro molto saturo e chiaro), non il ghiaccio dei ghiacciai (più pallido, in alto)
+  for(let y=Math.floor(terra*.3);y<terra;y++)for(let x=0;x<w;x++){const o=(y*w+x)*4,r=d[o],g=d[o+1],b=d[o+2];
+   if(b>225&&g>205&&r<150&&b-r>95){const a=Math.min(1,(b-r-95)/60);D[o]=150;D[o+1]=225;D[o+2]=255;D[o+3]=a*255;tot++}}
+  m.g.putImageData(md,0,0);
+  if(tot>30){const sm=slCanvas(w/8,h/8),al=slCanvas(w,h);if(sm&&al){sm.g.drawImage(m.c,0,0,w/8,h/8);al.g.imageSmoothingQuality='high';al.g.drawImage(sm.c,0,0,w,h);al.g.globalCompositeOperation='lighter';al.g.drawImage(al.c,0,0);an.blu=m.c;an.bluAlone=al.c}}}}
  e.an=an;return an;
 }
 
@@ -149,14 +156,13 @@ function slDraw(cx,VW){
    const S=k/an.A;// pixel dell'analisi -> mondo
    if(fluido){const fl=s.conf.fluido;ctx.globalCompositeOperation='lighter';
     ctx.globalAlpha=fl==='lava'?.55:fl==='palude'?.32:fl==='cascata'?.45:.38;ctx.drawImage(fluido,0,0,w,h)}
-   // finestre illuminate (elenco in sfondi-finestre.js, persone già tolte dalle immagini):
-   // la luce pulsa piano; ogni tanto una finestra si spegne per qualche secondo e poi si riaccende
+   // finestre illuminate (elenco in sfondi-finestre.js, persone già tolte dalle immagini): sempre accese,
+   // con un alone ampio che esce dal bordo e la luce interna che pulsano dolcemente (15/11: niente più spegnimenti)
    const fin=typeof SL_FINESTRE!=='undefined'&&SL_FINESTRE[s.file];
-   if(fin&&fin.length){
-    for(let j=0;j<fin.length;j++){const F=fin[j],X=F[0]*k,Y=F[1]*k,FW=F[2]*k,FH=F[3]*k,P=18+(j*7%5)*6,t=(now+j*5.3)%P;
-     if(t<2.6+(j%3)){ctx.globalCompositeOperation='source-over';ctx.globalAlpha=.78*Math.min(1,t*3,(2.6+(j%3)-t)*3);ctx.fillStyle='rgb(26,30,42)';ctx.fillRect(X,Y,FW,FH);continue}
-     ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.25+.22*Math.sin(now*(.9+(j%4)*.25)+j*1.7);
-     ctx.drawImage(spr.finestra,X-FW*.18,Y-FH*.3,FW*1.36,FH*1.6)}
+   if(fin&&fin.length){ctx.globalCompositeOperation='lighter';
+    for(let j=0;j<fin.length;j++){const F=fin[j],X=F[0]*k,Y=F[1]*k,FW=F[2]*k,FH=F[3]*k,p=Math.sin(now*(.7+(j%4)*.18)+j*1.7);
+     ctx.globalAlpha=.3+.14*p;ctx.drawImage(spr.finestra,X-FW*.55-6*k,Y-FH*.9-5*k,FW*2.1+12*k,FH*2.8+10*k);
+     ctx.globalAlpha=.42+.2*p;ctx.drawImage(spr.finestra,X-FW*.16,Y-FH*.28,FW*1.32,FH*1.56)}
    }
    // luci che lampeggiano (alcune respirano piano, altre si accendono e si spengono);
    // dove ci sono le finestre si tengono solo le luci azzurre e rosse (antenne, insegne)
@@ -164,6 +170,9 @@ function slDraw(cx,VW){
    for(let j=0;j<an.luci.length;j++){const L=an.luci[j],ph=j*1.618,blink=j%3===0;if(fin&&fin.length&&L[3]&&j%7!==0)continue;
     const a=blink?(Math.sin(now*2.2+ph*3)>.35?.95:0):.35+.3*Math.sin(now*1.3+ph);if(a<=.02)continue;
     const sz=(blink?11:8)*k,sp=j%7===0?spr.rosso:L[3]?spr.caldo:spr.freddo;ctx.globalAlpha=a;ctx.drawImage(sp,L[0]*S-sz/2,L[1]*S-sz/2,sz,sz)}
+   // contenitori e luci azzurre (NIMBUS): pulsano lentamente di luce azzurra, alone morbido più maschera
+   if(an.blu){ctx.globalCompositeOperation='lighter';const p=Math.sin(now*1.1);
+    ctx.globalAlpha=.4+.3*p;ctx.drawImage(an.bluAlone,0,0,w,h);ctx.globalAlpha=.3+.25*p;ctx.drawImage(an.blu,0,0,w,h)}
    // stelle che brillano
    for(let j=0;j<an.stelle.length;j++){const st=an.stelle[j],a=.5+.5*Math.sin(now*(1.5+j%5*.4)+j);if(a<.3)continue;const sz=6*k*(.6+a*.6);ctx.globalAlpha=a;ctx.drawImage(spr.bianco,st[0]*S-sz/2,st[1]*S-sz/2,sz,sz)}
   }
