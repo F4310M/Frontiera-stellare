@@ -127,7 +127,7 @@
 
  // 2) flora delle nubi / della lava (fase2.js): via lo shadowBlur per frame, sprite al neon
  const isCr=k=>k==='cristallo'||k==='cristallo_fuoco';
- const floraCol=k=>k==='cristallo'?'#b9a6ff':'#ff8a2a';
+ const floraCol=k=>k==='cristallo'?(pf&&pf.theme&&pf.theme.mat==='ghiaccio'?'#d6f4ff':'#b9a6ff'):'#ff8a2a';
  function floraCrystals(){
   const tb=pf&&pf.deco&&pf.deco.themeBack;if(!tb)return null;
   if(tb._crSrc!==tb.flora){tb._crSrc=tb.flora;tb._crRest=tb.flora.filter(f=>!isCr(f.kind));tb._crList=tb.flora.filter(f=>isCr(f.kind))}
