@@ -744,23 +744,10 @@ function sotDrawCrater(pr,now){
  ctx.beginPath();ctx.moveTo(x0-2,ya+2);ctx.lineTo(x1+2,yb+2);ctx.lineTo(x1+2,bot);ctx.lineTo(x0-2,bot);ctx.closePath();
  const C=sotCols(),pat=sotRockPattern(),g=ctx.createLinearGradient(0,top,0,bot);g.addColorStop(0,C.rgb(C.md,1,.55));g.addColorStop(.3,C.rgb(C.d,1,.65));g.addColorStop(1,'#030304');
  ctx.fillStyle=g;ctx.fill();ctx.save();ctx.clip();
- // pareti frastagliate dentro la buca, un po' illuminate dall'alto
- for(const side of [-1,1]){
-  const ex=side<0?x0:x1,ey=side<0?ya:yb;
-  ctx.beginPath();ctx.moveTo(ex,ey);
-  for(let y=ey;y<=bot;y+=16){const k=pfNoise(x0*.37+y*.11+side*13);ctx.lineTo(ex-side*(10+k*20+(y-ey)*.06),y)}
-  ctx.lineTo(ex,bot);ctx.closePath();
-  if(pat){ctx.fillStyle=pat;ctx.fill()}
-  const wg=ctx.createLinearGradient(0,ey,0,ey+170);wg.addColorStop(0,C.rgb(C.md,pat?.35:1,.1));wg.addColorStop(.5,C.rgb(C.d,pat?.7:1,.35));wg.addColorStop(1,'rgba(0,0,0,.95)');
-  ctx.fillStyle=wg;ctx.fill();
-  ctx.strokeStyle=C.rgb(C.l,.25);ctx.lineWidth=1;ctx.stroke();
- }
- // anelli di roccia dentro il tunnel: si stringono scendendo, come un pozzo che va in profondità
- for(let i=0;i<7;i++){
-  const y=top+22+i*i*5.2,k=i/7,inset=10+k*w*.18;
-  ctx.fillStyle=`rgba(0,0,0,${.18+k*.25})`;ctx.fillRect(x0+inset,y,w-inset*2,3+k*3);
-  ctx.strokeStyle=C.rgb(C.l,.16*(1-k));ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x0+inset,y-1);ctx.lineTo(x1-inset,y-1);ctx.stroke();
- }
+ // 2026-11-15 (Fabio): niente pareti o anelli con colori diversi, che facevano righe verticali.
+ // Il pozzo è di un colore unico in tutta la larghezza: roccia del pianeta che scurisce scendendo.
+ if(pat){ctx.globalAlpha=.35;ctx.fillStyle=pat;ctx.fillRect(x0-2,top,w+4,bot-top);ctx.globalAlpha=1;
+  const sc=ctx.createLinearGradient(0,top,0,bot);sc.addColorStop(0,'rgba(0,0,0,0)');sc.addColorStop(.45,'rgba(0,0,0,.55)');sc.addColorStop(1,'rgba(0,0,0,.95)');ctx.fillStyle=sc;ctx.fillRect(x0-2,top,w+4,bot-top)}
  // luce calda della galleria che sale dal fondo
  ctx.globalCompositeOperation='lighter';
  // la scia luminosa che si vede salire dal fondo (da sotto si risale da qui)
@@ -916,22 +903,8 @@ function sotDrawShaft(h,now){
  // fondo del tunnel: buio in basso, luce del giorno in alto
  const g=ctx.createLinearGradient(0,0,0,B);g.addColorStop(0,C.rgb(C.l,1));g.addColorStop(.18,C.rgb(C.md,1,.2));g.addColorStop(.55,C.rgb(C.d,1,.55));g.addColorStop(1,'#0b0b0c');
  ctx.fillStyle=g;ctx.fillRect(h.x0,0,w,B);
- // pareti interne: due fianchi frastagliati che si stringono verso l'alto (prospettiva)
- for(const side of [-1,1]){
-  const ex=side<0?h.x0:h.x1;
-  ctx.beginPath();ctx.moveTo(ex,B);
-  for(let y=B;y>=0;y-=10){const k=pfNoise(h.x0*.31+y*.17+side*7),inset=(1-y/B)*w*.16+6+k*10;ctx.lineTo(ex-side*inset,y)}
-  ctx.lineTo(ex,0);ctx.closePath();
-  if(pat){ctx.fillStyle=pat;ctx.fill()}
-  const wg=ctx.createLinearGradient(ex,0,ex-side*w*.3,0);wg.addColorStop(0,C.rgb(C.d,pat?.75:1,.45));wg.addColorStop(1,C.rgb(C.md,pat?.45:1,.3));ctx.fillStyle=wg;ctx.fill();
- }
- // anelli di strati di roccia (danno profondità al tunnel)
- ctx.lineWidth=1.5;
- for(let i=0;i<6;i++){
-  const y=B-12-i*(B/7),k=1-y/B,half=w/2-((1-y/B)*w*.16+10);
-  ctx.strokeStyle=i%2?'rgba(0,0,0,.45)':C.rgb(C.l,.1+k*.15);
-  ctx.beginPath();ctx.ellipse(cx,y,Math.max(8,half),3+k*2,0,0,Math.PI);ctx.stroke();
- }
+ // 2026-11-15: tunnel di un colore unico (niente fianchi più chiari/scuri che facevano righe verticali)
+ if(pat){ctx.globalAlpha=.35;ctx.fillStyle=pat;ctx.fillRect(h.x0,0,w,B);ctx.globalAlpha=1}
  // luce del giorno che scende
  ctx.globalCompositeOperation='lighter';
  const sun=ctx.createLinearGradient(0,0,0,B+30);sun.addColorStop(0,C.rgb(gMixS(C.l,[255,255,255],.3),.34));sun.addColorStop(1,C.rgb(C.l,0));
