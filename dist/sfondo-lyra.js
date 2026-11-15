@@ -12,8 +12,8 @@
 // ctx.filter o gradienti a tutto schermo a ogni fotogramma):
 // - luci di finestre e antenne che lampeggiano: trovate da sole nell'immagine quando si carica
 //   (piccoli punti chiari caldi o azzurri sopra la riga del terreno);
-// - acqua, palude, cascate e lava che si muovono: le zone vengono trovate dal colore (lago azzurro,
-//   palude verde fluorescente, vene di lava magenta) e sopra scorre una trama di riflessi/colata;
+// - acqua, cascate e lava che si muovono: le zone vengono trovate dal colore (lago azzurro,
+//   cascate bianco-azzurre, palude verde fluorescente, vene di lava magenta) e sopra scorre una trama di riflessi/colata;
 //   la lava pulsa anche di luce;
 // - cielo vivo: nuvole che scorrono lente; su NIMBUS la neve, su OMEGA stelle che brillano,
 //   su KHEPRI spore luminose che salgono, su LYRA navette che attraversano il cielo.
@@ -32,8 +32,8 @@ const SL={
    fluido:null,cielo:'nuvole'},
   NIMBUS:{img:[['nimbus-1.jpg',704],['nimbus-2.jpg',706],['nimbus-3.jpg',741],['nimbus-4.jpg',706],['nimbus-5.jpg',706]],
    fluido:null,cielo:'neve'},
-  KHEPRI:{img:[['khepri-1.jpg',800],['khepri-2.jpg',800],['khepri-3.jpg',780]],
-   fluido:'palude',cielo:'spore'},
+  KHEPRI:{img:[['khepri-1.jpg',730],['khepri-2.jpg',730],['khepri-3.jpg',684],['khepri-4.jpg',730],['khepri-5.jpg',730]],
+   fluido:'cascata',cielo:'spore'},// immagini rifatte da Fabio il 15/11 (città nella giungla, cascata)
   OMEGA:{img:[['omega-1.jpg',713],['omega-2.jpg',713],['omega-3.jpg',713],['omega-4.jpg',713]],
    fluido:'lava',cielo:'stelle'}
  }
@@ -93,6 +93,7 @@ function slAnalyze(s){
  if(fl){const m=slCanvas(w,h);if(m){const md=m.g.createImageData(w,h),D=md.data;let tot=0;
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){const o=(y*w+x)*4,r=d[o],g=d[o+1],b=d[o+2];let a=0;
    if(fl==='acqua'){if(y>terra-150*A&&y<terra+2&&b>150&&b>r+50&&g>110)a=Math.min(1,(b-r-50)/90)}
+   else if(fl==='cascata'){if(y<terra+2&&b>165&&g>165&&b>r+20)a=Math.min(1,(b-r-20)/70)}
    else if(fl==='palude'){if(g>140&&g>r+15&&g>b+40&&r>70)a=Math.min(1,(g-b-40)/110)}
    else if(fl==='lava'){if(r>150&&b>90&&g<120&&r>g+60)a=Math.min(1,(r-g-60)/120)}
    if(a>.05){D[o]=255;D[o+1]=255;D[o+2]=255;D[o+3]=a*255;tot++}}
@@ -129,10 +130,10 @@ function slDraw(cx,VW){
  let fluido=null;
  if(an&&an.mask){
   if(!s.fx)s.fx=slCanvas(an.w,an.h);
-  const f=s.fx,fl=s.conf.fluido,tex=fl==='lava'?spr.strie:spr.trama;
+  const f=s.fx,fl=s.conf.fluido,tex=fl==='lava'||fl==='cascata'?spr.strie:spr.trama;
   if(f&&tex){const g=f.g;g.globalCompositeOperation='source-over';g.globalAlpha=1;g.clearRect(0,0,an.w,an.h);
    const pat=g.createPattern(tex,'repeat');
-   if(pat){const dx=fl==='acqua'?now*14:fl==='lava'?now*4:now*6,dy=fl==='lava'?now*9:fl==='palude'?now*16:0;
+   if(pat){const dx=fl==='acqua'?now*14:fl==='lava'?now*4:now*6,dy=fl==='lava'?now*9:fl==='cascata'?now*46:fl==='palude'?now*16:0;
     if(pat.setTransform&&typeof DOMMatrix==='function')pat.setTransform(new DOMMatrix().translate(dx%256,dy%256));
     g.fillStyle=pat;g.fillRect(0,0,an.w,an.h);
     if(fl==='lava'){g.globalAlpha=.35+.25*Math.sin(now*1.7);g.drawImage(an.mask,0,0);g.globalAlpha=1}// la lava pulsa
@@ -147,7 +148,7 @@ function slDraw(cx,VW){
   if(an){
    const S=k/an.A;// pixel dell'analisi -> mondo
    if(fluido){const fl=s.conf.fluido;ctx.globalCompositeOperation='lighter';
-    ctx.globalAlpha=fl==='lava'?.55:fl==='palude'?.32:.38;ctx.drawImage(fluido,0,0,w,h)}
+    ctx.globalAlpha=fl==='lava'?.55:fl==='palude'?.32:fl==='cascata'?.45:.38;ctx.drawImage(fluido,0,0,w,h)}
    // finestre illuminate (elenco in sfondi-finestre.js, persone già tolte dalle immagini):
    // la luce pulsa piano; ogni tanto una finestra si spegne per qualche secondo e poi si riaccende
    const fin=typeof SL_FINESTRE!=='undefined'&&SL_FINESTRE[s.file];
