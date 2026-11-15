@@ -158,16 +158,20 @@ function nbSprite(){
   gr.addColorStop(0,'rgba(130,255,110,.55)');gr.addColorStop(.5,'rgba(80,200,70,.28)');gr.addColorStop(1,'rgba(40,120,40,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);nbPuff=c}catch(e){nbPuff=false}
  return nbPuff;
 }
+// la nebbia si disegna in una piccola immagine (1/8 dello schermo) e poi si stende su tutto lo schermo con una sola copia:
+// a tutto schermo in 4K le nuvole grandi costavano parecchi FPS
+let nbBuf=null;
 function nbDraw(){
  const k=nbK();if(!(k>.01))return;const sp=nbSprite();
- ctx.save();ctx.setTransform(1,0,0,1,0,0);
- const cw=ctx.canvas.width,ch=ctx.canvas.height,now=performance.now()/1000;
- ctx.globalAlpha=.2*k;ctx.fillStyle='#3fa83a';ctx.fillRect(0,0,cw,ch);
+ const cw=ctx.canvas.width,ch=ctx.canvas.height,bw=Math.max(64,Math.round(cw/8)),bh=Math.max(36,Math.round(ch/8));
+ try{if(!nbBuf||nbBuf.c.width!==bw||nbBuf.c.height!==bh){const c=document.createElement('canvas');c.width=bw;c.height=bh;nbBuf={c,g:c.getContext('2d')}}}catch(e){return}
+ const g=nbBuf.g,now=performance.now()/1000;
+ g.globalAlpha=1;g.clearRect(0,0,bw,bh);g.fillStyle='rgba(63,168,58,.2)';g.fillRect(0,0,bw,bh);
  if(sp){for(let i=0;i<NB.puffs;i++){
-  const sx=(i*0.618)%1,sy=((i*0.377)%1)*.8+.15,r=ch*(.22+((i*7)%5)*.05);
-  const x=((sx*(cw+2*r)+now*(18+i*3)*(i%2?1:-1))%(cw+2*r)+cw+2*r)%(cw+2*r)-r,y=sy*ch+Math.sin(now*.5+i)*ch*.03;
-  ctx.globalAlpha=k*(.5+.3*Math.sin(now*.7+i*1.3));ctx.drawImage(sp,x-r,y-r,r*2,r*2)}}
- ctx.restore();
+  const sx=(i*0.618)%1,sy=((i*0.377)%1)*.8+.15,r=bh*(.22+((i*7)%5)*.05);
+  const x=((sx*(bw+2*r)+now*(18+i*3)/8*(i%2?1:-1))%(bw+2*r)+bw+2*r)%(bw+2*r)-r,y=sy*bh+Math.sin(now*.5+i)*bh*.03;
+  g.globalAlpha=.5+.3*Math.sin(now*.7+i*1.3);g.drawImage(sp,x-r,y-r,r*2,r*2)}}
+ ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=k;ctx.imageSmoothingQuality='low';ctx.drawImage(nbBuf.c,0,0,cw,ch);ctx.restore();
 }
 
 // ---------------------------------------------------------------- grafica
