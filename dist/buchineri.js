@@ -8,7 +8,8 @@
 // poi solo drawImage ruotato (niente ctx.filter né shadowBlur sul canvas principale).
 // Va caricato dopo spazio.js e i18n.js (index.html: dopo speciale.js).
 
-const BH_CFG={ // 11-11: gravità ridotta del 10%; 11-14: sulla nave del pilota -20% (si riesce a fuggire)
+const BH_CFG={spiral:6.5,spiralSpeed:.9,// 11-15: onde a spirale (raggio in raggi dell'orizzonte, velocità di rotazione verso il centro)
+ // 11-11: gravità ridotta del 10%; 11-14: sulla nave del pilota -20% (si riesce a fuggire)
  chance:d=>Math.min(.95,.45+.13*d),      // probabilità che in una missione compaiano buchi neri (1: 58%, 5: 95%)
  first:d=>[12+(5-d)*3,24+(5-d)*5],       // secondi prima del primo
  next:d=>[70/(.6+.25*d),110/(.6+.25*d)], // secondi tra uno e il successivo
@@ -215,7 +216,21 @@ function bhMakeGfx(){
  g=shade.g;gr=g.createRadialGradient(128,128,0,128,128,128);
  gr.addColorStop(0,'rgba(0,0,0,.95)');gr.addColorStop(.3,'rgba(0,0,4,.7)');gr.addColorStop(.65,'rgba(4,0,12,.25)');gr.addColorStop(1,'rgba(0,0,0,0)');
  g.fillStyle=gr;g.fillRect(0,0,256,256);
- return{disk:disk.c,halo:halo.c,shade:shade.c};
+ // 11-15 (Fabio): onde gravitazionali a spirale (luce morbida, disegnata una volta sola; ruotando sembra che scorra verso il centro)
+ const spi=bhCanvas(512,512);
+ if(spi){g=spi.g;const C=256,arms=3,inR=30,outR=250;g.globalCompositeOperation='lighter';g.lineCap='round';
+  for(let arm=0;arm<arms;arm++){
+   for(const [w,a] of [[34,.035],[20,.06],[10,.09],[4,.12]]){
+    g.lineWidth=w;
+    for(let r=inR;r<outR;r+=3){
+     const t0=Math.log(r/inR)*2.1+arm*6.283/arms,t1=Math.log((r+3.4)/inR)*2.1+arm*6.283/arms,k=(r-inR)/(outR-inR),fade=Math.sin(Math.PI*Math.min(1,k*1.15))**1.2;
+     g.strokeStyle=`rgba(${Math.round(150+105*(1-k))},${Math.round(170+60*(1-k))},255,${a*fade})`;
+     g.beginPath();g.moveTo(C+Math.cos(t0)*r,C+Math.sin(t0)*r);g.lineTo(C+Math.cos(t1)*(r+3.4),C+Math.sin(t1)*(r+3.4));g.stroke();
+    }
+   }
+  }
+ }
+ return{disk:disk.c,halo:halo.c,shade:shade.c,spirale:spi?spi.c:null};
 }
 function bhGfx(){if(BH.gfx===null)BH.gfx=bhMakeGfx()||false;return BH.gfx||null}
 
@@ -241,6 +256,10 @@ function bhDraw(){
  }
  // ombra
  const sh=R*4.2;ctx.drawImage(G.shade,-sh,-sh,sh*2,sh*2);
+ // onde gravitazionali: la spirale gira, così le onde sembrano andare dall'esterno verso il buco
+ if(G.spirale){const SR=R*BH_CFG.spiral,now=performance.now()/1000;
+  ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.55+flash*.3+.12*Math.sin(now*1.7);
+  ctx.rotate(h.tilt);ctx.scale(1,.62);ctx.rotate(now*BH_CFG.spiralSpeed);ctx.drawImage(G.spirale,-SR,-SR,SR*2,SR*2);ctx.restore()}
  ctx.rotate(h.tilt);
  const D=R*BH_DISK,big=D*1.2;
  // metà del disco dietro il buco
