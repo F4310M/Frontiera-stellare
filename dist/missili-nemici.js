@@ -9,14 +9,18 @@ drawTargetLock=function(){
  const r=t.r+15+(1-p)*15+beat*5;
  ctx.save();ctx.strokeStyle=locked?(blink?'#ff6a4d':'#ffb567'):'#8ce9ec';ctx.fillStyle=ctx.strokeStyle;
  ctx.lineWidth=locked?2+beat:1.5;ctx.globalAlpha=locked?.55+.45*beat:.85;
- if(locked){ctx.shadowBlur=10+beat*10;ctx.shadowColor=ctx.strokeStyle}
+ // alone luminoso senza shadowBlur (pesante a ogni fotogramma): gli stessi tratti più larghi e trasparenti sotto
+ const tratti=()=>{ctx.beginPath();for(const sx of [-1,1])for(const sy of [-1,1]){ctx.moveTo(x+sx*r,y+sy*(r-10));ctx.lineTo(x+sx*r,y+sy*r);ctx.lineTo(x+sx*(r-10),y+sy*r)}ctx.moveTo(x+(r+6)*Math.cos(-Math.PI/2),y+(r+6)*Math.sin(-Math.PI/2));ctx.arc(x,y,r+6,-Math.PI/2,-Math.PI/2+p*Math.PI*2)};
+ if(locked){const a0=ctx.globalAlpha,w0=ctx.lineWidth,glow=10+beat*10;ctx.lineCap='round';ctx.lineJoin='round';tratti();
+  ctx.globalAlpha=a0*.14;ctx.lineWidth=w0+glow*.5;ctx.stroke();
+  ctx.globalAlpha=a0;ctx.lineWidth=w0;ctx.lineCap='butt';ctx.lineJoin='miter'}
  ctx.beginPath();for(const sx of [-1,1])for(const sy of [-1,1]){ctx.moveTo(x+sx*r,y+sy*(r-10));ctx.lineTo(x+sx*r,y+sy*r);ctx.lineTo(x+sx*(r-10),y+sy*r)}ctx.stroke();
  ctx.beginPath();ctx.arc(x,y,r+6,-Math.PI/2,-Math.PI/2+p*Math.PI*2);ctx.stroke();
  if(locked){// onda che si allarga dal bersaglio
   const w=(now*1.6)%1;ctx.globalAlpha=(1-w)*.6;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y,r+6+w*26,0,Math.PI*2);ctx.stroke();
   ctx.globalAlpha=1;ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);ctx.fill();
  }
- ctx.globalAlpha=locked?(blink?1:.45):.85;ctx.shadowBlur=0;
+ ctx.globalAlpha=locked?(blink?1:.45):.85;
  ctx.font='10px "Chakra Petch",sans-serif';ctx.textAlign='center';ctx.fillText(locked?'AGGANCIATO':'AGGANCIO',x,y-r-14);
  ctx.restore();
 };

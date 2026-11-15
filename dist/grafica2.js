@@ -299,11 +299,12 @@ function gSolidCache(sd){
  for(let i=0;i<sd.w/55;i++){const bx=x0+rnd()*sd.w,by=y+30+rnd()*150,br=6+rnd()*16,c=gMix(m.mid,m.light,.3+rnd()*.4),gr=g.createRadialGradient(bx-br*.35,by-br*.4,1,bx,by,br*1.1);gr.addColorStop(0,gRgb(gMix(c,[255,255,255],.18)));gr.addColorStop(.7,gRgb(c));gr.addColorStop(1,gRgb(gMix(c,[0,0,0],.5)));g.fillStyle=gr;g.beginPath();for(let j=0;j<7;j++){const a=j/7*6.28,rr=br*(.75+gHash(i*7+j+Math.floor(bx))*.35);g.lineTo(bx+Math.cos(a)*rr,by+Math.sin(a)*rr*.75)}g.closePath();g.fill();g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=1;g.stroke()}
  // dettagli del tema dentro la roccia
  if(id==='foresta'){g.lineCap='round';for(let i=0;i<sd.w/40;i++){let rx=x0+rnd()*sd.w,ry=y+6;g.strokeStyle=gRgb(gMix([58,40,24],[120,90,56],rnd()),.85);g.lineWidth=3+rnd()*3;g.beginPath();g.moveTo(rx,ry);for(let j=0;j<5;j++){rx+=(rnd()-.5)*26;ry+=10+rnd()*16;g.lineTo(rx,ry);g.lineWidth*=.8}g.stroke()}}
- if(id==='deserto'){for(let i=0;i<sd.w/300;i++){const fx=x0+40+rnd()*(sd.w-80),fy=y+70+rnd()*80;g.strokeStyle='rgba(245,225,185,.45)';g.lineWidth=1.5;g.beginPath();for(let a=0;a<12;a+=.3){const r=a*1.6;g.lineTo(fx+Math.cos(a)*r,fy+Math.sin(a)*r)}g.stroke()}}
+ // 2026-11-15: le spirali disegnate sono sostituite dai fossili di Fabio (immagini-terra.js)
+ if(false&&id==='deserto'){for(let i=0;i<sd.w/300;i++){const fx=x0+40+rnd()*(sd.w-80),fy=y+70+rnd()*80;g.strokeStyle='rgba(245,225,185,.45)';g.lineWidth=1.5;g.beginPath();for(let a=0;a<12;a+=.3){const r=a*1.6;g.lineTo(fx+Math.cos(a)*r,fy+Math.sin(a)*r)}g.stroke()}}
  if(id==='mare'){for(let i=0;i<sd.w/24;i++){const bx=x0+rnd()*sd.w,by=y+8+rnd()*40;g.fillStyle='rgba(230,240,235,.55)';g.beginPath();g.arc(bx,by,1.5+rnd()*2.5,0,6.28);g.fill();g.fillStyle='rgba(40,60,60,.6)';g.beginPath();g.arc(bx,by,.8,0,6.28);g.fill()}}
  if(id==='lava'){g.save();g.lineCap='round';for(let i=0;i<sd.w/70;i++){let cx=x0+rnd()*sd.w,cy=y+4;g.strokeStyle='rgba(255,140,50,.85)';g.shadowBlur=10;g.shadowColor='#ff5a1f';g.lineWidth=1+rnd()*1.8;g.beginPath();g.moveTo(cx,cy);for(let j=0;j<6;j++){cx+=(rnd()-.5)*24;cy+=8+rnd()*14;g.lineTo(cx,cy)}g.stroke()}g.restore()}
  if(id==='tempesta'){
-  const crystal=pf.theme.mat==='abisso'?['#ff9eba','#9b2452']:['#d6c8ff','#6a54c8'];
+  const crystal=pf.theme.mat==='abisso'?['#ff9eba','#9b2452']:pf.theme.mat==='ghiaccio'?['#f2fcff','#6fb0d8']:['#d6c8ff','#6a54c8'];
   for(let i=0;i<sd.w/90;i++)gCrystal(g,x0+rnd()*sd.w,y+30+rnd()*140,6+rnd()*12,rnd()*6.28,crystal);
  }
  // ombre: profondità, occlusione sotto il bordo e ai lati
@@ -367,7 +368,7 @@ function gSurface(g,sd,m,id,rnd){
   for(let x=x0+6;x<x1-6;x+=9+rnd()*14){g.fillStyle=gRgb(gMix(m.top2,[0,0,0],rnd()*.4));g.beginPath();g.moveTo(x-4,y+1);g.lineTo(x-1,y-3-rnd()*3);g.lineTo(x+4,y+1);g.fill()}g.restore();
  }else{
   g.save();g.lineCap='round';for(let x=x0+2;x<x1-2;x+=3){const h=2+gHash(Math.floor(x*11))*5;g.strokeStyle=gRgb(gMix(m.lip,m.top2,gHash(Math.floor(x*4))));g.lineWidth=1.5;g.beginPath();g.moveTo(x,y+2);g.lineTo(x+1,y-h);g.stroke()}g.restore();
-  for(let x=x0+30;x<x1-30;x+=60+rnd()*90)if(rnd()<.6)gCrystal(g,x,y+1,5+rnd()*5,(rnd()-.5)*.5,['#efe8ff','#7a62d8']);
+  for(let x=x0+30;x<x1-30;x+=60+rnd()*90)if(rnd()<.6)gCrystal(g,x,y+1,5+rnd()*5,(rnd()-.5)*.5,pf.theme.mat==='ghiaccio'?['#f2fcff','#6fb0d8']:['#efe8ff','#7a62d8']);
  }
  if(id==='foresta'||id==='mare')for(let x=x0+25;x<x1-25;x+=70+rnd()*85){
   const height=9+rnd()*11,lean=(rnd()-.5)*9;

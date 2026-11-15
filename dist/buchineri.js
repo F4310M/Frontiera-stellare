@@ -8,7 +8,8 @@
 // poi solo drawImage ruotato (niente ctx.filter né shadowBlur sul canvas principale).
 // Va caricato dopo spazio.js e i18n.js (index.html: dopo speciale.js).
 
-const BH_CFG={ // 11-11: gravità ridotta del 10%
+const BH_CFG={spiral:6.5,spiralSpeed:.9,// 11-15: onde a spirale (raggio in raggi dell'orizzonte, velocità di rotazione verso il centro)
+ // 11-11: gravità ridotta del 10%; 11-14: sulla nave del pilota -20% (si riesce a fuggire)
  chance:d=>Math.min(.95,.45+.13*d),      // probabilità che in una missione compaiano buchi neri (1: 58%, 5: 95%)
  first:d=>[12+(5-d)*3,24+(5-d)*5],       // secondi prima del primo
  next:d=>[70/(.6+.25*d),110/(.6+.25*d)], // secondi tra uno e il successivo
@@ -17,6 +18,7 @@ const BH_CFG={ // 11-11: gravità ridotta del 10%
  drift:[27,288],                         // senza post-bruciatore: velocità minima verso il centro (bordo → centro)
  pull:[99,702],pullBoost:[54,450],swirl:.42,
  fallSpeed:[36,558],planetGap:700,swallow:.95,
+ player:.8,                             // 11-14: quanto il buco nero tira la nave del pilota rispetto al resto
  swallowEnemy:1.1,capture:.9            // navi nemiche: durata della spirale e raggio di cattura (in raggi dell'orizzonte)
 };
 const BH={sw:[],hole:null,timer:0,on:false,inside:false,was:false,warned:false,hum:0,hint:0,eaten:0,motes:[],gfx:null};
@@ -96,11 +98,11 @@ function bhPullPlayer(h,dt){
  BH.inside=true;BH.was=true;
  const ux=d?dx/d:Math.cos(player.angle),uy=d?dy/d:Math.sin(player.angle),boost=player.boostState==='active',q=1-d/h.reach;
  if(!BH.warned){BH.warned=true;status('ANOMALIA GRAVITAZIONALE · USA IL POST-BRUCIATORE',3600);tone(70,.9,'sawtooth',.03,40)}
- const a=bhAccel(h,d,boost?BH_CFG.pullBoost:BH_CFG.pull);
+ const a=bhAccel(h,d,boost?BH_CFG.pullBoost:BH_CFG.pull)*BH_CFG.player;
  player.vx+=(ux-uy*BH_CFG.swirl*.5)*a*dt;player.vy+=(uy+ux*BH_CFG.swirl*.5)*a*dt;
  if(!boost){
   // senza post-bruciatore i motori normali non bastano: la nave scivola sempre verso il centro
-  const drift=h.k*(BH_CFG.drift[0]+(BH_CFG.drift[1]-BH_CFG.drift[0])*q*q),vr=player.vx*ux+player.vy*uy;
+  const drift=BH_CFG.player*h.k*(BH_CFG.drift[0]+(BH_CFG.drift[1]-BH_CFG.drift[0])*q*q),vr=player.vx*ux+player.vy*uy;
   if(vr<drift){player.vx+=ux*(drift-vr);player.vy+=uy*(drift-vr)}
   BH.hint-=dt;
   if(BH.hint<=0&&(player.forward||player.strafe)&&h.k>.5){BH.hint=5;status('SOLO IL POST-BRUCIATORE PUÒ SFUGGIRE AL BUCO NERO',2000)}
@@ -204,24 +206,31 @@ function bhMakeGfx(){
  gr.addColorStop(0,'rgba(255,250,235,0)');gr.addColorStop(.02,'rgba(255,248,225,.95)');gr.addColorStop(.12,'rgba(255,214,140,.85)');
  gr.addColorStop(.32,'rgba(255,138,60,.55)');gr.addColorStop(.58,'rgba(196,60,90,.28)');gr.addColorStop(.82,'rgba(110,50,170,.12)');gr.addColorStop(1,'rgba(60,30,120,0)');
  g.fillStyle=gr;g.beginPath();g.arc(R,R,R,0,6.283);g.arc(R,R,inner,0,6.283,true);g.fill();
- // filamenti di gas che girano
- g.globalCompositeOperation='lighter';g.lineCap='round';
- for(let i=0;i<190;i++){
-  const k=Math.pow(Math.random(),1.6),r=inner+(R-inner)*k,a=Math.random()*6.283,len=.25+Math.random()*(1.2-k*.6);
-  const hot=1-k;g.strokeStyle=`rgba(255,${Math.round(150+hot*100)},${Math.round(90+hot*140)},${(.05+Math.random()*.22)*(1-k*.7)})`;
-  g.lineWidth=.8+Math.random()*2.6*(1-k*.5);g.beginPath();g.arc(R,R,r,a,a+len);g.stroke();
- }
- for(let i=0;i<40;i++){const r=inner+(R-inner)*Math.random()*.5,a=Math.random()*6.283;g.fillStyle='rgba(255,245,220,.5)';g.beginPath();g.arc(R+Math.cos(a)*r,R+Math.sin(a)*r,.8+Math.random()*1.4,0,6.283);g.fill()}
+ // 11-15 (Fabio): niente filamenti o puntini, solo luce morbida del disco
  // alone: anello di fotoni + bagliore morbido (si disegna in 'lighter')
  g=halo.g;gr=g.createRadialGradient(128,128,0,128,128,128);
- gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(.36,'rgba(0,0,0,0)');gr.addColorStop(.385,'rgba(255,236,200,.95)');gr.addColorStop(.42,'rgba(255,180,110,.45)');
- gr.addColorStop(.6,'rgba(200,110,255,.14)');gr.addColorStop(1,'rgba(120,80,255,0)');
+ gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(.33,'rgba(0,0,0,0)');gr.addColorStop(.4,'rgba(255,226,180,.6)');gr.addColorStop(.5,'rgba(255,170,100,.32)');
+ gr.addColorStop(.7,'rgba(200,110,255,.12)');gr.addColorStop(1,'rgba(120,80,255,0)');// bagliore morbido, senza anello netto
  g.fillStyle=gr;g.fillRect(0,0,256,256);
  // ombra: lo spazio intorno si scurisce (la luce delle stelle viene deviata)
  g=shade.g;gr=g.createRadialGradient(128,128,0,128,128,128);
  gr.addColorStop(0,'rgba(0,0,0,.95)');gr.addColorStop(.3,'rgba(0,0,4,.7)');gr.addColorStop(.65,'rgba(4,0,12,.25)');gr.addColorStop(1,'rgba(0,0,0,0)');
  g.fillStyle=gr;g.fillRect(0,0,256,256);
- return{disk:disk.c,halo:halo.c,shade:shade.c};
+ // 11-15 (Fabio): onde gravitazionali a spirale (luce morbida, disegnata una volta sola; ruotando sembra che scorra verso il centro)
+ const spi=bhCanvas(512,512);
+ if(spi){g=spi.g;const C=256,arms=3,inR=30,outR=250;g.globalCompositeOperation='lighter';g.lineCap='round';
+  for(let arm=0;arm<arms;arm++){
+   for(const [w,a] of [[34,.035],[20,.06],[10,.09],[4,.12]]){
+    g.lineWidth=w;
+    for(let r=inR;r<outR;r+=3){
+     const t0=Math.log(r/inR)*2.1+arm*6.283/arms,t1=Math.log((r+3.4)/inR)*2.1+arm*6.283/arms,k=(r-inR)/(outR-inR),fade=Math.sin(Math.PI*Math.min(1,k*1.15))**1.2;
+     g.strokeStyle=`rgba(${Math.round(150+105*(1-k))},${Math.round(170+60*(1-k))},255,${a*fade})`;
+     g.beginPath();g.moveTo(C+Math.cos(t0)*r,C+Math.sin(t0)*r);g.lineTo(C+Math.cos(t1)*(r+3.4),C+Math.sin(t1)*(r+3.4));g.stroke();
+    }
+   }
+  }
+ }
+ return{disk:disk.c,halo:halo.c,shade:shade.c,spirale:spi?spi.c:null};
 }
 function bhGfx(){if(BH.gfx===null)BH.gfx=bhMakeGfx()||false;return BH.gfx||null}
 
@@ -247,6 +256,10 @@ function bhDraw(){
  }
  // ombra
  const sh=R*4.2;ctx.drawImage(G.shade,-sh,-sh,sh*2,sh*2);
+ // onde gravitazionali: la spirale gira, così le onde sembrano andare dall'esterno verso il buco
+ if(G.spirale){const SR=R*BH_CFG.spiral,now=performance.now()/1000;
+  ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.55+flash*.3+.12*Math.sin(now*1.7);
+  ctx.rotate(h.tilt);ctx.scale(1,.62);ctx.rotate(now*BH_CFG.spiralSpeed);ctx.drawImage(G.spirale,-SR,-SR,SR*2,SR*2);ctx.restore()}
  ctx.rotate(h.tilt);
  const D=R*BH_DISK,big=D*1.2;
  // metà del disco dietro il buco
@@ -256,28 +269,15 @@ function bhDraw(){
  // alone e anello di fotoni
  ctx.save();ctx.globalCompositeOperation='lighter';
  const hr=R/.385*1.02;ctx.globalAlpha=Math.min(1,.85+flash*.3);ctx.drawImage(G.halo,-hr,-hr,hr*2,hr*2);
- // il disco lontano piegato dalla gravità: arco luminoso sopra il buco
- ctx.globalAlpha=.55+flash*.35;ctx.strokeStyle='#ffb070';ctx.lineWidth=R*.22;
- ctx.beginPath();ctx.ellipse(0,0,R*1.32,R*1.18,0,Math.PI*1.02,Math.PI*1.98);ctx.stroke();
- ctx.globalAlpha=.7+flash*.3;ctx.strokeStyle='#fff1d6';ctx.lineWidth=Math.max(1,R*.05);
- ctx.beginPath();ctx.ellipse(0,0,R*1.25,R*1.12,0,Math.PI*1.04,Math.PI*1.96);ctx.stroke();
+ // 11-15: niente archi disegnati sopra il buco, la luce la dà l'alone
  ctx.restore();
  // orizzonte degli eventi
  ctx.fillStyle='#000';ctx.beginPath();ctx.arc(0,0,R,0,6.283);ctx.fill();
- ctx.strokeStyle=`rgba(255,232,196,${.75+flash*.25})`;ctx.lineWidth=Math.max(1.2,R*.04);ctx.beginPath();ctx.arc(0,0,R*1.02,0,6.283);ctx.stroke();
  // metà del disco davanti al buco
  ctx.save();ctx.beginPath();ctx.rect(-big,0,big*2,big);ctx.clip();
  ctx.globalCompositeOperation='lighter';ctx.scale(1,sq);ctx.rotate(h.spin);ctx.drawImage(G.disk,-D,-D,D*2,D*2);
  ctx.restore();
- // granelli di materia (un solo percorso)
- ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle='rgba(255,214,160,.7)';ctx.lineWidth=1.4;ctx.lineCap='round';ctx.beginPath();
- const s=R/Math.max(1,h.core);
- for(const m of BH.motes){
-  const r=m.r*s,x=Math.cos(m.a)*r,y=Math.sin(m.a)*r*sq,x2=Math.cos(m.a-.18)*r,y2=Math.sin(m.a-.18)*r*sq;
-  if(y<0&&Math.hypot(x,y/sq)<R*1.4)continue;
-  ctx.moveTo(x2,y2);ctx.lineTo(x,y);
- }
- ctx.stroke();ctx.restore();
+ // 11-15: i granelli di materia non si disegnano più (erano linee attorno al buco)
  ctx.restore();
 }
 // indicatore sul bordo dello schermo quando il buco nero tira ma non si vede ancora
@@ -327,4 +327,16 @@ if(typeof I18N_ROWS!=='undefined'){
  ];
  for(const r of rows)if(!I18N_ROWS.some(x=>x[0]===r[0]))I18N_ROWS.push(r);
  if(typeof i18nBuild==='function')i18nBuild();
+}
+
+// 11-15 (Fabio: "rimuovi le linee intorno al buco nero, solo luce"): le onde d'urto (anelli) vicino al buco nero
+// non si disegnano; la spinta resta uguale.
+if(typeof drawShockwaves==='function'&&typeof shockwaves!=='undefined'){
+ const bhOrigShock=drawShockwaves;
+ drawShockwaves=function(){
+  const h=BH.hole;if(!h)return bhOrigShock.apply(this,arguments);
+  const lim=h.core*Math.max(.05,h.grow)*BH_DISK*1.3,tutte=shockwaves.slice();
+  for(let i=shockwaves.length-1;i>=0;i--){const w=shockwaves[i];if(Math.hypot(w.x-h.x,w.y-h.y)<lim+(w.radius||0)*.5)shockwaves.splice(i,1)}
+  try{return bhOrigShock.apply(this,arguments)}finally{shockwaves.length=0;shockwaves.push(...tutte)}
+ };
 }

@@ -737,6 +737,32 @@ function sotCols(){
 function gMixS(a,b,t){return[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]}
 function gRgbS(c,a=1){return`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`}
 function sotRockPattern(){try{return typeof gPattern==='function'&&gfx&&gfx.tex?gPattern(ctx):null}catch(e){return null}}
+// 2026-11-15 (Fabio): il pozzo è stato scavato dall'uomo: pareti foderate di lamiera con rivetti,
+// travi di rinforzo e un collare d'acciaio con le strisce di pericolo alla bocca.
+const SOT_MET={w:11,giunto:58,rivetto:22};
+function sotMetalSide(x,y0,y1,side){
+ // x = bordo della buca; side -1 = parete sinistra (la lamiera va verso destra), 1 = destra
+ const W=SOT_MET.w,xa=side<0?x:x-W;
+ const g=ctx.createLinearGradient(xa,0,xa+W,0);
+ if(side<0){g.addColorStop(0,'#2c3138');g.addColorStop(.35,'#7d8691');g.addColorStop(1,'#3a4048')}
+ else{g.addColorStop(0,'#3a4048');g.addColorStop(.65,'#7d8691');g.addColorStop(1,'#2c3138')}
+ ctx.fillStyle=g;ctx.fillRect(xa,y0,W,y1-y0);
+ ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(side<0?xa+W-1.5:xa,y0,1.5,y1-y0);
+ for(let y=y0+SOT_MET.giunto;y<y1;y+=SOT_MET.giunto){ctx.fillStyle='rgba(10,12,16,.7)';ctx.fillRect(xa,y,W,2);ctx.fillStyle='rgba(220,230,240,.25)';ctx.fillRect(xa,y+2,W,1)}
+ ctx.fillStyle='#c9d1da';
+ for(let y=y0+10;y<y1;y+=SOT_MET.rivetto){ctx.beginPath();ctx.arc(xa+W/2,y,1.4,0,6.283);ctx.fill()}
+}
+function sotMetalBeam(x0,x1,y,h){
+ // trave orizzontale corta che sporge dalla parete (rinforzo), solo ai lati per non chiudere il passaggio
+ const g=ctx.createLinearGradient(0,y,0,y+h);g.addColorStop(0,'#8a939e');g.addColorStop(.5,'#4a515a');g.addColorStop(1,'#23272d');
+ ctx.fillStyle=g;ctx.fillRect(x0,y,x1-x0,h);ctx.fillStyle='rgba(255,255,255,.18)';ctx.fillRect(x0,y,x1-x0,1);
+}
+function sotHazard(x0,x1,y,h){
+ ctx.save();ctx.beginPath();ctx.rect(x0,y,x1-x0,h);ctx.clip();
+ ctx.fillStyle='#1b1b1b';ctx.fillRect(x0,y,x1-x0,h);ctx.fillStyle='#e8b923';
+ for(let x=x0-h;x<x1+h;x+=h*1.6){ctx.beginPath();ctx.moveTo(x,y+h);ctx.lineTo(x+h*.8,y+h);ctx.lineTo(x+h*1.6,y);ctx.lineTo(x+h*.8,y);ctx.closePath();ctx.fill()}
+ ctx.restore();ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=1;ctx.strokeRect(x0+.5,y+.5,x1-x0-1,h-1);
+}
 function sotDrawCrater(pr,now){
  const x0=pr.x,w=pr.w,x1=x0+w,ya=pr.ya??pr.y,yb=pr.yb??pr.y,top=Math.min(ya,yb),bot=PF_VH+40;
  ctx.save();
@@ -744,23 +770,10 @@ function sotDrawCrater(pr,now){
  ctx.beginPath();ctx.moveTo(x0-2,ya+2);ctx.lineTo(x1+2,yb+2);ctx.lineTo(x1+2,bot);ctx.lineTo(x0-2,bot);ctx.closePath();
  const C=sotCols(),pat=sotRockPattern(),g=ctx.createLinearGradient(0,top,0,bot);g.addColorStop(0,C.rgb(C.md,1,.55));g.addColorStop(.3,C.rgb(C.d,1,.65));g.addColorStop(1,'#030304');
  ctx.fillStyle=g;ctx.fill();ctx.save();ctx.clip();
- // pareti frastagliate dentro la buca, un po' illuminate dall'alto
- for(const side of [-1,1]){
-  const ex=side<0?x0:x1,ey=side<0?ya:yb;
-  ctx.beginPath();ctx.moveTo(ex,ey);
-  for(let y=ey;y<=bot;y+=16){const k=pfNoise(x0*.37+y*.11+side*13);ctx.lineTo(ex-side*(10+k*20+(y-ey)*.06),y)}
-  ctx.lineTo(ex,bot);ctx.closePath();
-  if(pat){ctx.fillStyle=pat;ctx.fill()}
-  const wg=ctx.createLinearGradient(0,ey,0,ey+170);wg.addColorStop(0,C.rgb(C.md,pat?.35:1,.1));wg.addColorStop(.5,C.rgb(C.d,pat?.7:1,.35));wg.addColorStop(1,'rgba(0,0,0,.95)');
-  ctx.fillStyle=wg;ctx.fill();
-  ctx.strokeStyle=C.rgb(C.l,.25);ctx.lineWidth=1;ctx.stroke();
- }
- // anelli di roccia dentro il tunnel: si stringono scendendo, come un pozzo che va in profondità
- for(let i=0;i<7;i++){
-  const y=top+22+i*i*5.2,k=i/7,inset=10+k*w*.18;
-  ctx.fillStyle=`rgba(0,0,0,${.18+k*.25})`;ctx.fillRect(x0+inset,y,w-inset*2,3+k*3);
-  ctx.strokeStyle=C.rgb(C.l,.16*(1-k));ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x0+inset,y-1);ctx.lineTo(x1-inset,y-1);ctx.stroke();
- }
+ // 2026-11-15 (Fabio): niente pareti o anelli con colori diversi, che facevano righe verticali.
+ // Il pozzo è di un colore unico in tutta la larghezza: roccia del pianeta che scurisce scendendo.
+ if(pat){ctx.globalAlpha=.35;ctx.fillStyle=pat;ctx.fillRect(x0-2,top,w+4,bot-top);ctx.globalAlpha=1;
+  const sc=ctx.createLinearGradient(0,top,0,bot);sc.addColorStop(0,'rgba(0,0,0,0)');sc.addColorStop(.45,'rgba(0,0,0,.55)');sc.addColorStop(1,'rgba(0,0,0,.95)');ctx.fillStyle=sc;ctx.fillRect(x0-2,top,w+4,bot-top)}
  // luce calda della galleria che sale dal fondo
  ctx.globalCompositeOperation='lighter';
  // la scia luminosa che si vede salire dal fondo (da sotto si risale da qui)
@@ -771,7 +784,14 @@ function sotDrawCrater(pr,now){
  // polvere che scende nella buca
  ctx.fillStyle=C.rgb(C.l,.5);
  for(let i=0;i<7;i++){const k=(now*.35+pfNoise(x0+i*7))%1,px=x0+14+pfNoise(x0+i*3)*(w-28),py=top+k*(bot-top);ctx.globalAlpha=Math.sin(k*Math.PI)*.6;ctx.fillRect(px,py,2,2)}
+ ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+ // pareti di lamiera, travi di rinforzo ai lati e ombra che scende
+ sotMetalSide(x0,ya,bot,-1);sotMetalSide(x1,yb,bot,1);
+ for(let y=top+70;y<bot-20;y+=95){sotMetalBeam(x0+SOT_MET.w,x0+SOT_MET.w+16,y,7);sotMetalBeam(x1-SOT_MET.w-16,x1-SOT_MET.w,y,7)}
+ {const sh=ctx.createLinearGradient(0,top,0,bot);sh.addColorStop(0,'rgba(0,0,0,0)');sh.addColorStop(.5,'rgba(0,0,0,.45)');sh.addColorStop(1,'rgba(0,0,0,.85)');ctx.fillStyle=sh;ctx.fillRect(x0-2,top,w+4,bot-top)}
  ctx.restore();ctx.restore();
+ // collare d'acciaio alla bocca, con strisce di pericolo
+ sotHazard(x0-6,x0+SOT_MET.w+4,ya-3,6);sotHazard(x1-SOT_MET.w-4,x1+6,yb-3,6);
  // cartello: freccia in giù verso le gallerie
  sotSign(x0-58,ya,'GALLERIE',false,'#ffb348',now);
 }
@@ -845,10 +865,7 @@ function sotMakeBack(){
  // sassi e crepe sparsi
  for(let i=0;i<70;i++){const x=rnd()*SOT_TILE,y=SOT.ceil+40+rnd()*(PF_VH-SOT.ceil-60),r=1.5+rnd()*4;wrap(()=>{g.fillStyle=rnd()<.5?dark:mid;g.globalAlpha=.35;g.beginPath();g.ellipse(x,y,r*1.4,r,rnd()*3,0,6.28);g.fill();g.fillStyle=lite;g.globalAlpha=.12;g.beginPath();g.ellipse(x-r*.3,y-r*.4,r*.6,r*.35,0,0,6.28);g.fill()})}
  g.globalAlpha=1;
- // vene di cristallo che brillano debolmente
- const col=m.rim;g.strokeStyle=col;g.lineWidth=1.2;
- for(let i=0;i<16;i++){let x=rnd()*SOT_TILE,y=SOT.ceil+60+rnd()*360;const pts=[[x,y]];for(let j=0;j<5;j++){x+=(rnd()-.5)*40;y+=(rnd()-.5)*30;pts.push([x,y])}const a=.12+rnd()*.18;wrap(()=>{g.globalAlpha=a;g.beginPath();pts.forEach(([px,py],j)=>j?g.lineTo(px,py):g.moveTo(px,py));g.stroke()})}
- g.globalAlpha=1;
+ // 2026-11-15 (Fabio): tolte le vene chiare a zig-zag sui muri (sembravano disegni strani)
  return cv.c;
 }
 // Strato più vicino (si muove più in fretta): archi di roccia e radici che pendono, quasi neri.
@@ -916,31 +933,19 @@ function sotDrawShaft(h,now){
  // fondo del tunnel: buio in basso, luce del giorno in alto
  const g=ctx.createLinearGradient(0,0,0,B);g.addColorStop(0,C.rgb(C.l,1));g.addColorStop(.18,C.rgb(C.md,1,.2));g.addColorStop(.55,C.rgb(C.d,1,.55));g.addColorStop(1,'#0b0b0c');
  ctx.fillStyle=g;ctx.fillRect(h.x0,0,w,B);
- // pareti interne: due fianchi frastagliati che si stringono verso l'alto (prospettiva)
- for(const side of [-1,1]){
-  const ex=side<0?h.x0:h.x1;
-  ctx.beginPath();ctx.moveTo(ex,B);
-  for(let y=B;y>=0;y-=10){const k=pfNoise(h.x0*.31+y*.17+side*7),inset=(1-y/B)*w*.16+6+k*10;ctx.lineTo(ex-side*inset,y)}
-  ctx.lineTo(ex,0);ctx.closePath();
-  if(pat){ctx.fillStyle=pat;ctx.fill()}
-  const wg=ctx.createLinearGradient(ex,0,ex-side*w*.3,0);wg.addColorStop(0,C.rgb(C.d,pat?.75:1,.45));wg.addColorStop(1,C.rgb(C.md,pat?.45:1,.3));ctx.fillStyle=wg;ctx.fill();
- }
- // anelli di strati di roccia (danno profondità al tunnel)
- ctx.lineWidth=1.5;
- for(let i=0;i<6;i++){
-  const y=B-12-i*(B/7),k=1-y/B,half=w/2-((1-y/B)*w*.16+10);
-  ctx.strokeStyle=i%2?'rgba(0,0,0,.45)':C.rgb(C.l,.1+k*.15);
-  ctx.beginPath();ctx.ellipse(cx,y,Math.max(8,half),3+k*2,0,0,Math.PI);ctx.stroke();
- }
+ // 2026-11-15: tunnel di un colore unico (niente fianchi più chiari/scuri che facevano righe verticali)
+ if(pat){ctx.globalAlpha=.35;ctx.fillStyle=pat;ctx.fillRect(h.x0,0,w,B);ctx.globalAlpha=1}
  // luce del giorno che scende
  ctx.globalCompositeOperation='lighter';
  const sun=ctx.createLinearGradient(0,0,0,B+30);sun.addColorStop(0,C.rgb(gMixS(C.l,[255,255,255],.3),.34));sun.addColorStop(1,C.rgb(C.l,0));
  ctx.fillStyle=sun;ctx.beginPath();ctx.moveTo(cx-w*.18,0);ctx.lineTo(cx+w*.18,0);ctx.lineTo(cx+w*.42,B+30);ctx.lineTo(cx-w*.42,B+30);ctx.closePath();ctx.fill();
  ctx.globalCompositeOperation='source-over';
- // bocca del tunnel: roccia rotta e sassi che pendono
- ctx.fillStyle=dark;
- for(let i=0;i<9;i++){const k=pfNoise(h.x0+i*3.3),side=i%2?1:-1,ex=side<0?h.x0:h.x1,dx=(i>>1)*8;ctx.beginPath();ctx.moveTo(ex-side*(dx-6),SOT.ceil-4);ctx.lineTo(ex-side*(dx+10+k*8),SOT.ceil+6);ctx.lineTo(ex-side*(dx+2+k*4),SOT.ceil+16+k*24*(i<4?1:.5));ctx.closePath();ctx.fill()}
- ctx.strokeStyle=lite;ctx.globalAlpha=.25;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(h.x0-4,SOT.ceil+6);ctx.lineTo(h.x0+8,SOT.ceil+12);ctx.moveTo(h.x1+4,SOT.ceil+6);ctx.lineTo(h.x1-8,SOT.ceil+12);ctx.stroke();ctx.globalAlpha=1;
+ // pareti di lamiera fino alla bocca, travi ai lati e collare d'acciaio con strisce di pericolo
+ sotMetalSide(h.x0,0,B,-1);sotMetalSide(h.x1,0,B,1);
+ for(let y=36;y<B-20;y+=70){sotMetalBeam(h.x0+SOT_MET.w,h.x0+SOT_MET.w+14,y,6);sotMetalBeam(h.x1-SOT_MET.w-14,h.x1-SOT_MET.w,y,6)}
+ sotMetalBeam(h.x0-10,h.x1+10,SOT.ceil+2,9);sotHazard(h.x0-10,h.x1+10,SOT.ceil+11,6);
+ // due luci di servizio sul collare
+ ctx.fillStyle='#ffd27a';for(const lx of [h.x0+6,h.x1-6]){ctx.beginPath();ctx.arc(lx,SOT.ceil+21,2.5,0,6.283);ctx.fill()}
  ctx.restore();
 }
 // Scia luminosa sotto il cratere: una sottile traccia di luce dorata che sale dal pavimento al tunnel,

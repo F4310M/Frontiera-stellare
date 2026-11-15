@@ -46,7 +46,7 @@
   let c='';try{c=getComputedStyle(panel).getPropertyValue('--panel-accent').trim()}catch(e){}
   return c||'#7ddce8';
  }
- function nascondi(){if(svg)svg.classList.remove('on');lastKey=''}
+ function nascondi(){if(svg&&svg.classList.contains('on'))svg.classList.remove('on');lastKey=''}
  const dist2=(a,b)=>(a[0]-b[0])**2+(a[1]-b[1])**2;
 
  function frame(now){
@@ -107,7 +107,7 @@
    c.setAttribute('cx',(b.s[0]+(b.a[0]-b.s[0])*f).toFixed(1));c.setAttribute('cy',(b.s[1]+(b.a[1]-b.s[1])*f).toFixed(1));
    c.style.opacity=(Math.sin(f*Math.PI)*.5).toFixed(2);
   }));
-  svg.classList.add('on');
+  if(!svg.classList.contains('on'))svg.classList.add('on');
  }
 
  const css=document.createElement('style');
