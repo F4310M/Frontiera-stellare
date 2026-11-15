@@ -61,16 +61,20 @@ if(typeof pfDrawAmbient==='function'){
 
 // ---------------------------------------------------------------- pianeta nello spazio (pianeta.js)
 if(typeof PL_THEMES!=='undefined'){
- PL_THEMES.ghiaccio={sea:.48,water:['#3b6e94','#7fb6dc','#cfeeff'],
-  land:[[0,'#e8f4fa'],[.05,'#cfe6f3'],[.18,'#a9cbe0'],[.32,'#f4fbff'],[.46,'#8fb3cc'],[.6,'#ffffff']],
-  clouds:.62,cloudAmt:.45,ice:.55,atm:[170,225,255]};
+ // tutto coperto di neve e ghiaccio, niente mari (richiesta di Fabio del 15/11): il livello del mare è 0,
+ // quindi tutta la superficie è "terra"; i colori vanno dalle valli di ghiaccio grigio-azzurro (basse)
+ // ai campi di neve bianchi, ai ghiacciai celesti e alle creste bianche (alte). Il rilievo resta.
+ PL_THEMES.ghiaccio={sea:0,water:['#9fbfd4','#c8e0ee','#e8f4fa'],
+  land:[[.3,'#8aa6bb'],[.42,'#b7cfdf'],[.52,'#eef6fb'],[.64,'#cfe5f2'],[.74,'#9cc4dd'],[.86,'#f4fbff'],[1,'#dbeaf4'],[1.2,'#ffffff']],
+  clouds:.66,cloudAmt:.35,ice:.8,atm:[170,225,255]};
 }
 // ---------------------------------------------------------------- globo della home (pianeti-dettaglio.js)
 if(typeof PD_THEMES!=='undefined'){
  const st=typeof pdStops==='function'?pdStops:(a=>a);
- PD_THEMES.ghiaccio={sea:.5,deep:'#2d5b80',shallow:'#86c4ea',coast:'#d6f1ff',
-  land:st([[0,'#eef8fd'],[.08,'#cfe6f3'],[.24,'#a8c9de'],[.42,'#f6fbff'],[.62,'#8eb0c8'],[.85,'#ffffff']]),
-  ice:.5,cloud:[.62,.4,'#ffffff'],atm:'#aee6ff',glow:'#dff6ff',cities:.3,craters:6};
+ // come nello spazio: niente mare, solo neve e ghiaccio
+ PD_THEMES.ghiaccio={sea:0,deep:'#9fbfd4',shallow:'#c8e0ee',coast:'#e8f4fa',
+  land:st([[.3,'#8aa6bb'],[.44,'#b7cfdf'],[.56,'#eef6fb'],[.68,'#cfe5f2'],[.8,'#9cc4dd'],[.94,'#f4fbff'],[1.1,'#dbeaf4'],[1.3,'#ffffff']]),
+  ice:.8,cloud:[.64,.32,'#ffffff'],atm:'#aee6ff',glow:'#dff6ff',cities:.12,craters:4};
 }
 // ---------------------------------------------------------------- pianeta del menu (menu-pianeti.js)
 if(typeof mpTexture==='function'&&typeof MP!=='undefined'){
@@ -80,9 +84,10 @@ if(typeof mpTexture==='function'&&typeof MP!=='undefined'){
   const key=p.code||p.name;if(MP.tex.has(key))return MP.tex.get(key);
   const o=mpCanvas(MP_TW,MP_TH);let url='';
   if(o){const g=o.g,s=(p.name||'').length*97+(p.difficulty||1)*13;
-   g.fillStyle='#bfe0f2';g.fillRect(0,0,MP_TW,MP_TH);
-   for(let i=0;i<8;i++)mpBand(g,i*16,7,`rgba(${i%2?'60,110,150':'255,255,255'},${i%2?.25:.3})`,4,s+i);
-   mpLand(g,s,4,'rgba(240,250,255,.7)','rgba(120,170,205,.35)');
+   // tutto neve: base bianca, ghiacciai celesti e valli grigio-azzurre, niente mare
+   g.fillStyle='#e6f2f9';g.fillRect(0,0,MP_TW,MP_TH);
+   for(let i=0;i<8;i++)mpBand(g,i*16,7,`rgba(${i%2?'150,185,210':'255,255,255'},${i%2?.22:.35})`,4,s+i);
+   mpLand(g,s,4,'rgba(170,200,222,.45)','rgba(255,255,255,.5)');
    for(let i=0;i<10;i++)mpBlob(g,mpHash(s+i*7)*MP_TW,mpHash(s+i*7+1)*MP_TH,4+mpHash(s+i*7+2)*10,'rgba(255,255,255,.4)',.4);
    try{url=o.c.toDataURL('image/png')}catch(e){url=''}}
   MP.tex.set(key,url);return url;

@@ -42,7 +42,7 @@ function tdLiquidStrips(){
  const col=id==='lava'||id==='ghiaccio'?null:[gHex(m.liquid[0]),gHex(m.liquid[1]),gHex(m.liquid[2])];
  const sky=gHex(th.sky[2]||'#203040'),foam=[235,250,255];
  // celle della crosta di lava (Voronoi ripetibile in orizzontale)
- const cells=[];if(id==='lava'||id==='ghiaccio'){const rr=pfRng(seed+5),nc=70;for(let i=0;i<nc;i++)cells.push([rr()*Wd,rr()*H*1.1])}
+ const cells=[];if(id==='lava'){const rr=pfRng(seed+5),nc=70;for(let i=0;i<nc;i++)cells.push([rr()*Wd,rr()*H*1.1])}
  const nearest=(x,y)=>{let d1=1e9,d2=1e9;for(const [cx,cy] of cells){let dx=Math.abs(x-cx);if(dx>Wd/2)dx=Wd-dx;const d=dx*dx+(y-cy)*(y-cy);if(d<d1){d2=d1;d1=d}else if(d<d2)d2=d}return[Math.sqrt(d1),Math.sqrt(d2)]};
  for(let py=0;py<h;py++){
   const y=py/R,v=y/H,deep=Math.min(1,v*1.25);
@@ -57,11 +57,11 @@ function tdLiquidStrips(){
     // seconda striscia: colata luminosa che scorre (velature calde)
     const flow=nz(u,v,seed+3,24,3)*.6+nz(u,v,seed+4,48,5)*.4;a2=Math.max(0,flow-.58)*1.5*255*(1-v*.7)*(.35+crack*.65);r2=255;g2=150+flow*60;b2=60;
    }else if(id==='ghiaccio'){
-    // mare ghiacciato: lastre chiare con crepe azzurre scure, più scuro in profondità, riflessi bianchi
-    const [d1,d2]=nearest(x,y),edge=d2-d1,crack=Math.max(0,1-edge/(2.4+nz(u,v,seed+1,64,6)*2)),plate=Math.min(1,edge/26),fr=nz(u,v,seed+2,128,20);
-    const base=gMix([214,238,252],[70,128,170],Math.min(1,v*1.3));
-    r=base[0]*(.86+plate*.14+(fr-.5)*.1)-crack*90;g=base[1]*(.88+plate*.12+(fr-.5)*.08)-crack*60;b=base[2]*(.92+plate*.08)-crack*25;
-    a2=Math.max(0,fr-.62)*2.4*200*(1-v*.8)*(1-crack);r2=255;g2=255;b2=255;// riflessi che scorrono sul ghiaccio
+    // campo di neve (NIMBUS tutto innevato, niente mare): cumuli morbidi, increspature del vento, ombre azzurre in basso
+    const drift=nz(u,v,seed+2,12,2.5),rip=Math.sin(x*.16+nz(u,v,seed+1,40,4)*7+y*.6)*.5+.5,grain=shdH(px,py,seed)%1;
+    const sh=(drift-.5)*.32+(rip-.5)*.08*(1-v*.6)+(grain-.5)*.05,base=gMix([248,252,255],[150,186,214],Math.min(1,v*1.15));
+    r=base[0]*(1+sh);g=base[1]*(1+sh);b=Math.min(255,base[2]*(1+sh*.6)+6);
+    a2=Math.max(0,grain-.985)*60*255*(1-v*.7);r2=255;g2=255;b2=255;// scintillii della neve
    }else if(id==='deserto'){
     const rip=Math.sin((x*.21+nz(u,v,seed+1,40,4)*9)+y*.9)*.5+.5,dune=nz(u,v,seed+2,10,2),grain=shdH(px,py,seed)%1;
     const sh=(dune-.5)*.5+(rip-.5)*.18*(1-v*.5)+(grain-.5)*.12,base=gMix(col[0],col[1],Math.min(1,v*1.4));
@@ -98,7 +98,7 @@ if(tdOrig.gDrawFrontLiquid)gDrawFrontLiquid=function(cx,VW,now){
  // due strisce che scorrono a velocità diverse
  const strip=(img,speed,alpha,mode)=>{const o=((cx*.0+now*speed)%L.w+L.w)%L.w,start=Math.floor((x0+o)/L.w)*L.w-o;
   ctx.globalAlpha=alpha;ctx.globalCompositeOperation=mode;for(let x=start;x<x1;x+=L.w)ctx.drawImage(img,x,TD_TOP-6,L.w,L.h)};
- strip(L.a,TD.scorre[0]*(L.id==='lava'?.35:L.id==='ghiaccio'?.12:1),1,'source-over');
+ strip(L.a,TD.scorre[0]*(L.id==='lava'?.35:L.id==='ghiaccio'?0:1),1,'source-over');
  strip(L.b,TD.scorre[1]*(L.id==='lava'?.5:1),L.id==='lava'?.6:.9,L.id==='deserto'?'source-over':'lighter');
  ctx.restore();ctx.save();
  // cresta: linea della schiuma più un alone largo e tenue (al posto di shadowBlur)
@@ -106,7 +106,7 @@ if(tdOrig.gDrawFrontLiquid)gDrawFrontLiquid=function(cx,VW,now){
  ctx.lineJoin='round';ctx.lineCap='round';
  if(th.id==='lava'){crest(9,.18,'#ffb04a');crest(4,.4,'#ffd27a');crest(1.8,1,'#fff1c8')}
  else if(th.id==='deserto'){crest(2.2,.7,'rgba(255,236,190,.9)')}
- else if(th.id==='ghiaccio'){crest(4,.25,'#ffffff');crest(1.6,.95,'#f4fdff')}
+ else if(th.id==='ghiaccio'){crest(6,.35,'#ffffff');crest(2,.9,'#ffffff')}
  else if(th.id==='tempesta'){crest(5,.12,'#d8ccff');crest(1.4,.6,'#e8e0ff')}
  else{crest(4,.16,'#ffffff');crest(1.6,1,m.foam);
   // creste che brillano e scorrono lungo la superficie

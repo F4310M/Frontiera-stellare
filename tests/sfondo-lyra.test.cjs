@@ -47,4 +47,9 @@ assert.equal(typeof run('slSel.e.an'),'object','immagine analizzata (luci, fluid
 assert.ok(!/shadowBlur\s*=\s*[1-9]/.test(src)&&!/\.filter\s*=/.test(src),'niente shadowBlur o ctx.filter');
 const html=fs.readFileSync(path.join(dist,'index.html'),'utf8'),at=f=>html.indexOf('<script src="'+f);
 assert.ok(at('sfondo-lyra.js')>at('grafica2.js')&&at('sfondo-lyra.js')>at('fuga-sfondo.js'),'ordine di caricamento');
+// finestre: elenco generato, caricato prima, con finestre solo per immagini esistenti
+const fsrc=fs.readFileSync(path.join(dist,'sfondi-finestre.js'),'utf8'),FIN=JSON.parse(fsrc.slice(fsrc.indexOf('{'),fsrc.lastIndexOf('}')+1));
+for(const [f,list] of Object.entries(FIN)){assert.ok(fs.existsSync(path.join(dist,'sfondi',f)),'finestre di '+f);for(const q of list)assert.ok(q.length===7&&q[2]>0&&q[3]>0)}
+assert.ok(Object.values(FIN).flat().length>50,'finestre trovate');
+assert.ok(at('sfondi-finestre.js')>0&&at('sfondi-finestre.js')<at('sfondo-lyra.js'),'elenco finestre prima di sfondo-lyra.js');
 console.log('sfondo-lyra: ok');

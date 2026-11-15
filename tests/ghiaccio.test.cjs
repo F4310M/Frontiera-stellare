@@ -25,7 +25,7 @@ assert.equal(run('PF_THEMES.ghiaccio.mat'),'ghiaccio');assert.equal(run('PF_THEM
 assert.equal(run('PF_THEMES.tempesta.mat'),undefined,'il tema tempesta resta com\'era');
 assert.ok(run('G_MAT.ghiaccio')&&run('G_MAT.ghiaccio.rim')==='#ffffff','materiale del ghiaccio');
 // spazio e home
-assert.ok(run('PL_THEMES.ghiaccio.land')&&!run('PL_THEMES.ghiaccio.gas'),'pianeta di ghiaccio, non gassoso');
+assert.ok(run('PL_THEMES.ghiaccio.land')&&!run('PL_THEMES.ghiaccio.gas'),'pianeta di ghiaccio, non gassoso');assert.ok(run('PL_THEMES.ghiaccio.sea')<=0&&run('PD_THEMES.ghiaccio.sea')<=0,'niente mari: tutto neve e ghiaccio');
 assert.ok(run('PD_THEMES.ghiaccio.land'),'globo della home');
 // neve che cade
 run('pf.theme=PF_THEMES.ghiaccio;pf.ambient=[];for(let i=0;i<60;i++)pfUpdateAmbient(1/30)');

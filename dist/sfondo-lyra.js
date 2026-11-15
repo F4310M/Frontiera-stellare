@@ -106,6 +106,8 @@ function slSprites(){
  if(slSpr)return slSpr;slSpr={};
  const glow=col=>{const c=slCanvas(32,32);if(!c)return null;const r=c.g.createRadialGradient(16,16,0,16,16,16);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.25,col);r.addColorStop(1,'rgba(0,0,0,0)');c.g.fillStyle=r;c.g.fillRect(0,0,32,32);return c.c};
  slSpr.caldo=glow('rgba(255,200,110,.8)');slSpr.freddo=glow('rgba(120,230,255,.8)');slSpr.rosso=glow('rgba(255,60,80,.85)');slSpr.verde=glow('rgba(160,255,140,.8)');slSpr.bianco=glow('rgba(220,235,255,.7)');
+ // bagliore di finestra: rettangolo morbido (pieno al centro, sfumato ai bordi), colorato poi con l'alfa
+ const fw=slCanvas(64,40);if(fw){const g=fw.g;for(let i=0;i<10;i++){const t=i/9;g.fillStyle=`rgba(255,214,150,${.06+t*.1})`;const ix=t*14,iy=t*9;g.fillRect(ix,iy,64-ix*2,40-iy*2)}slSpr.finestra=fw.c}
  // nuvola: tanti cerchi sfumati sovrapposti
  const nv=slCanvas(256,96);if(nv){const g=nv.g;for(let i=0;i<14;i++){const x=30+Math.random()*196,y=34+Math.random()*30,r=18+Math.random()*26,gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(255,255,255,.55)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2)}slSpr.nuvola=nv.c}
  // trame che scorrono sui fluidi: increspature orizzontali (acqua, palude) e striature verticali (lava, cascate)
@@ -146,9 +148,19 @@ function slDraw(cx,VW){
    const S=k/an.A;// pixel dell'analisi -> mondo
    if(fluido){const fl=s.conf.fluido;ctx.globalCompositeOperation='lighter';
     ctx.globalAlpha=fl==='lava'?.55:fl==='palude'?.32:.38;ctx.drawImage(fluido,0,0,w,h)}
-   // luci che lampeggiano (alcune respirano piano, altre si accendono e si spengono)
+   // finestre illuminate (elenco in sfondi-finestre.js, persone già tolte dalle immagini):
+   // la luce pulsa piano; ogni tanto una finestra si spegne per qualche secondo e poi si riaccende
+   const fin=typeof SL_FINESTRE!=='undefined'&&SL_FINESTRE[s.file];
+   if(fin&&fin.length){
+    for(let j=0;j<fin.length;j++){const F=fin[j],X=F[0]*k,Y=F[1]*k,FW=F[2]*k,FH=F[3]*k,P=18+(j*7%5)*6,t=(now+j*5.3)%P;
+     if(t<2.6+(j%3)){ctx.globalCompositeOperation='source-over';ctx.globalAlpha=.78*Math.min(1,t*3,(2.6+(j%3)-t)*3);ctx.fillStyle='rgb(26,30,42)';ctx.fillRect(X,Y,FW,FH);continue}
+     ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.25+.22*Math.sin(now*(.9+(j%4)*.25)+j*1.7);
+     ctx.drawImage(spr.finestra,X-FW*.18,Y-FH*.3,FW*1.36,FH*1.6)}
+   }
+   // luci che lampeggiano (alcune respirano piano, altre si accendono e si spengono);
+   // dove ci sono le finestre si tengono solo le luci azzurre e rosse (antenne, insegne)
    ctx.globalCompositeOperation='lighter';
-   for(let j=0;j<an.luci.length;j++){const L=an.luci[j],ph=j*1.618,blink=j%3===0;
+   for(let j=0;j<an.luci.length;j++){const L=an.luci[j],ph=j*1.618,blink=j%3===0;if(fin&&fin.length&&L[3]&&j%7!==0)continue;
     const a=blink?(Math.sin(now*2.2+ph*3)>.35?.95:0):.35+.3*Math.sin(now*1.3+ph);if(a<=.02)continue;
     const sz=(blink?11:8)*k,sp=j%7===0?spr.rosso:L[3]?spr.caldo:spr.freddo;ctx.globalAlpha=a;ctx.drawImage(sp,L[0]*S-sz/2,L[1]*S-sz/2,sz,sz)}
    // stelle che brillano
