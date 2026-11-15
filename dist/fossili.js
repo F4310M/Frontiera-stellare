@@ -5,7 +5,7 @@
 // Avvicinandosi a un fossile grande compare la scritta FOSSILE ANTICO.
 // Si appoggia a sotterranei.js (aggancia sotDrawCeiling): va caricato dopo sotterranei.js e i18n.js.
 
-const FOS_CFG={floorChance:.5,floorGap:[260,520],ceilGap:[420,760],wallBig:1,near:150};
+const FOS_CFG={floorChance:.5,floorGap:[260,520],ceilGap:[420,760],backGap:[380,640],wallBig:1,near:150};
 const FOS_KINDS={ammonite:{w:72,h:72},trilobite:{w:70,h:48},pesce:{w:124,h:56},felce:{w:84,h:96},cranio:{w:92,h:76},rettile:{w:300,h:150}};
 let fosState=null;
 
@@ -47,6 +47,16 @@ function fosBuild(S){
    if(!clearOfLifts(x,K.w*sc+30))continue;
    const y=Math.round(28+K.h*sc/2+rnd()*Math.max(0,SOT.ceil-60-K.h*sc));
    list.push({kind,x:Math.round(x),y,sc,rot:(rnd()-.5)*.9,flip:rnd()<.5,v:Math.floor(rnd()*1e6),where:'ceil',big:kind==='rettile'||kind==='cranio'});
+  }
+ }
+ // 2026-11-15 (Fabio): sulla parete di fondo della galleria, al posto delle vene a zig-zag, i suoi fossili
+ if(S.sections.length){
+  const x0=Math.min(...S.sections.map(s=>s.x0)),x1=Math.max(...S.sections.map(s=>s.x1));
+  for(let x=x0+200+rnd()*200;x<x1-100;x+=FOS_CFG.backGap[0]+rnd()*(FOS_CFG.backGap[1]-FOS_CFG.backGap[0])){
+   const kind=rnd()<.25?'rettile':rnd()<.2?'cranio':pick(smallKinds),K=FOS_KINDS[kind],sc=kind==='rettile'?.75:1+rnd()*.4;
+   if(!clearOfLifts(x,K.w*sc+40))continue;
+   const y=Math.round(SOT.ceil+90+K.h*sc/2+rnd()*Math.max(0,PF_VH-SOT.ceil-330-K.h*sc));
+   list.push({kind,x:Math.round(x),y,sc,rot:(rnd()-.5)*.3,flip:rnd()<.5,v:Math.floor(rnd()*1e6),where:'back',big:kind==='rettile'||kind==='cranio'});
   }
  }
  return list;
@@ -161,7 +171,7 @@ function fosDrawList(st,which,cx,VW){
   const K=FOS_KINDS[f.kind],half=K.w*f.sc/2+20;if(f.x+half<cx||f.x-half>cx+VW)continue;
   const sp=fosSprite(st,f);if(!sp)continue;
   ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.rot);ctx.scale(f.flip?-f.sc:f.sc,f.sc);
-  ctx.globalAlpha=f.where==='ceil'?.85:1;ctx.drawImage(sp.c,-sp.w/2,-sp.h/2,sp.w,sp.h);
+  ctx.globalAlpha=f.where==='ceil'?.85:f.where==='back'?.7:1;ctx.drawImage(sp.c,-sp.w/2,-sp.h/2,sp.w,sp.h);
   ctx.restore();
  }
 }

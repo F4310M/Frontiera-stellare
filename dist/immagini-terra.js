@@ -54,3 +54,40 @@ if(typeof fosSprite==='function'){
   return {c:img,w:iw*s,h:ih*s};
  };
 }
+
+// 2026-11-15 (Fabio): i suoi fossili anche nel terreno della superficie (al posto delle spirali disegnate),
+// su tutti i pianeti. Posizioni fisse per ogni tratto di terreno, disegnate sopra la roccia già pronta,
+// un po' trasparenti e più scure in profondità, così sembrano incastonate.
+const IT_TERRA={gap:[300,560],y:[50,140],w:[56,84],dino:.14,alpha:1};
+const itTerra=new WeakMap();
+function itTerraList(sd){
+ let L=itTerra.get(sd);if(L)return L;L=[];
+ const rnd=typeof pfRng==='function'?pfRng(Math.floor(sd.x*13+sd.y*7+3)):Math.random;
+ for(let x=sd.x+60+rnd()*160;x<sd.x+sd.w-60;x+=IT_TERRA.gap[0]+rnd()*(IT_TERRA.gap[1]-IT_TERRA.gap[0])){
+  const dino=sd.w>520&&rnd()<IT_TERRA.dino,id=dino?8:Math.floor(rnd()*8),w=dino?190:IT_TERRA.w[0]+rnd()*(IT_TERRA.w[1]-IT_TERRA.w[0]);
+  if(x-w/2<sd.x+30||x+w/2>sd.x+sd.w-30)continue;
+  L.push({x,y:sd.y+IT_TERRA.y[0]+rnd()*(IT_TERRA.y[1]-IT_TERRA.y[0]),w,id,rot:(rnd()-.5)*(dino?.12:.8),flip:rnd()<.5});
+ }
+ itTerra.set(sd,L);return L;
+}
+if(typeof gDrawSolid==='function'){
+ const itOrigSolid=gDrawSolid;
+ gDrawSolid=function(sd,now){
+  const r=itOrigSolid.apply(this,arguments);
+  try{
+   if(typeof pf!=='undefined'&&pf&&!pf.under){
+    const q=ctx.imageSmoothingQuality;ctx.imageSmoothingQuality='low';
+    for(const f of itTerraList(sd)){
+     const img=IT_FOS[f.id];if(!itOk(img))continue;
+     if(typeof pfOnScreen==='function'&&!pfOnScreen(f.x,f.w))continue;
+     const h=f.w*img.naturalHeight/img.naturalWidth,deep=Math.min(1,(f.y-sd.y)/180);
+     ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.rot);if(f.flip)ctx.scale(-1,1);
+     ctx.globalAlpha=IT_TERRA.alpha*(1-deep*.18);ctx.drawImage(img,-f.w/2,-h/2,f.w,h);
+     ctx.restore();
+    }
+    ctx.imageSmoothingQuality=q;
+   }
+  }catch(e){}
+  return r;
+ };
+}

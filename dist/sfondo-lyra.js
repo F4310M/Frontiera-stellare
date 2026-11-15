@@ -115,7 +115,7 @@ function slSprites(){
  const glow=col=>{const c=slCanvas(32,32);if(!c)return null;const r=c.g.createRadialGradient(16,16,0,16,16,16);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.25,col);r.addColorStop(1,'rgba(0,0,0,0)');c.g.fillStyle=r;c.g.fillRect(0,0,32,32);return c.c};
  slSpr.caldo=glow('rgba(255,200,110,.8)');slSpr.freddo=glow('rgba(120,230,255,.8)');slSpr.rosso=glow('rgba(255,60,80,.85)');slSpr.verde=glow('rgba(160,255,140,.8)');slSpr.bianco=glow('rgba(220,235,255,.7)');
  // bagliore di finestra: rettangolo morbido (pieno al centro, sfumato ai bordi), colorato poi con l'alfa
- const fw=slCanvas(64,40);if(fw){const g=fw.g;for(let i=0;i<10;i++){const t=i/9;g.fillStyle=`rgba(255,214,150,${.06+t*.1})`;const ix=t*14,iy=t*9;g.fillRect(ix,iy,64-ix*2,40-iy*2)}slSpr.finestra=fw.c}
+ const fw=slCanvas(64,40);if(fw){const g=fw.g;for(let i=0;i<10;i++){const t=i/9;g.fillStyle=`rgba(255,${206+t*30|0},${130+t*60|0},${.1+t*.17})`;const ix=t*14,iy=t*9;g.fillRect(ix,iy,64-ix*2,40-iy*2)}slSpr.finestra=fw.c}
  // nuvola: tanti cerchi sfumati sovrapposti
  const nv=slCanvas(256,96);if(nv){const g=nv.g;for(let i=0;i<14;i++){const x=30+Math.random()*196,y=34+Math.random()*30,r=18+Math.random()*26,gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(255,255,255,.55)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2)}slSpr.nuvola=nv.c}
  // trame che scorrono sui fluidi: increspature orizzontali (acqua, palude) e striature verticali (lava, cascate)
@@ -161,8 +161,10 @@ function slDraw(cx,VW){
    const fin=typeof SL_FINESTRE!=='undefined'&&SL_FINESTRE[s.file];
    if(fin&&fin.length){ctx.globalCompositeOperation='lighter';
     for(let j=0;j<fin.length;j++){const F=fin[j],X=F[0]*k,Y=F[1]*k,FW=F[2]*k,FH=F[3]*k,p=Math.sin(now*(.7+(j%4)*.18)+j*1.7);
-     ctx.globalAlpha=.3+.14*p;ctx.drawImage(spr.finestra,X-FW*.55-6*k,Y-FH*.9-5*k,FW*2.1+12*k,FH*2.8+10*k);
-     ctx.globalAlpha=.42+.2*p;ctx.drawImage(spr.finestra,X-FW*.16,Y-FH*.28,FW*1.32,FH*1.56)}
+     // 15/11 sera (Fabio: "molto fioche"): alone e luce interna molto più forti, più un nucleo caldo quasi bianco
+     ctx.globalAlpha=.6+.2*p;ctx.drawImage(spr.finestra,X-FW*.7-9*k,Y-FH*1.1-8*k,FW*2.4+18*k,FH*3.2+16*k);
+     ctx.globalAlpha=.9+.1*p;ctx.drawImage(spr.finestra,X-FW*.2,Y-FH*.32,FW*1.4,FH*1.64);
+     ctx.globalAlpha=.55+.15*p;ctx.drawImage(spr.finestra,X,Y,FW,FH)}
    }
    // luci che lampeggiano (alcune respirano piano, altre si accendono e si spengono);
    // dove ci sono le finestre si tengono solo le luci azzurre e rosse (antenne, insegne)

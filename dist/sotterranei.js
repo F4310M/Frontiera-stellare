@@ -737,6 +737,32 @@ function sotCols(){
 function gMixS(a,b,t){return[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]}
 function gRgbS(c,a=1){return`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`}
 function sotRockPattern(){try{return typeof gPattern==='function'&&gfx&&gfx.tex?gPattern(ctx):null}catch(e){return null}}
+// 2026-11-15 (Fabio): il pozzo è stato scavato dall'uomo: pareti foderate di lamiera con rivetti,
+// travi di rinforzo e un collare d'acciaio con le strisce di pericolo alla bocca.
+const SOT_MET={w:11,giunto:58,rivetto:22};
+function sotMetalSide(x,y0,y1,side){
+ // x = bordo della buca; side -1 = parete sinistra (la lamiera va verso destra), 1 = destra
+ const W=SOT_MET.w,xa=side<0?x:x-W;
+ const g=ctx.createLinearGradient(xa,0,xa+W,0);
+ if(side<0){g.addColorStop(0,'#2c3138');g.addColorStop(.35,'#7d8691');g.addColorStop(1,'#3a4048')}
+ else{g.addColorStop(0,'#3a4048');g.addColorStop(.65,'#7d8691');g.addColorStop(1,'#2c3138')}
+ ctx.fillStyle=g;ctx.fillRect(xa,y0,W,y1-y0);
+ ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(side<0?xa+W-1.5:xa,y0,1.5,y1-y0);
+ for(let y=y0+SOT_MET.giunto;y<y1;y+=SOT_MET.giunto){ctx.fillStyle='rgba(10,12,16,.7)';ctx.fillRect(xa,y,W,2);ctx.fillStyle='rgba(220,230,240,.25)';ctx.fillRect(xa,y+2,W,1)}
+ ctx.fillStyle='#c9d1da';
+ for(let y=y0+10;y<y1;y+=SOT_MET.rivetto){ctx.beginPath();ctx.arc(xa+W/2,y,1.4,0,6.283);ctx.fill()}
+}
+function sotMetalBeam(x0,x1,y,h){
+ // trave orizzontale corta che sporge dalla parete (rinforzo), solo ai lati per non chiudere il passaggio
+ const g=ctx.createLinearGradient(0,y,0,y+h);g.addColorStop(0,'#8a939e');g.addColorStop(.5,'#4a515a');g.addColorStop(1,'#23272d');
+ ctx.fillStyle=g;ctx.fillRect(x0,y,x1-x0,h);ctx.fillStyle='rgba(255,255,255,.18)';ctx.fillRect(x0,y,x1-x0,1);
+}
+function sotHazard(x0,x1,y,h){
+ ctx.save();ctx.beginPath();ctx.rect(x0,y,x1-x0,h);ctx.clip();
+ ctx.fillStyle='#1b1b1b';ctx.fillRect(x0,y,x1-x0,h);ctx.fillStyle='#e8b923';
+ for(let x=x0-h;x<x1+h;x+=h*1.6){ctx.beginPath();ctx.moveTo(x,y+h);ctx.lineTo(x+h*.8,y+h);ctx.lineTo(x+h*1.6,y);ctx.lineTo(x+h*.8,y);ctx.closePath();ctx.fill()}
+ ctx.restore();ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=1;ctx.strokeRect(x0+.5,y+.5,x1-x0-1,h-1);
+}
 function sotDrawCrater(pr,now){
  const x0=pr.x,w=pr.w,x1=x0+w,ya=pr.ya??pr.y,yb=pr.yb??pr.y,top=Math.min(ya,yb),bot=PF_VH+40;
  ctx.save();
@@ -758,7 +784,14 @@ function sotDrawCrater(pr,now){
  // polvere che scende nella buca
  ctx.fillStyle=C.rgb(C.l,.5);
  for(let i=0;i<7;i++){const k=(now*.35+pfNoise(x0+i*7))%1,px=x0+14+pfNoise(x0+i*3)*(w-28),py=top+k*(bot-top);ctx.globalAlpha=Math.sin(k*Math.PI)*.6;ctx.fillRect(px,py,2,2)}
+ ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+ // pareti di lamiera, travi di rinforzo ai lati e ombra che scende
+ sotMetalSide(x0,ya,bot,-1);sotMetalSide(x1,yb,bot,1);
+ for(let y=top+70;y<bot-20;y+=95){sotMetalBeam(x0+SOT_MET.w,x0+SOT_MET.w+16,y,7);sotMetalBeam(x1-SOT_MET.w-16,x1-SOT_MET.w,y,7)}
+ {const sh=ctx.createLinearGradient(0,top,0,bot);sh.addColorStop(0,'rgba(0,0,0,0)');sh.addColorStop(.5,'rgba(0,0,0,.45)');sh.addColorStop(1,'rgba(0,0,0,.85)');ctx.fillStyle=sh;ctx.fillRect(x0-2,top,w+4,bot-top)}
  ctx.restore();ctx.restore();
+ // collare d'acciaio alla bocca, con strisce di pericolo
+ sotHazard(x0-6,x0+SOT_MET.w+4,ya-3,6);sotHazard(x1-SOT_MET.w-4,x1+6,yb-3,6);
  // cartello: freccia in giù verso le gallerie
  sotSign(x0-58,ya,'GALLERIE',false,'#ffb348',now);
 }
@@ -832,10 +865,7 @@ function sotMakeBack(){
  // sassi e crepe sparsi
  for(let i=0;i<70;i++){const x=rnd()*SOT_TILE,y=SOT.ceil+40+rnd()*(PF_VH-SOT.ceil-60),r=1.5+rnd()*4;wrap(()=>{g.fillStyle=rnd()<.5?dark:mid;g.globalAlpha=.35;g.beginPath();g.ellipse(x,y,r*1.4,r,rnd()*3,0,6.28);g.fill();g.fillStyle=lite;g.globalAlpha=.12;g.beginPath();g.ellipse(x-r*.3,y-r*.4,r*.6,r*.35,0,0,6.28);g.fill()})}
  g.globalAlpha=1;
- // vene di cristallo che brillano debolmente
- const col=m.rim;g.strokeStyle=col;g.lineWidth=1.2;
- for(let i=0;i<16;i++){let x=rnd()*SOT_TILE,y=SOT.ceil+60+rnd()*360;const pts=[[x,y]];for(let j=0;j<5;j++){x+=(rnd()-.5)*40;y+=(rnd()-.5)*30;pts.push([x,y])}const a=.12+rnd()*.18;wrap(()=>{g.globalAlpha=a;g.beginPath();pts.forEach(([px,py],j)=>j?g.lineTo(px,py):g.moveTo(px,py));g.stroke()})}
- g.globalAlpha=1;
+ // 2026-11-15 (Fabio): tolte le vene chiare a zig-zag sui muri (sembravano disegni strani)
  return cv.c;
 }
 // Strato più vicino (si muove più in fretta): archi di roccia e radici che pendono, quasi neri.
@@ -910,10 +940,12 @@ function sotDrawShaft(h,now){
  const sun=ctx.createLinearGradient(0,0,0,B+30);sun.addColorStop(0,C.rgb(gMixS(C.l,[255,255,255],.3),.34));sun.addColorStop(1,C.rgb(C.l,0));
  ctx.fillStyle=sun;ctx.beginPath();ctx.moveTo(cx-w*.18,0);ctx.lineTo(cx+w*.18,0);ctx.lineTo(cx+w*.42,B+30);ctx.lineTo(cx-w*.42,B+30);ctx.closePath();ctx.fill();
  ctx.globalCompositeOperation='source-over';
- // bocca del tunnel: roccia rotta e sassi che pendono
- ctx.fillStyle=dark;
- for(let i=0;i<9;i++){const k=pfNoise(h.x0+i*3.3),side=i%2?1:-1,ex=side<0?h.x0:h.x1,dx=(i>>1)*8;ctx.beginPath();ctx.moveTo(ex-side*(dx-6),SOT.ceil-4);ctx.lineTo(ex-side*(dx+10+k*8),SOT.ceil+6);ctx.lineTo(ex-side*(dx+2+k*4),SOT.ceil+16+k*24*(i<4?1:.5));ctx.closePath();ctx.fill()}
- ctx.strokeStyle=lite;ctx.globalAlpha=.25;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(h.x0-4,SOT.ceil+6);ctx.lineTo(h.x0+8,SOT.ceil+12);ctx.moveTo(h.x1+4,SOT.ceil+6);ctx.lineTo(h.x1-8,SOT.ceil+12);ctx.stroke();ctx.globalAlpha=1;
+ // pareti di lamiera fino alla bocca, travi ai lati e collare d'acciaio con strisce di pericolo
+ sotMetalSide(h.x0,0,B,-1);sotMetalSide(h.x1,0,B,1);
+ for(let y=36;y<B-20;y+=70){sotMetalBeam(h.x0+SOT_MET.w,h.x0+SOT_MET.w+14,y,6);sotMetalBeam(h.x1-SOT_MET.w-14,h.x1-SOT_MET.w,y,6)}
+ sotMetalBeam(h.x0-10,h.x1+10,SOT.ceil+2,9);sotHazard(h.x0-10,h.x1+10,SOT.ceil+11,6);
+ // due luci di servizio sul collare
+ ctx.fillStyle='#ffd27a';for(const lx of [h.x0+6,h.x1-6]){ctx.beginPath();ctx.arc(lx,SOT.ceil+21,2.5,0,6.283);ctx.fill()}
  ctx.restore();
 }
 // Scia luminosa sotto il cratere: una sottile traccia di luce dorata che sale dal pavimento al tunnel,
