@@ -15,10 +15,10 @@ vm.runInContext(fs.readFileSync(path.join(dist,'tempesta.js'),'utf8'),sb);
 const run=c=>vm.runInContext(c,sb),step=(n,f)=>{for(let i=0;i<n;i++){if(f)f();run('pfUpdatePilot(1/60)')}};
 
 // prima della tempesta nessuna spinta
-run('pf.tempesta={next:4,t:-1,dur:6,k:0,warned:false,gust:0}');
-step(30);assert.equal(run('pf.pilot.x'),900,'calma: nessuna spinta');
-step(60);assert.ok(sb.banners.includes('TEMPESTA IN ARRIVO'),'avviso prima della tempesta');
-step(60*4);assert.ok(run('pf.tempesta.k')>.5,'tempesta in corso');
+run('pf.tempesta={next:7,t:-1,dur:6,k:0,warned:false,gust:0}');
+step(90);assert.equal(run('pf.pilot.x'),900,'calma: nessuna spinta');
+step(60);assert.equal(run('pf.tempesta.warned'),true,'avviso prima della tempesta');
+step(60*6);assert.ok(run('pf.tempesta.k')>.5,'tempesta in corso');
 // a piedi, correndo avanti, si arretra
 let x0=run('pf.pilot.x');step(60,()=>run('pf.pilot.vx=265'));assert.ok(run('pf.pilot.x')<x0,'a piedi il vento vince');
 // col jetpack acceso il vento non spinge e il jetpack si scalda più piano
@@ -37,3 +37,26 @@ assert.ok(!/shadowBlur\s*=/.test(src)&&!/\.filter\s*=/.test(src),'niente shadowB
 const html=fs.readFileSync(path.join(dist,'index.html'),'utf8'),at=f=>html.indexOf('<script src="'+f);
 assert.ok(at('tempesta.js')>at('battaglia.js')&&at('tempesta.js')>at('mercato-plus.js')&&at('tempesta.js')>at('sotterranei.js'),'ordine di caricamento');
 console.log('tempesta: ok');
+
+// ---- 11-15: avviso sul monitor e nebbia velenosa nel sottosuolo
+{
+ const sb2={Math,performance:{now:()=>0},state:'platform',paused:false,PF_RUN:265,PF_JET:{heat:36},W:1280,H:720,stati:[],perse:0};
+ vm.createContext(sb2);
+ vm.runInContext(`var pf={phase:'missione',under:true,boss:null,cam:{x:0,lock:false},theme:{id:'deserto'},flash:0,
+  solids:[{x:0,y:600,w:2000}],plats:[],pilot:{x:900,y:600,w:22,vx:0,vy:0,ground:true,visible:true,hp:100,shield:100,barrier:false,jetOn:false}};
+ function pfGroundAt(x){return 600}function pfUpdatePilot(dt){}function pfUpdateJetpack(){}function drawPlatform(){}
+ function pfBanner(){}function pfStatus(t){stati.push(t)}function pfLoseLife(){perse++}`,sb2);
+ vm.runInContext(fs.readFileSync(path.join(dist,'tempesta.js'),'utf8'),sb2);
+ const r2=c=>vm.runInContext(c,sb2),st2=n=>{for(let i=0;i<n;i++)r2('pfUpdatePilot(1/60)')};
+ r2('pf.nebbia={next:3,t:-1,dur:6,k:0,warned:false,acc:0,hiss:0}');
+ st2(60);assert.equal(r2('pf.tempesta.k'),0,'nel sottosuolo niente vento');
+ assert.equal(r2('pf.nebbia.warned'),true,'avviso della nebbia prima che arrivi');
+ st2(60*4);assert.ok(r2('pf.nebbia.k')>.9,'nebbia in corso');
+ let h0=r2('pf.pilot.hp');st2(120);assert.ok(r2('pf.pilot.hp')<=h0-8,'la nebbia toglie energia');
+ h0=r2('pf.pilot.hp');r2('pf.pilot.barrier=true');st2(120);assert.equal(r2('pf.pilot.hp'),h0,'con la barriera niente danno');
+ assert.ok(r2('pf.pilot.shield')<100,'la barriera si consuma');
+ assert.ok(sb2.stati.includes('NEBBIA VELENOSA · TIENI LA BARRIERA'));
+ r2('pf.under=false');st2(60*3);assert.equal(r2('pf.nebbia.k'),0,'in superficie la nebbia sparisce');
+ const s2=fs.readFileSync(path.join(dist,'tempesta.js'),'utf8');assert.ok(/TS=\{[\s\S]*warn:5/.test(s2),'avviso 5 secondi prima');
+ console.log('tempesta (avviso + nebbia): ok');
+}
