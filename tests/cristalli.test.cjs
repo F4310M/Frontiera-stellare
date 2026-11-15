@@ -2,7 +2,7 @@
 const fs=require('fs'),path=require('path'),assert=require('assert');
 const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'dist/index.html'),'utf8');
-const a=html.indexOf('src="grafica2.js"'),b=html.indexOf('src="sotterranei.js'),c=html.indexOf('src="cristalli.js"');
+const a=html.indexOf('src="grafica2.js'),b=html.indexOf('src="sotterranei.js'),c=html.indexOf('src="cristalli.js');
 assert(a>0&&b>a&&c>b,'cristalli.js va caricato dopo grafica2.js e sotterranei.js');
 const src=fs.readFileSync(path.join(root,'dist/cristalli.js'),'utf8');
 assert(!/\.filter\s*=|\.shadowBlur\s*=/.test(src),'niente ctx.filter né shadowBlur: solo sprite in cache');

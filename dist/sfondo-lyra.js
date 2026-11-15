@@ -42,7 +42,7 @@ const slCache=new Map();// file -> {img, ready, an}
 let slOn=false,slSel=null;// slSel: immagine scelta per la missione in corso
 let slGiro=0;try{slGiro=+localStorage.getItem('conexSfondoGiro')||0}catch(e){}
 
-function slFile(f){return'sfondi/'+f+'?v=20261115a'}
+function slFile(f){return'sfondi/'+f+'?v=20261115p'}
 function slLoad(f){
  let e=slCache.get(f);if(e)return e;
  e={img:null,ready:false,an:null};slCache.set(f,e);
